@@ -1367,6 +1367,7 @@ def registro_horas(equipo_id):
     
     # Si es salida, cargar datos de la entrada
     cargo_nombre = None
+    cliente_nombre = None
     valores_entrada = None
     if entrada_pendiente:
         form.IdCargo.data = entrada_pendiente.IdCargo
