@@ -109,15 +109,36 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-4. **Configurar base de datos**
+4. **Inicializar datos de demostración (opcional)**
+```bash
+python init_demo_data.py
+```
+Esto creará:
+- 3 empleados de prueba
+- 3 clientes de prueba  
+- 2 equipos adicionales
+- Datos maestros básicos
+
+5. **Configurar base de datos**
 ```bash
 python run.py
 ```
 
-5. **Acceder al sistema**
+6. **Acceder al sistema**
 - URL: http://localhost:5000
-- Usuario administrador: admin
+- Usuario administrador: admin@gruas.com
 - Contraseña: admin123
+
+### 📊 Datos de Demostración
+
+Si ejecutaste `init_demo_data.py`, tendrás estos usuarios adicionales:
+
+| Email | Contraseña | Rol |
+|-------|------------|-----|
+| admin@gruas.com | admin123 | Administrador |
+| juan.perez@empresa.com | 123456 | Empleado |
+| maria.garcia@empresa.com | 123456 | Empleado |
+| carlos.lopez@empresa.com | 123456 | Empleado |
 
 ## 📁 Estructura del Proyecto
 
