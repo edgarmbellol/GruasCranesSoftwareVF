@@ -39,20 +39,20 @@
                     </div>
                 </div>
 
-                <!-- Reporte de Equipos (Próximamente) -->
+                <!-- Reporte de Horas por Equipo -->
                 <div class="col-md-6 col-lg-4 mb-4">
-                    <div class="card report-card disabled">
+                    <div class="card report-card">
                         <div class="card-body text-center">
                             <div class="report-icon mb-3">
-                                <i class="fas fa-crane fa-3x text-muted"></i>
+                                <i class="fas fa-cogs fa-3x text-success"></i>
                             </div>
-                            <h5 class="card-title">Uso de Equipos</h5>
+                            <h5 class="card-title">Horas por Equipo</h5>
                             <p class="card-text text-muted">
-                                Análisis de utilización de equipos y tiempos de operación.
+                                Reporte de horas trabajadas y horómetro por equipo con vista de calendario.
                             </p>
-                            <button class="btn btn-secondary" disabled>
-                                <i class="fas fa-clock me-2"></i>Próximamente
-                            </button>
+                            <a href="{{ url_for('reporte_horas_equipo') }}" class="btn btn-success">
+                                <i class="fas fa-chart-line me-2"></i>Ver Reporte
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -145,7 +145,8 @@
                                     <h6>Reportes Disponibles</h6>
                                     <ul class="text-muted">
                                         <li><strong>Horas por Empleado:</strong> Calendario visual con días trabajados y horas totales</li>
-                                        <li><strong>Filtros:</strong> Por empleado, mes y año</li>
+                                        <li><strong>Horas por Equipo:</strong> Análisis de horómetro y horas trabajadas por equipo</li>
+                                        <li><strong>Filtros:</strong> Por empleado/equipo, mes y año</li>
                                         <li><strong>Resumen:</strong> Estadísticas de días trabajados y no trabajados</li>
                                     </ul>
                                 </div>

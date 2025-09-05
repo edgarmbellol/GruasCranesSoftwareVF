@@ -560,7 +560,7 @@ class RegistroHorasForm(FlaskForm):
     FotoGrua = FileField(
         'Foto de la Grúa',
         validators=[
-            Optional(),
+            DataRequired(message='La foto de la grúa es requerida'),
             FileAllowed(['jpg', 'jpeg', 'png', 'gif'], 'Solo se permiten imágenes JPG, PNG o GIF')
         ],
         render_kw={'class': 'form-control', 'accept': 'image/*'}
@@ -621,19 +621,51 @@ class RegistroHorasForm(FlaskForm):
     
     def validate_Kilometraje(self, field):
         """Validar kilometraje para operadores"""
-        if self.IdCargo.data and field.data is not None:
+        if self.IdCargo.data:
             cargo = Cargo.query.get(self.IdCargo.data)
             if cargo and 'operador' in cargo.descripcionCargo.lower():
-                if field.data is None:
+                if field.data is None or field.data == '':
                     raise ValidationError('El kilometraje es requerido para operadores')
+        else:
+            # Si no hay cargo seleccionado, el campo es opcional
+            pass
     
     def validate_Horometro(self, field):
         """Validar horómetro para operadores"""
-        if self.IdCargo.data and field.data is not None:
+        if self.IdCargo.data:
             cargo = Cargo.query.get(self.IdCargo.data)
             if cargo and 'operador' in cargo.descripcionCargo.lower():
-                if field.data is None:
+                if field.data is None or field.data == '':
                     raise ValidationError('El horómetro es requerido para operadores')
+        else:
+            # Si no hay cargo seleccionado, el campo es opcional
+            pass
+    
+    def validate_FotoKilometraje(self, field):
+        """Validar foto del kilometraje para operadores"""
+        if self.IdCargo.data:
+            cargo = Cargo.query.get(self.IdCargo.data)
+            if cargo and 'operador' in cargo.descripcionCargo.lower():
+                if not field.data:
+                    raise ValidationError('La foto del kilometraje es requerida para operadores')
+    
+    def validate_FotoHorometro(self, field):
+        """Validar foto del horómetro para operadores"""
+        if self.IdCargo.data:
+            cargo = Cargo.query.get(self.IdCargo.data)
+            if cargo and 'operador' in cargo.descripcionCargo.lower():
+                if not field.data:
+                    raise ValidationError('La foto del horómetro es requerida para operadores')
+    
+    def validate_IdCliente(self, field):
+        """Validar cliente según estado del equipo"""
+        if self.IdEstadoEquipo.data:
+            estado = EstadoEquipo.query.get(self.IdEstadoEquipo.data)
+            if estado and 'operativo' in estado.Descripcion.lower():
+                # Solo validar si el campo no es de solo lectura
+                if not hasattr(self, 'IdCliente') or not (self.IdCliente.render_kw and self.IdCliente.render_kw.get('readonly')):
+                    if not field.data or field.data == 0:
+                        raise ValidationError('El cliente es requerido cuando el equipo está operativo')
 
 class CambiarContrasenaForm(FlaskForm):
     """Formulario para cambiar contraseña"""

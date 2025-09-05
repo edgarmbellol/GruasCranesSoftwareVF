@@ -1371,8 +1371,15 @@ def registro_horas(equipo_id):
     if entrada_pendiente:
         form.IdCargo.data = entrada_pendiente.IdCargo
         form.IdCargo.render_kw = {'readonly': True, 'style': 'background-color: #f8f9fa;'}
+        # Pre-seleccionar el mismo cliente que se usó en la entrada
+        form.IdCliente.data = entrada_pendiente.IdCliente
+        form.IdCliente.render_kw = {'readonly': True, 'style': 'background-color: #f8f9fa;'}
+        # El estado del equipo puede cambiar (se puede dañar), así que es editable
+        form.IdEstadoEquipo.data = entrada_pendiente.IdEstadoEquipo
         # Obtener el nombre del cargo para mostrar
         cargo_nombre = entrada_pendiente.cargo.descripcionCargo if entrada_pendiente.cargo else 'N/A'
+        # Obtener el nombre del cliente para mostrar
+        cliente_nombre = entrada_pendiente.cliente.NombreCliente if entrada_pendiente.cliente else 'N/A'
         # Obtener valores de entrada para validación
         valores_entrada = {
             'kilometraje': entrada_pendiente.Kilometraje,
@@ -1387,6 +1394,7 @@ def registro_horas(equipo_id):
                          empleado=empleado,
                          entrada_pendiente=entrada_pendiente,
                          cargo_nombre=cargo_nombre,
+                         cliente_nombre=cliente_nombre,
                          valores_entrada=valores_entrada)
 
 @app.route('/registro/<int:equipo_id>/procesar', methods=['POST'])
@@ -1660,6 +1668,125 @@ def reporte_horas_empleado():
     return render_template('reportes/horas_empleado.html', 
                          empleados=empleados,
                          empleado_id=empleado_id,
+                         mes=mes,
+                         año=año,
+                         calendario_data=calendario_data,
+                         calendario=cal,
+                         nombre_mes=nombre_mes,
+                         resumen=resumen,
+                         calendar=calendar)
+
+@app.route('/reportes/horas-equipo')
+@require_admin
+def reporte_horas_equipo():
+    """Reporte de horas trabajadas por equipo con horómetro"""
+    equipo_id = request.args.get('equipo_id', type=int)
+    mes = request.args.get('mes', datetime.now().month, type=int)
+    año = request.args.get('año', datetime.now().year, type=int)
+    
+    equipos = Equipo.query.filter_by(Estado='activo').all()
+    
+    calendario_data = {}
+    resumen = {
+        'total_horas': 0,
+        'total_horometro': 0,
+        'dias_trabajados': 0,
+        'dias_no_trabajados': 0,
+        'equipo_placa': 'Seleccione un equipo',
+        'horometro_inicial': 0,
+        'horometro_final': 0
+    }
+    
+    if equipo_id:
+        equipo = Equipo.query.get(equipo_id)
+        if equipo:
+            resumen['equipo_placa'] = f"{equipo.Placa} - {equipo.tipo_equipo.descripcion if equipo.tipo_equipo else 'N/A'}"
+            
+            fecha_inicio = date(año, mes, 1)
+            fecha_fin = date(año, mes, calendar.monthrange(año, mes)[1])
+            
+            # Obtener registros del equipo en el mes
+            registros = RegistroHoras.query.filter(
+                RegistroHoras.IdEquipo == equipo_id,
+                RegistroHoras.FechaEmpleado >= fecha_inicio,
+                RegistroHoras.FechaEmpleado <= fecha_fin
+            ).order_by(RegistroHoras.FechaEmpleado, RegistroHoras.HoraEmpleado).all()
+            
+            dias_trabajados = set()
+            horas_por_dia = {}
+            horometro_por_dia = {}
+            
+            # Obtener horómetro inicial del mes (último registro del mes anterior)
+            ultimo_registro_anterior = RegistroHoras.query.filter(
+                RegistroHoras.IdEquipo == equipo_id,
+                RegistroHoras.FechaEmpleado < fecha_inicio,
+                RegistroHoras.Horometro.isnot(None)
+            ).order_by(RegistroHoras.FechaEmpleado.desc(), RegistroHoras.HoraEmpleado.desc()).first()
+            
+            horometro_inicial = ultimo_registro_anterior.Horometro if ultimo_registro_anterior else 0
+            resumen['horometro_inicial'] = horometro_inicial
+            
+            # Procesar registros del mes
+            for registro in registros:
+                dia = registro.FechaEmpleado.day
+                
+                if registro.TipoRegistro == 'entrada':
+                    # Buscar la salida correspondiente
+                    salida = RegistroHoras.query.filter(
+                        RegistroHoras.IdEquipo == equipo_id,
+                        RegistroHoras.IdEmpleado == registro.IdEmpleado,
+                        RegistroHoras.TipoRegistro == 'salida',
+                        RegistroHoras.FechaEmpleado >= registro.FechaEmpleado,
+                        RegistroHoras.FechaEmpleado <= registro.FechaEmpleado + timedelta(days=1)
+                    ).order_by(RegistroHoras.FechaEmpleado, RegistroHoras.HoraEmpleado).first()
+                    
+                    if salida and registro.Horometro is not None and salida.Horometro is not None:
+                        dias_trabajados.add(dia)
+                        
+                        # Calcular horas trabajadas
+                        entrada_datetime = datetime.combine(registro.FechaEmpleado, registro.HoraEmpleado)
+                        salida_datetime = datetime.combine(salida.FechaEmpleado, salida.HoraEmpleado)
+                        horas_trabajadas = (salida_datetime - entrada_datetime).total_seconds() / 3600
+                        
+                        # Calcular incremento de horómetro
+                        incremento_horometro = salida.Horometro - registro.Horometro
+                        
+                        if dia not in horas_por_dia:
+                            horas_por_dia[dia] = 0
+                            horometro_por_dia[dia] = 0
+                        
+                        horas_por_dia[dia] += horas_trabajadas
+                        horometro_por_dia[dia] += incremento_horometro
+            
+            # Llenar calendario
+            for dia in range(1, calendar.monthrange(año, mes)[1] + 1):
+                calendario_data[dia] = {
+                    'trabajo': dia in dias_trabajados,
+                    'horas': round(horas_por_dia.get(dia, 0), 2),
+                    'horometro': round(horometro_por_dia.get(dia, 0), 2)
+                }
+            
+            # Calcular resumen
+            resumen['total_horas'] = round(sum(horas_por_dia.values()), 2)
+            resumen['total_horometro'] = round(sum(horometro_por_dia.values()), 2)
+            resumen['dias_trabajados'] = len(dias_trabajados)
+            resumen['dias_no_trabajados'] = calendar.monthrange(año, mes)[1] - len(dias_trabajados)
+            
+            # Obtener horómetro final del mes
+            ultimo_registro_mes = RegistroHoras.query.filter(
+                RegistroHoras.IdEquipo == equipo_id,
+                RegistroHoras.FechaEmpleado <= fecha_fin,
+                RegistroHoras.Horometro.isnot(None)
+            ).order_by(RegistroHoras.FechaEmpleado.desc(), RegistroHoras.HoraEmpleado.desc()).first()
+            
+            resumen['horometro_final'] = ultimo_registro_mes.Horometro if ultimo_registro_mes else horometro_inicial
+    
+    cal = calendar.monthcalendar(año, mes)
+    nombre_mes = calendar.month_name[mes]
+    
+    return render_template('reportes/horas_equipo.html', 
+                         equipos=equipos,
+                         equipo_id=equipo_id,
                          mes=mes,
                          año=año,
                          calendario_data=calendario_data,
