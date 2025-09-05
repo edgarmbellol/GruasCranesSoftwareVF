@@ -1,0 +1,335 @@
+{% extends "base.html" %}
+
+{% block title %}Detalle de Usuario - GRÚAS CRANES S.A.S{% endblock %}
+
+{% block content %}
+<div class="detalle-container">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-12 col-lg-8">
+                <!-- Header -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h1 class="page-title">
+                                    <i class="fas fa-user-circle me-3"></i>Detalle de Usuario
+                                </h1>
+                                <p class="page-subtitle">Información completa del usuario</p>
+                            </div>
+                            <div class="btn-group">
+                                <a href="{{ url_for('usuarios') }}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-arrow-left me-2"></i>Volver a la Lista
+                                </a>
+                                <a href="{{ url_for('editar_usuario', id=user.id) }}" class="btn btn-primary">
+                                    <i class="fas fa-edit me-2"></i>Editar
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Información del Usuario -->
+                <div class="row">
+                    <!-- Información Personal -->
+                    <div class="col-12 col-md-6 mb-4">
+                        <div class="card h-100">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">
+                                    <i class="fas fa-user me-2"></i>Información Personal
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row mb-3">
+                                    <div class="col-4">
+                                        <strong>Tipo de Documento:</strong>
+                                    </div>
+                                    <div class="col-8">
+                                        <span class="badge bg-info">{{ user.tipo_documento }}</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="row mb-3">
+                                    <div class="col-4">
+                                        <strong>Documento:</strong>
+                                    </div>
+                                    <div class="col-8">
+                                        <code>{{ user.documento }}</code>
+                                    </div>
+                                </div>
+                                
+                                <div class="row mb-3">
+                                    <div class="col-4">
+                                        <strong>Nombre:</strong>
+                                    </div>
+                                    <div class="col-8">
+                                        {{ user.nombre }}
+                                    </div>
+                                </div>
+                                
+                                <div class="row mb-3">
+                                    <div class="col-4">
+                                        <strong>Email:</strong>
+                                    </div>
+                                    <div class="col-8">
+                                        <a href="mailto:{{ user.email }}" class="text-decoration-none">
+                                            <i class="fas fa-envelope me-1"></i>{{ user.email }}
+                                        </a>
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-4">
+                                        <strong>Celular:</strong>
+                                    </div>
+                                    <div class="col-8">
+                                        <a href="tel:{{ user.celular }}" class="text-decoration-none">
+                                            <i class="fas fa-phone me-1"></i>{{ user.celular }}
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Información del Sistema -->
+                    <div class="col-12 col-md-6 mb-4">
+                        <div class="card h-100">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">
+                                    <i class="fas fa-cog me-2"></i>Información del Sistema
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row mb-3">
+                                    <div class="col-4">
+                                        <strong>Perfil:</strong>
+                                    </div>
+                                    <div class="col-8">
+                                        {% if user.perfil_usuario == 'administrador' %}
+                                            <span class="badge bg-danger">
+                                                <i class="fas fa-crown me-1"></i>Administrador
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-primary">
+                                                <i class="fas fa-user me-1"></i>Empleado
+                                            </span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                <div class="row mb-3">
+                                    <div class="col-4">
+                                        <strong>Estado:</strong>
+                                    </div>
+                                    <div class="col-8">
+                                        {% if user.estado == 'activo' %}
+                                            <span class="badge bg-success">
+                                                <i class="fas fa-check-circle me-1"></i>Activo
+                                            </span>
+                                        {% elif user.estado == 'inactivo' %}
+                                            <span class="badge bg-secondary">
+                                                <i class="fas fa-times-circle me-1"></i>Inactivo
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-warning">
+                                                <i class="fas fa-exclamation-triangle me-1"></i>Suspendido
+                                            </span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                <div class="row mb-3">
+                                    <div class="col-4">
+                                        <strong>ID del Usuario:</strong>
+                                    </div>
+                                    <div class="col-8">
+                                        <code>#{{ user.id }}</code>
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-4">
+                                        <strong>Fecha de Creación:</strong>
+                                    </div>
+                                    <div class="col-8">
+                                        {% if user.fecha_creacion %}
+                                            {{ user.fecha_creacion.strftime('%d/%m/%Y %H:%M') }}
+                                        {% else %}
+                                            <span class="text-muted">No disponible</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Información de Actividad -->
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">
+                                    <i class="fas fa-chart-line me-2"></i>Actividad del Usuario
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-12 col-md-6">
+                                        <div class="info-item">
+                                            <div class="info-label">
+                                                <i class="fas fa-sign-in-alt me-2"></i>Último Login:
+                                            </div>
+                                            <div class="info-value">
+                                                {% if user.ultimo_login %}
+                                                    {{ user.ultimo_login.strftime('%d/%m/%Y %H:%M') }}
+                                                    <small class="text-muted d-block">
+                                                        {{ user.ultimo_login.strftime('%A, %d de %B de %Y') }}
+                                                    </small>
+                                                {% else %}
+                                                    <span class="text-muted">Nunca ha iniciado sesión</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-12 col-md-6">
+                                        <div class="info-item">
+                                            <div class="info-label">
+                                                <i class="fas fa-calendar-times me-2"></i>Fecha de Inactividad:
+                                            </div>
+                                            <div class="info-value">
+                                                {% if user.fecha_inactividad %}
+                                                    {{ user.fecha_inactividad.strftime('%d/%m/%Y %H:%M') }}
+                                                    <small class="text-muted d-block">
+                                                        {{ user.fecha_inactividad.strftime('%A, %d de %B de %Y') }}
+                                                    </small>
+                                                {% else %}
+                                                    <span class="text-success">Usuario activo</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Acciones -->
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">
+                                    <i class="fas fa-tools me-2"></i>Acciones Disponibles
+                                </h5>
+                                <div class="d-flex flex-wrap gap-2">
+                                    <a href="{{ url_for('editar_usuario', id=user.id) }}" class="btn btn-warning">
+                                        <i class="fas fa-edit me-2"></i>Editar Usuario
+                                    </a>
+                                    
+                                    {% if user.estado == 'activo' %}
+                                        <form method="POST" action="{{ url_for('eliminar_usuario', id=user.id) }}" 
+                                              class="d-inline" 
+                                              onsubmit="return confirm('¿Estás seguro de desactivar este usuario?')">
+                                            <button type="submit" class="btn btn-danger">
+                                                <i class="fas fa-user-times me-2"></i>Desactivar Usuario
+                                            </button>
+                                        </form>
+                                    {% else %}
+                                        <form method="POST" action="{{ url_for('activar_usuario', id=user.id) }}" 
+                                              class="d-inline">
+                                            <button type="submit" class="btn btn-success">
+                                                <i class="fas fa-user-check me-2"></i>Activar Usuario
+                                            </button>
+                                        </form>
+                                    {% endif %}
+                                    
+                                    <a href="{{ url_for('usuarios') }}" class="btn btn-outline-secondary">
+                                        <i class="fas fa-list me-2"></i>Ver Todos los Usuarios
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.detalle-container {
+    padding: 2rem 0;
+}
+
+.page-title {
+    color: var(--primary-color);
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.page-subtitle {
+    color: var(--text-light);
+    margin-bottom: 0;
+}
+
+.card {
+    box-shadow: var(--shadow-lg);
+    border: none;
+    transition: transform 0.2s ease;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+}
+
+.card-header {
+    background: var(--gradient-primary);
+    color: var(--light-color);
+    border-bottom: none;
+}
+
+.card-title {
+    font-weight: 600;
+}
+
+.info-item {
+    margin-bottom: 1.5rem;
+}
+
+.info-label {
+    font-weight: 600;
+    color: var(--text-color);
+    margin-bottom: 0.5rem;
+}
+
+.info-value {
+    color: var(--text-light);
+}
+
+.btn-group .btn {
+    margin-right: 0.5rem;
+}
+
+.btn-group .btn:last-child {
+    margin-right: 0;
+}
+
+code {
+    background-color: var(--light-bg);
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.875rem;
+}
+
+.badge {
+    font-size: 0.75rem;
+    padding: 0.5rem 0.75rem;
+}
+</style>
+{% endblock %}

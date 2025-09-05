@@ -1,0 +1,1038 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro de Horas - {{ equipo.Placa }} - GRÚAS CRANES S.A.S</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #27AE60;
+            --primary-dark: #229954;
+            --secondary-color: #F1C40F;
+            --dark-color: #111111;
+            --light-color: #FFFFFF;
+            --text-color: #2C3E50;
+            --text-light: #7F8C8D;
+            --border-color: #BDC3C7;
+            --light-bg: #F8F9FA;
+            --gradient-primary: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            --shadow-sm: 0 2px 4px rgba(0,0,0,0.1);
+            --shadow-lg: 0 8px 25px rgba(0,0,0,0.15);
+        }
+
+        body {
+            background: var(--light-bg);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .header {
+            background: var(--gradient-primary);
+            color: var(--light-color);
+            padding: 1rem 0;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .equipo-info {
+            background: var(--light-color);
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-sm);
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .form-container {
+            background: var(--light-color);
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: var(--shadow-lg);
+            margin-bottom: 2rem;
+        }
+
+        .form-section {
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background: var(--light-bg);
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+        }
+
+        .section-title {
+            color: var(--primary-color);
+            font-weight: 600;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .section-title i {
+            margin-right: 0.5rem;
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: var(--text-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .form-control:focus,
+        .form-select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(39, 174, 96, 0.25);
+        }
+
+        .btn-primary {
+            background: var(--gradient-primary);
+            border: none;
+            font-weight: 600;
+            padding: 0.75rem 2rem;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+
+        .hidden-field {
+            display: none;
+        }
+
+        .cargo-icon {
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            background: var(--light-bg);
+            border-radius: 50%;
+            margin-right: 1rem;
+        }
+
+        .equipo-badge {
+            background: var(--secondary-color);
+            color: var(--dark-color);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+        
+        .btn-volver {
+            transition: all 0.3s ease;
+            border: 2px solid var(--secondary-color);
+            color: var(--dark-color);
+            font-weight: 600;
+        }
+        
+        .btn-volver:hover {
+            background-color: var(--secondary-color);
+            color: var(--dark-color);
+            transform: translateX(-2px);
+        }
+        
+        .btn-volver-header {
+            background-color: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: var(--light-color);
+        }
+        
+        .btn-volver-header:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+            color: var(--light-color);
+        }
+        
+        .cargo-readonly {
+            background: linear-gradient(135deg, #E8F5E8 0%, #F0F8F0 100%);
+            border: 2px solid var(--primary-color);
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+        
+        .cargo-readonly i {
+            color: var(--primary-color);
+        }
+        
+        .entrada-reference {
+            margin-top: 0.5rem;
+            padding: 0.5rem;
+            background: linear-gradient(135deg, #E8F5E8 0%, #F0F8F0 100%);
+            border: 1px solid var(--primary-color);
+            border-radius: 8px;
+            font-size: 0.85rem;
+        }
+        
+        .entrada-reference i {
+            color: var(--primary-color);
+        }
+        
+        .validation-message {
+            margin-top: 0.5rem;
+            padding: 0.5rem;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        
+        .validation-message.valid {
+            background: linear-gradient(135deg, #D4EDDA 0%, #C3E6CB 100%);
+            color: #155724;
+            border: 1px solid #C3E6CB;
+        }
+        
+        .validation-message.invalid {
+            background: linear-gradient(135deg, #F8D7DA 0%, #F5C6CB 100%);
+            color: #721C24;
+            border: 1px solid #F5C6CB;
+        }
+        
+        .validation-message i {
+            margin-right: 0.5rem;
+        }
+
+        .alert {
+            border-radius: 10px;
+            border: none;
+        }
+
+        .alert-success {
+            background: linear-gradient(135deg, #d4edda, #c3e6cb);
+            color: #155724;
+        }
+
+        .alert-danger {
+            background: linear-gradient(135deg, #f8d7da, #f5c6cb);
+            color: #721c24;
+        }
+
+        .file-upload {
+            position: relative;
+            display: inline-block;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        .file-upload input[type=file] {
+            position: absolute;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        .file-upload-label {
+            display: block;
+            padding: 0.75rem;
+            background: var(--light-bg);
+            border: 2px dashed var(--border-color);
+            border-radius: 10px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .file-upload:hover .file-upload-label {
+            border-color: var(--primary-color);
+            background: rgba(39, 174, 96, 0.1);
+        }
+
+        .image-preview {
+            text-align: center;
+        }
+
+        .preview-image {
+            max-width: 100%;
+            max-height: 200px;
+            border-radius: 10px;
+            box-shadow: var(--shadow-sm);
+            border: 2px solid var(--border-color);
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            border-color: #dc3545;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+            border-color: #bd2130;
+        }
+
+        .location-info {
+            background: var(--light-bg);
+            padding: 1rem;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 1rem;
+        }
+
+        .location-info i {
+            color: var(--primary-color);
+            margin-right: 0.5rem;
+        }
+
+        @media (max-width: 768px) {
+            .form-container {
+                padding: 1rem;
+                margin: 1rem;
+            }
+            
+            .equipo-info {
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <div class="d-flex align-items-center">
+                        <a href="{{ url_for('equipos') }}" class="btn btn-volver me-3" title="Volver a Equipos">
+                            <i class="fas fa-arrow-left me-2"></i>
+                            Volver
+                        </a>
+                        <div>
+                            <h1 class="mb-0">
+                                <i class="fas fa-clock me-3"></i>
+                                Registro de Horas
+                            </h1>
+                            <p class="mb-0">Sistema de control de tiempo de trabajo</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 text-end">
+                    <div class="equipo-badge">
+                        <i class="fas fa-crane me-2"></i>
+                        {{ equipo.Placa }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container mt-4">
+        <!-- Información del equipo -->
+        <div class="equipo-info">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <div class="d-flex align-items-center">
+                        <a href="{{ url_for('equipos') }}" class="btn btn-volver-header btn-sm me-3" title="Volver a Equipos">
+                            <i class="fas fa-arrow-left me-1"></i>
+                            Volver
+                        </a>
+                        <div>
+                            <h4 class="mb-2">
+                                <i class="fas fa-crane me-2"></i>
+                                {{ equipo.Placa }} - {{ equipo.tipo_equipo.descripcion if equipo.tipo_equipo else 'N/A' }}
+                            </h4>
+                            <p class="mb-1">
+                                <strong>Marca:</strong> {{ equipo.marca.DescripcionMarca if equipo.marca else 'N/A' }}
+                            </p>
+                        </div>
+                    </div>
+                    <p class="mb-0">
+                        <strong>Capacidad:</strong> {{ equipo.Capacidad }} toneladas
+                    </p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <div class="cargo-icon">
+                        <i class="fas fa-{{ 'play' if not entrada_pendiente else 'stop' }}"></i>
+                    </div>
+                    <h5 class="mt-2">
+                        {{ 'Registro de Salida' if entrada_pendiente else 'Registro de Entrada' }}
+                    </h5>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mensajes -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show">
+                        <i class="fas fa-{{ 'check-circle' if category == 'success' else 'exclamation-triangle' }} me-2"></i>
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- Formulario -->
+        <div class="form-container">
+            <form method="POST" action="{{ url_for('procesar_registro_horas', equipo_id=equipo.IdEquipo) }}" enctype="multipart/form-data" id="registroForm">
+                {{ form.hidden_tag() }}
+                
+                <!-- Campos ocultos necesarios -->
+                <input type="hidden" name="TipoRegistro" value="{{ form.TipoRegistro.data }}">
+                <input type="hidden" name="IdEquipo" value="{{ form.IdEquipo.data }}">
+                <input type="hidden" name="IdEmpleado" value="{{ form.IdEmpleado.data }}">
+                
+                <!-- Información básica -->
+                <div class="form-section">
+                    <h5 class="section-title">
+                        <i class="fas fa-info-circle"></i>
+                        Información Básica
+                    </h5>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            {{ form.FechaEmpleado.label(class="form-label") }}
+                            {{ form.FechaEmpleado(class="form-control" + (" is-invalid" if form.FechaEmpleado.errors else ""), id="FechaEmpleado", onchange="validarFechaHora()") }}
+                            <small class="form-text text-muted">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Fecha actual preestablecida - puedes modificarla si es necesario
+                            </small>
+                            <div id="fecha-validation" class="validation-message" style="display: none;"></div>
+                            {% if form.FechaEmpleado.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.FechaEmpleado.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            {{ form.HoraEmpleado.label(class="form-label") }}
+                            {{ form.HoraEmpleado(class="form-control" + (" is-invalid" if form.HoraEmpleado.errors else ""), id="HoraEmpleado", onchange="validarFechaHora()") }}
+                            <small class="form-text text-muted">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Hora actual preestablecida - puedes modificarla si es necesario
+                            </small>
+                            <div id="hora-validation" class="validation-message" style="display: none;"></div>
+                            {% if form.HoraEmpleado.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.HoraEmpleado.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Empleado</label>
+                            <div class="form-control-plaintext bg-light p-2 rounded">
+                                <i class="fas fa-user me-2"></i>
+                                <strong>{{ empleado.nombre }}</strong> - {{ empleado.documento }}
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            {{ form.IdCargo.label(class="form-label") }}
+                            {% if form.IdCargo.render_kw and form.IdCargo.render_kw.get('readonly') %}
+                                <!-- Mostrar el cargo como texto no editable -->
+                                <div class="form-control-plaintext cargo-readonly p-3 rounded">
+                                    <i class="fas fa-user-tie me-2"></i>
+                                    <strong>{{ cargo_nombre or 'N/A' }}</strong>
+                                </div>
+                                <!-- Campo oculto para enviar el valor -->
+                                <input type="hidden" name="IdCargo" value="{{ form.IdCargo.data }}">
+                                <small class="form-text text-muted">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    El cargo se mantiene igual al de la entrada
+                                </small>
+                            {% else %}
+                                {{ form.IdCargo(class="form-select" + (" is-invalid" if form.IdCargo.errors else "")) }}
+                            {% endif %}
+                            {% if form.IdCargo.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.IdCargo.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            {{ form.IdEstadoEquipo.label(class="form-label") }}
+                            {{ form.IdEstadoEquipo(class="form-select" + (" is-invalid" if form.IdEstadoEquipo.errors else "")) }}
+                            {% if form.IdEstadoEquipo.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.IdEstadoEquipo.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Datos del equipo (solo para operadores) -->
+                <div class="form-section" id="datosEquipo">
+                    <h5 class="section-title">
+                        <i class="fas fa-tachometer-alt"></i>
+                        Datos del Equipo
+                    </h5>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            {{ form.Kilometraje.label(class="form-label") }}
+                            {{ form.Kilometraje(class="form-control" + (" is-invalid" if form.Kilometraje.errors else ""), id="Kilometraje", oninput="validarKilometraje()") }}
+                            {% if valores_entrada %}
+                                <div class="entrada-reference">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    <small class="text-muted">
+                                        Valor de entrada: <strong>{{ valores_entrada.kilometraje }}</strong>
+                                        ({{ valores_entrada.fecha_entrada }} {{ valores_entrada.hora_entrada }})
+                                    </small>
+                                </div>
+                            {% endif %}
+                            <div id="kilometraje-validation" class="validation-message" style="display: none;"></div>
+                            {% if form.Kilometraje.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.Kilometraje.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            {{ form.Horometro.label(class="form-label") }}
+                            {{ form.Horometro(class="form-control" + (" is-invalid" if form.Horometro.errors else ""), id="Horometro", oninput="validarHorometro()") }}
+                            {% if valores_entrada %}
+                                <div class="entrada-reference">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    <small class="text-muted">
+                                        Valor de entrada: <strong>{{ valores_entrada.horometro }}</strong>
+                                        ({{ valores_entrada.fecha_entrada }} {{ valores_entrada.hora_entrada }})
+                                    </small>
+                                </div>
+                            {% endif %}
+                            <div id="horometro-validation" class="validation-message" style="display: none;"></div>
+                            {% if form.Horometro.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.Horometro.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cliente (solo si estado es operativo) -->
+                <div class="form-section" id="clienteSection">
+                    <h5 class="section-title">
+                        <i class="fas fa-building"></i>
+                        Información del Cliente
+                    </h5>
+                    
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            {{ form.IdCliente.label(class="form-label") }}
+                            {{ form.IdCliente(class="form-select" + (" is-invalid" if form.IdCliente.errors else "")) }}
+                            {% if form.IdCliente.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.IdCliente.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Fotos -->
+                <div class="form-section">
+                    <h5 class="section-title">
+                        <i class="fas fa-camera"></i>
+                        Evidencia Fotográfica
+                    </h5>
+                    
+                    <div class="row">
+                        <div class="col-md-4 mb-3" id="fotoKilometraje">
+                            <label class="form-label">Foto del Kilometraje</label>
+                            <div class="file-upload">
+                                {{ form.FotoKilometraje(class="form-control", onchange="previewImage(this, 'previewKilometraje')") }}
+                                <label for="FotoKilometraje" class="file-upload-label">
+                                    <i class="fas fa-camera me-2"></i>
+                                    <span id="textKilometraje">Seleccionar imagen</span>
+                                </label>
+                            </div>
+                            <div id="previewKilometraje" class="image-preview mt-2" style="display: none;">
+                                <img id="imgKilometraje" src="" alt="Preview" class="preview-image">
+                                <button type="button" class="btn btn-sm btn-danger mt-2" onclick="removeImage('FotoKilometraje', 'previewKilometraje', 'textKilometraje')">
+                                    <i class="fas fa-trash me-1"></i>Eliminar
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4 mb-3" id="fotoHorometro">
+                            <label class="form-label">Foto del Horómetro</label>
+                            <div class="file-upload">
+                                {{ form.FotoHorometro(class="form-control", onchange="previewImage(this, 'previewHorometro')") }}
+                                <label for="FotoHorometro" class="file-upload-label">
+                                    <i class="fas fa-camera me-2"></i>
+                                    <span id="textHorometro">Seleccionar imagen</span>
+                                </label>
+                            </div>
+                            <div id="previewHorometro" class="image-preview mt-2" style="display: none;">
+                                <img id="imgHorometro" src="" alt="Preview" class="preview-image">
+                                <button type="button" class="btn btn-sm btn-danger mt-2" onclick="removeImage('FotoHorometro', 'previewHorometro', 'textHorometro')">
+                                    <i class="fas fa-trash me-1"></i>Eliminar
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Foto de la Grúa</label>
+                            <div class="file-upload">
+                                {{ form.FotoGrua(class="form-control", onchange="previewImage(this, 'previewGrua')") }}
+                                <label for="FotoGrua" class="file-upload-label">
+                                    <i class="fas fa-camera me-2"></i>
+                                    <span id="textGrua">Seleccionar imagen</span>
+                                </label>
+                            </div>
+                            <div id="previewGrua" class="image-preview mt-2" style="display: none;">
+                                <img id="imgGrua" src="" alt="Preview" class="preview-image">
+                                <button type="button" class="btn btn-sm btn-danger mt-2" onclick="removeImage('FotoGrua', 'previewGrua', 'textGrua')">
+                                    <i class="fas fa-trash me-1"></i>Eliminar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Ubicación -->
+                <div class="form-section">
+                    <h5 class="section-title">
+                        <i class="fas fa-map-marker-alt"></i>
+                        Ubicación
+                    </h5>
+                    
+                    <div class="location-info">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>Ubicación actual:</strong> <span id="ubicacionTexto">Obteniendo ubicación...</span>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Latitud</label>
+                            <input type="text" id="latitud" name="latitud" class="form-control" readonly placeholder="Se obtiene automáticamente">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Longitud</label>
+                            <input type="text" id="longitud" name="longitud" class="form-control" readonly placeholder="Se obtiene automáticamente">
+                        </div>
+                        <div class="col-md-12 mb-3">
+                            {{ form.Ubicacion.label(class="form-label") }}
+                            {{ form.Ubicacion(class="form-control") }}
+                        </div>
+                    </div>
+                    
+                    <div class="text-center">
+                        <button type="button" class="btn btn-outline-primary" onclick="obtenerUbicacion()">
+                            <i class="fas fa-location-arrow me-2"></i>Actualizar Ubicación
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Observaciones -->
+                <div class="form-section">
+                    <h5 class="section-title">
+                        <i class="fas fa-comment"></i>
+                        Observaciones
+                    </h5>
+                    
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            {{ form.Observacion.label(class="form-label") }}
+                            {{ form.Observacion(class="form-control") }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Botones de acción -->
+                <div class="text-center">
+                    <a href="{{ url_for('equipos') }}" class="btn btn-volver btn-lg me-3">
+                        <i class="fas fa-arrow-left me-2"></i>
+                        Volver a Equipos
+                    </a>
+                    {{ form.submit(class="btn btn-primary btn-lg") }}
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Preview de imágenes
+        function previewImage(input, previewId) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                const preview = document.getElementById(previewId);
+                const img = preview.querySelector('img');
+                const textId = input.id.replace('Foto', 'text');
+                const textElement = document.getElementById(textId);
+                
+                reader.onload = function(e) {
+                    img.src = e.target.result;
+                    preview.style.display = 'block';
+                    textElement.textContent = input.files[0].name;
+                };
+                
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        // Eliminar imagen
+        function removeImage(inputId, previewId, textId) {
+            const input = document.getElementById(inputId);
+            const preview = document.getElementById(previewId);
+            const textElement = document.getElementById(textId);
+            
+            input.value = '';
+            preview.style.display = 'none';
+            textElement.textContent = 'Seleccionar imagen';
+        }
+
+        // Obtener ubicación
+        function obtenerUbicacion() {
+            document.getElementById('ubicacionTexto').textContent = 'Obteniendo ubicación...';
+            
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    function(position) {
+                        const lat = position.coords.latitude;
+                        const lng = position.coords.longitude;
+                        
+                        // Actualizar campos
+                        document.getElementById('latitud').value = lat.toFixed(6);
+                        document.getElementById('longitud').value = lng.toFixed(6);
+                        
+                        // Mostrar coordenadas
+                        document.getElementById('ubicacionTexto').textContent = `Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}`;
+                        document.querySelector('input[name="ubicacion"]').value = `Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}`;
+                        
+                        // Intentar obtener dirección (sin API key por ahora)
+                        // fetch(`https://api.opencagedata.com/geocode/v1/json?q=${lat}+${lng}&key=YOUR_API_KEY`)
+                        //     .then(response => response.json())
+                        //     .then(data => {
+                        //         if (data.results && data.results[0]) {
+                        //             const ubicacion = data.results[0].formatted;
+                        //             document.getElementById('ubicacionTexto').textContent = ubicacion;
+                        //             document.querySelector('input[name="ubicacion"]').value = ubicacion;
+                        //         }
+                        //     })
+                        //     .catch(() => {
+                        //         // Mantener coordenadas si falla la geocodificación
+                        //     });
+                    },
+                    function(error) {
+                        let mensaje = 'No se pudo obtener la ubicación';
+                        switch(error.code) {
+                            case error.PERMISSION_DENIED:
+                                mensaje = 'Permiso de ubicación denegado';
+                                break;
+                            case error.POSITION_UNAVAILABLE:
+                                mensaje = 'Ubicación no disponible';
+                                break;
+                            case error.TIMEOUT:
+                                mensaje = 'Tiempo de espera agotado';
+                                break;
+                        }
+                        document.getElementById('ubicacionTexto').textContent = mensaje;
+                        console.error('Error obteniendo ubicación:', error);
+                    },
+                    {
+                        enableHighAccuracy: true,
+                        timeout: 10000,
+                        maximumAge: 60000
+                    }
+                );
+            } else {
+                document.getElementById('ubicacionTexto').textContent = 'Geolocalización no soportada por este navegador';
+            }
+        }
+
+        // Controlar visibilidad de campos según cargo
+        function controlarCampos() {
+            const cargoSelect = document.getElementById('IdCargo');
+            const estadoSelect = document.getElementById('IdEstadoEquipo');
+            const datosEquipo = document.getElementById('datosEquipo');
+            const clienteSection = document.getElementById('clienteSection');
+            const fotoKilometraje = document.getElementById('fotoKilometraje');
+            const fotoHorometro = document.getElementById('fotoHorometro');
+            
+            // Obtener texto del cargo seleccionado o del cargo de solo lectura
+            let cargoTexto = '';
+            if (cargoSelect && cargoSelect.options && cargoSelect.options[cargoSelect.selectedIndex]) {
+                cargoTexto = cargoSelect.options[cargoSelect.selectedIndex].text.toLowerCase();
+            } else {
+                // Si es cargo de solo lectura, obtener el texto del div
+                const cargoReadonly = document.querySelector('.cargo-readonly');
+                if (cargoReadonly) {
+                    cargoTexto = cargoReadonly.textContent.toLowerCase();
+                }
+            }
+            
+            const esOperador = cargoTexto.includes('operador');
+            
+            // Mostrar/ocultar campos de datos del equipo
+            if (esOperador) {
+                datosEquipo.style.display = 'block';
+                fotoKilometraje.style.display = 'block';
+                fotoHorometro.style.display = 'block';
+            } else {
+                datosEquipo.style.display = 'none';
+                fotoKilometraje.style.display = 'none';
+                fotoHorometro.style.display = 'none';
+            }
+            
+            // Controlar campo cliente según estado
+            const estadoTexto = estadoSelect.options[estadoSelect.selectedIndex].text.toLowerCase();
+            const esOperativo = estadoTexto.includes('operativo');
+            
+            if (esOperativo) {
+                clienteSection.style.display = 'block';
+            } else {
+                clienteSection.style.display = 'none';
+            }
+        }
+
+        // Inicializar
+        document.addEventListener('DOMContentLoaded', function() {
+            // Obtener ubicación
+            obtenerUbicacion();
+            
+            // Controlar campos inicialmente
+            controlarCampos();
+            
+            // Agregar event listeners
+            document.getElementById('IdCargo').addEventListener('change', controlarCampos);
+            document.getElementById('IdEstadoEquipo').addEventListener('change', controlarCampos);
+            
+            // Establecer fecha y hora actual
+            const ahora = new Date();
+            const fecha = ahora.toISOString().split('T')[0];
+            const hora = ahora.toTimeString().split(' ')[0].substring(0, 5);
+            
+            document.getElementById('FechaEmpleado').value = fecha;
+            document.getElementById('HoraEmpleado').value = hora;
+        });
+
+        // Variables globales para validación
+        let valoresEntrada = null;
+        
+        // Obtener valores de entrada si están disponibles
+        {% if valores_entrada %}
+        valoresEntrada = {
+            kilometraje: {{ valores_entrada.kilometraje }},
+            horometro: {{ valores_entrada.horometro }}
+        };
+        {% endif %}
+        
+        // Función para validar kilometraje en tiempo real
+        function validarKilometraje() {
+            const campo = document.getElementById('Kilometraje');
+            const valor = parseFloat(campo.value);
+            const mensaje = document.getElementById('kilometraje-validation');
+            
+            if (!valoresEntrada || !campo.value) {
+                mensaje.style.display = 'none';
+                campo.classList.remove('is-valid', 'is-invalid');
+                return;
+            }
+            
+            if (valor >= valoresEntrada.kilometraje) {
+                mensaje.innerHTML = '<i class="fas fa-check-circle"></i>Valor válido: mayor o igual al de entrada';
+                mensaje.className = 'validation-message valid';
+                mensaje.style.display = 'block';
+                campo.classList.remove('is-invalid');
+                campo.classList.add('is-valid');
+            } else {
+                mensaje.innerHTML = '<i class="fas fa-exclamation-triangle"></i>Debe ser mayor o igual a ' + valoresEntrada.kilometraje;
+                mensaje.className = 'validation-message invalid';
+                mensaje.style.display = 'block';
+                campo.classList.remove('is-valid');
+                campo.classList.add('is-invalid');
+            }
+        }
+        
+        // Función para validar horómetro en tiempo real
+        function validarHorometro() {
+            const campo = document.getElementById('Horometro');
+            const valor = parseFloat(campo.value);
+            const mensaje = document.getElementById('horometro-validation');
+            
+            if (!valoresEntrada || !campo.value) {
+                mensaje.style.display = 'none';
+                campo.classList.remove('is-valid', 'is-invalid');
+                return;
+            }
+            
+            if (valor >= valoresEntrada.horometro) {
+                mensaje.innerHTML = '<i class="fas fa-check-circle"></i>Valor válido: mayor o igual al de entrada';
+                mensaje.className = 'validation-message valid';
+                mensaje.style.display = 'block';
+                campo.classList.remove('is-invalid');
+                campo.classList.add('is-valid');
+            } else {
+                mensaje.innerHTML = '<i class="fas fa-exclamation-triangle"></i>Debe ser mayor o igual a ' + valoresEntrada.horometro;
+                mensaje.className = 'validation-message invalid';
+                mensaje.style.display = 'block';
+                campo.classList.remove('is-valid');
+                campo.classList.add('is-invalid');
+            }
+        }
+        
+        // Función para validar fecha y hora
+        function validarFechaHora() {
+            const fechaCampo = document.getElementById('FechaEmpleado');
+            const horaCampo = document.getElementById('HoraEmpleado');
+            const fechaMensaje = document.getElementById('fecha-validation');
+            const horaMensaje = document.getElementById('hora-validation');
+            
+            // Limpiar validaciones anteriores
+            fechaCampo.classList.remove('is-valid', 'is-invalid');
+            horaCampo.classList.remove('is-valid', 'is-invalid');
+            fechaMensaje.style.display = 'none';
+            horaMensaje.style.display = 'none';
+            
+            if (!fechaCampo.value || !horaCampo.value) {
+                return;
+            }
+            
+            const fechaActual = new Date();
+            const fechaIngresada = new Date(fechaCampo.value + 'T' + horaCampo.value);
+            
+            // Validar que no sea una fecha futura
+            if (fechaIngresada > fechaActual) {
+                fechaCampo.classList.add('is-invalid');
+                fechaMensaje.innerHTML = '<i class="fas fa-exclamation-triangle me-1"></i>La fecha y hora no pueden ser futuras';
+                fechaMensaje.style.display = 'block';
+                return;
+            }
+            
+            // Si es formulario de salida, validar contra la entrada
+            if (valoresEntrada && valoresEntrada.fecha_entrada && valoresEntrada.hora_entrada) {
+                const fechaEntrada = new Date(valoresEntrada.fecha_entrada + 'T' + valoresEntrada.hora_entrada);
+                
+                // Validar que la salida no sea anterior a la entrada
+                if (fechaIngresada < fechaEntrada) {
+                    fechaCampo.classList.add('is-invalid');
+                    horaCampo.classList.add('is-invalid');
+                    fechaMensaje.innerHTML = '<i class="fas fa-exclamation-triangle me-1"></i>La fecha y hora de salida no pueden ser anteriores a la entrada';
+                    fechaMensaje.style.display = 'block';
+                    return;
+                }
+                
+                // Validar que no exceda 24 horas de diferencia
+                const diferenciaHoras = (fechaIngresada - fechaEntrada) / (1000 * 60 * 60);
+                if (diferenciaHoras > 24) {
+                    fechaCampo.classList.add('is-invalid');
+                    horaCampo.classList.add('is-invalid');
+                    fechaMensaje.innerHTML = '<i class="fas fa-exclamation-triangle me-1"></i>La diferencia no puede ser mayor a 24 horas';
+                    fechaMensaje.style.display = 'block';
+                    return;
+                }
+                
+                // Mostrar información de la diferencia
+                if (diferenciaHoras > 0) {
+                    const horas = Math.floor(diferenciaHoras);
+                    const minutos = Math.floor((diferenciaHoras - horas) * 60);
+                    fechaMensaje.innerHTML = `<i class="fas fa-info-circle me-1"></i>Tiempo trabajado: ${horas}h ${minutos}m`;
+                    fechaMensaje.style.display = 'block';
+                    fechaCampo.classList.add('is-valid');
+                    horaCampo.classList.add('is-valid');
+                }
+            } else {
+                // Para formularios de entrada, solo validar que no sea futuro
+                fechaCampo.classList.add('is-valid');
+                horaCampo.classList.add('is-valid');
+            }
+        }
+        
+        // Validación del formulario
+        document.getElementById('registroForm').addEventListener('submit', function(e) {
+            // Validar fecha y hora primero
+            const fechaCampo = document.getElementById('FechaEmpleado');
+            const horaCampo = document.getElementById('HoraEmpleado');
+            
+            if (!fechaCampo.value || !horaCampo.value) {
+                e.preventDefault();
+                alert('La fecha y hora son obligatorias');
+                return false;
+            }
+            
+            const fechaActual = new Date();
+            const fechaIngresada = new Date(fechaCampo.value + 'T' + horaCampo.value);
+            
+            // Validar que no sea una fecha futura
+            if (fechaIngresada > fechaActual) {
+                e.preventDefault();
+                alert('La fecha y hora no pueden ser futuras');
+                return false;
+            }
+            
+            // Si es formulario de salida, validar contra la entrada
+            if (valoresEntrada && valoresEntrada.fecha_entrada && valoresEntrada.hora_entrada) {
+                const fechaEntrada = new Date(valoresEntrada.fecha_entrada + 'T' + valoresEntrada.hora_entrada);
+                
+                // Validar que la salida no sea anterior a la entrada
+                if (fechaIngresada < fechaEntrada) {
+                    e.preventDefault();
+                    alert('La fecha y hora de salida no pueden ser anteriores a la entrada');
+                    return false;
+                }
+                
+                // Validar que no exceda 24 horas de diferencia
+                const diferenciaHoras = (fechaIngresada - fechaEntrada) / (1000 * 60 * 60);
+                if (diferenciaHoras > 24) {
+                    e.preventDefault();
+                    alert('La diferencia entre entrada y salida no puede ser mayor a 24 horas');
+                    return false;
+                }
+            }
+            
+            // Obtener cargo del select o del div de solo lectura
+            let cargoTexto = '';
+            const cargoSelect = document.getElementById('IdCargo');
+            if (cargoSelect && cargoSelect.options && cargoSelect.options[cargoSelect.selectedIndex]) {
+                cargoTexto = cargoSelect.options[cargoSelect.selectedIndex].text.toLowerCase();
+            } else {
+                const cargoReadonly = document.querySelector('.cargo-readonly');
+                if (cargoReadonly) {
+                    cargoTexto = cargoReadonly.textContent.toLowerCase();
+                }
+            }
+            
+            const esOperador = cargoTexto.includes('operador');
+            
+            if (esOperador) {
+                const kilometraje = document.getElementById('Kilometraje').value;
+                const horometro = document.getElementById('Horometro').value;
+                
+                if (!kilometraje || !horometro) {
+                    e.preventDefault();
+                    alert('Los campos de kilometraje y horómetro son obligatorios para operadores');
+                    return false;
+                }
+                
+                // Validación adicional con valores de entrada
+                if (valoresEntrada) {
+                    const kmValor = parseFloat(kilometraje);
+                    const hmValor = parseFloat(horometro);
+                    
+                    if (kmValor < valoresEntrada.kilometraje) {
+                        e.preventDefault();
+                        alert(`El kilometraje de salida (${kmValor}) debe ser mayor o igual al de entrada (${valoresEntrada.kilometraje})`);
+                        return false;
+                    }
+                    
+                    if (hmValor < valoresEntrada.horometro) {
+                        e.preventDefault();
+                        alert(`El horómetro de salida (${hmValor}) debe ser mayor o igual al de entrada (${valoresEntrada.horometro})`);
+                        return false;
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

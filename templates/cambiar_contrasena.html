@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+
+{% block title %}Cambiar Contraseña - GRÚAS CRANES S.A.S{% endblock %}
+
+{% block content %}
+<div class="container mt-5 pt-4">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-8 col-lg-6">
+            <div class="card shadow-lg border-0">
+                <div class="card-header bg-primary text-white text-center py-3">
+                    <h3 class="mb-0">
+                        <i class="fas fa-key me-2"></i>
+                        Cambiar Contraseña
+                    </h3>
+                </div>
+                
+                <div class="card-body p-4">
+                    <div class="alert alert-info" role="alert">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Información:</strong> Para cambiar tu contraseña, debes ingresar tu contraseña actual y luego la nueva contraseña.
+                    </div>
+                    
+                    <form method="POST" novalidate>
+                        {{ form.hidden_tag() }}
+                        
+                        <!-- Contraseña Actual -->
+                        <div class="mb-4">
+                            {{ form.contrasena_actual.label(class="form-label fw-bold") }}
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="fas fa-lock"></i>
+                                </span>
+                                {{ form.contrasena_actual(class="form-control" + (" is-invalid" if form.contrasena_actual.errors else "")) }}
+                            </div>
+                            {% if form.contrasena_actual.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.contrasena_actual.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Nueva Contraseña -->
+                        <div class="mb-4">
+                            {{ form.nueva_contrasena.label(class="form-label fw-bold") }}
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="fas fa-key"></i>
+                                </span>
+                                {{ form.nueva_contrasena(class="form-control" + (" is-invalid" if form.nueva_contrasena.errors else "")) }}
+                            </div>
+                            {% if form.nueva_contrasena.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.nueva_contrasena.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">
+                                <i class="fas fa-shield-alt me-1"></i>
+                                La contraseña debe tener al menos 6 caracteres
+                            </div>
+                        </div>
+                        
+                        <!-- Confirmar Nueva Contraseña -->
+                        <div class="mb-4">
+                            {{ form.confirmar_contrasena.label(class="form-label fw-bold") }}
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="fas fa-check-circle"></i>
+                                </span>
+                                {{ form.confirmar_contrasena(class="form-control" + (" is-invalid" if form.confirmar_contrasena.errors else "")) }}
+                            </div>
+                            {% if form.confirmar_contrasena.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.confirmar_contrasena.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Botones -->
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{{ url_for('dashboard') }}" class="btn btn-secondary me-md-2">
+                                <i class="fas fa-arrow-left me-1"></i>
+                                Cancelar
+                            </a>
+                            {{ form.submit(class="btn btn-primary") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Información de Seguridad -->
+            <div class="card mt-4 border-0 bg-light">
+                <div class="card-body">
+                    <h6 class="card-title text-primary">
+                        <i class="fas fa-shield-alt me-2"></i>
+                        Consejos de Seguridad
+                    </h6>
+                    <ul class="list-unstyled mb-0 small">
+                        <li class="mb-1">
+                            <i class="fas fa-check text-success me-2"></i>
+                            Usa una combinación de letras, números y símbolos
+                        </li>
+                        <li class="mb-1">
+                            <i class="fas fa-check text-success me-2"></i>
+                            Evita usar información personal obvia
+                        </li>
+                        <li class="mb-1">
+                            <i class="fas fa-check text-success me-2"></i>
+                            No compartas tu contraseña con nadie
+                        </li>
+                        <li class="mb-0">
+                            <i class="fas fa-check text-success me-2"></i>
+                            Cambia tu contraseña regularmente
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Mostrar/ocultar contraseñas
+    const passwordFields = document.querySelectorAll('input[type="password"]');
+    
+    passwordFields.forEach(field => {
+        const inputGroup = field.closest('.input-group');
+        if (inputGroup) {
+            const toggleButton = document.createElement('button');
+            toggleButton.type = 'button';
+            toggleButton.className = 'btn btn-outline-secondary';
+            toggleButton.innerHTML = '<i class="fas fa-eye"></i>';
+            
+            toggleButton.addEventListener('click', function() {
+                const type = field.getAttribute('type') === 'password' ? 'text' : 'password';
+                field.setAttribute('type', type);
+                
+                const icon = this.querySelector('i');
+                icon.className = type === 'password' ? 'fas fa-eye' : 'fas fa-eye-slash';
+            });
+            
+            inputGroup.appendChild(toggleButton);
+        }
+    });
+    
+    // Validación en tiempo real
+    const nuevaContrasena = document.querySelector('input[name="nueva_contrasena"]');
+    const confirmarContrasena = document.querySelector('input[name="confirmar_contrasena"]');
+    
+    function validatePasswords() {
+        if (nuevaContrasena.value && confirmarContrasena.value) {
+            if (nuevaContrasena.value === confirmarContrasena.value) {
+                confirmarContrasena.classList.remove('is-invalid');
+                confirmarContrasena.classList.add('is-valid');
+            } else {
+                confirmarContrasena.classList.remove('is-valid');
+                confirmarContrasena.classList.add('is-invalid');
+            }
+        }
+    }
+    
+    nuevaContrasena.addEventListener('input', validatePasswords);
+    confirmarContrasena.addEventListener('input', validatePasswords);
+});
+</script>
+{% endblock %}

@@ -1,0 +1,272 @@
+{% extends "base.html" %}
+
+{% block title %}Cliente: {{ cliente.NombreCliente }} - GRÚAS CRANES S.A.S{% endblock %}
+
+{% block content %}
+<div class="detalle-container">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-12 col-lg-8">
+                <!-- Header -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h1 class="page-title">
+                                    <i class="fas fa-building me-3"></i>{{ cliente.NombreCliente }}
+                                </h1>
+                                <p class="page-subtitle">Información detallada del cliente</p>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <a href="{{ url_for('editar_cliente', id=cliente.IdCliente) }}" class="btn btn-warning">
+                                    <i class="fas fa-edit me-2"></i>Editar
+                                </a>
+                                <a href="{{ url_for('clientes') }}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-arrow-left me-2"></i>Volver a la Lista
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Información principal -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">
+                                    <i class="fas fa-info-circle me-2"></i>Información General
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label fw-bold">ID del Cliente</label>
+                                        <p class="form-control-plaintext">
+                                            <code>#{{ cliente.IdCliente }}</code>
+                                        </p>
+                                    </div>
+                                    
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label fw-bold">Estado</label>
+                                        <p class="form-control-plaintext">
+                                            {% if cliente.Estado == 'activo' %}
+                                                <span class="badge bg-success fs-6">
+                                                    <i class="fas fa-check-circle me-1"></i>Activo
+                                                </span>
+                                            {% else %}
+                                                <span class="badge bg-secondary fs-6">
+                                                    <i class="fas fa-times-circle me-1"></i>Inactivo
+                                                </span>
+                                            {% endif %}
+                                        </p>
+                                    </div>
+                                    
+                                    <div class="col-md-8 mb-3">
+                                        <label class="form-label fw-bold">Nombre del Cliente</label>
+                                        <p class="form-control-plaintext fs-5">{{ cliente.NombreCliente }}</p>
+                                    </div>
+                                    
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label fw-bold">NIT</label>
+                                        <p class="form-control-plaintext">
+                                            <code class="fs-5">{{ cliente.Nit }}</code>
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Información de auditoría -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">
+                                    <i class="fas fa-history me-2"></i>Información de Auditoría
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label fw-bold">Fecha de Creación</label>
+                                        <p class="form-control-plaintext">
+                                            <i class="fas fa-calendar-plus me-2 text-muted"></i>
+                                            {{ cliente.FechaCreacion.strftime('%d/%m/%Y %H:%M') if cliente.FechaCreacion else 'N/A' }}
+                                        </p>
+                                    </div>
+                                    
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label fw-bold">Usuario que Creó</label>
+                                        <p class="form-control-plaintext">
+                                            <i class="fas fa-user-plus me-2 text-muted"></i>
+                                            {{ cliente.usuario_crea.nombre if cliente.usuario_crea else 'N/A' }}
+                                        </p>
+                                    </div>
+                                    
+                                    {% if cliente.Estado == 'inactivo' %}
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label fw-bold">Fecha de Inactivación</label>
+                                        <p class="form-control-plaintext">
+                                            <i class="fas fa-calendar-times me-2 text-muted"></i>
+                                            {{ cliente.FechaInactiva.strftime('%d/%m/%Y %H:%M') if cliente.FechaInactiva else 'N/A' }}
+                                        </p>
+                                    </div>
+                                    
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label fw-bold">Usuario que Inactivó</label>
+                                        <p class="form-control-plaintext">
+                                            <i class="fas fa-user-times me-2 text-muted"></i>
+                                            {{ cliente.usuario_inactiva.nombre if cliente.usuario_inactiva else 'N/A' }}
+                                        </p>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Acciones -->
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">
+                                    <i class="fas fa-cogs me-2"></i>Acciones Disponibles
+                                </h5>
+                                <div class="d-flex flex-wrap gap-2">
+                                    <a href="{{ url_for('editar_cliente', id=cliente.IdCliente) }}" class="btn btn-warning">
+                                        <i class="fas fa-edit me-2"></i>Editar Cliente
+                                    </a>
+                                    
+                                    <form method="POST" action="{{ url_for('eliminar_cliente', id=cliente.IdCliente) }}" 
+                                          class="d-inline" 
+                                          onsubmit="return confirm('¿Estás seguro de cambiar el estado de este cliente?')">
+                                        <button type="submit" 
+                                                class="btn {{ 'btn-danger' if cliente.Estado == 'activo' else 'btn-success' }}">
+                                            <i class="fas {{ 'fa-times' if cliente.Estado == 'activo' else 'fa-check' }} me-2"></i>
+                                            {{ 'Desactivar' if cliente.Estado == 'activo' else 'Activar' }} Cliente
+                                        </button>
+                                    </form>
+                                    
+                                    <a href="{{ url_for('clientes') }}" class="btn btn-outline-secondary">
+                                        <i class="fas fa-list me-2"></i>Ver Todos los Clientes
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.detalle-container {
+    padding: 2rem 0;
+}
+
+.page-title {
+    color: var(--primary-color);
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.page-subtitle {
+    color: var(--text-light);
+    margin-bottom: 0;
+}
+
+.card {
+    box-shadow: var(--shadow-lg);
+    border: none;
+    margin-bottom: 1.5rem;
+}
+
+.card-header {
+    background: var(--light-bg);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.card-title {
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+.form-label {
+    color: var(--text-color);
+    margin-bottom: 0.5rem;
+}
+
+.form-control-plaintext {
+    color: var(--text-color);
+    padding: 0.5rem 0;
+    margin-bottom: 0;
+}
+
+code {
+    background-color: var(--light-bg);
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.875rem;
+}
+
+.badge {
+    font-size: 0.875rem;
+    padding: 0.5rem 0.75rem;
+}
+
+.btn {
+    font-weight: 500;
+}
+
+.btn-warning {
+    background: var(--secondary-color);
+    border-color: var(--secondary-color);
+    color: var(--dark-color);
+}
+
+.btn-warning:hover {
+    background: #d4ac0d;
+    border-color: #d4ac0d;
+    color: var(--dark-color);
+}
+
+.btn-danger {
+    background: #dc3545;
+    border-color: #dc3545;
+}
+
+.btn-danger:hover {
+    background: #c82333;
+    border-color: #bd2130;
+}
+
+.btn-success {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.btn-success:hover {
+    background: var(--primary-dark);
+    border-color: var(--primary-dark);
+}
+
+.btn-outline-secondary {
+    border-color: var(--border-color);
+    color: var(--text-color);
+}
+
+.btn-outline-secondary:hover {
+    background-color: var(--border-color);
+    border-color: var(--border-color);
+    color: var(--text-color);
+}
+</style>
+{% endblock %}

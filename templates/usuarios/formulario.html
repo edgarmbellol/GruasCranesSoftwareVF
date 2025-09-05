@@ -1,0 +1,304 @@
+{% extends "base.html" %}
+
+{% block title %}{{ titulo }} - GRÚAS CRANES S.A.S{% endblock %}
+
+{% block content %}
+<div class="formulario-container">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-12 col-lg-8">
+                <!-- Header -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h1 class="page-title">
+                                    <i class="fas fa-user-{% if 'Editar' in titulo %}edit{% else %}plus{% endif %} me-3"></i>{{ titulo }}
+                                </h1>
+                                <p class="page-subtitle">
+                                    {% if 'Editar' in titulo %}
+                                        Modifica la información del usuario
+                                    {% else %}
+                                        Completa la información para crear un nuevo usuario
+                                    {% endif %}
+                                </p>
+                            </div>
+                            <a href="{{ url_for('usuarios') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Volver a la Lista
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Formulario -->
+                <div class="card">
+                    <div class="card-body">
+                        <form method="POST" novalidate>
+                            {{ form.hidden_tag() }}
+                            
+                            <div class="row">
+                                <!-- Información Personal -->
+                                <div class="col-12">
+                                    <h5 class="section-title">
+                                        <i class="fas fa-user me-2"></i>Información Personal
+                                    </h5>
+                                    <hr class="section-divider">
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    {{ form.tipo_documento.label(class="form-label") }}
+                                    {{ form.tipo_documento(class="form-select" + (" is-invalid" if form.tipo_documento.errors else "")) }}
+                                    {% if form.tipo_documento.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.tipo_documento.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    {{ form.documento.label(class="form-label") }}
+                                    {{ form.documento(class="form-control" + (" is-invalid" if form.documento.errors else "")) }}
+                                    {% if form.documento.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.documento.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="col-12 mb-3">
+                                    {{ form.nombre.label(class="form-label") }}
+                                    {{ form.nombre(class="form-control" + (" is-invalid" if form.nombre.errors else "")) }}
+                                    {% if form.nombre.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.nombre.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    {{ form.email.label(class="form-label") }}
+                                    {{ form.email(class="form-control" + (" is-invalid" if form.email.errors else "")) }}
+                                    {% if form.email.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.email.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    {{ form.celular.label(class="form-label") }}
+                                    {{ form.celular(class="form-control" + (" is-invalid" if form.celular.errors else "")) }}
+                                    {% if form.celular.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.celular.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <!-- Información del Sistema -->
+                                <div class="col-12">
+                                    <h5 class="section-title">
+                                        <i class="fas fa-cog me-2"></i>Información del Sistema
+                                    </h5>
+                                    <hr class="section-divider">
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    {{ form.perfil_usuario.label(class="form-label") }}
+                                    {{ form.perfil_usuario(class="form-select" + (" is-invalid" if form.perfil_usuario.errors else "")) }}
+                                    {% if form.perfil_usuario.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.perfil_usuario.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    {{ form.estado.label(class="form-label") }}
+                                    {{ form.estado(class="form-select" + (" is-invalid" if form.estado.errors else "")) }}
+                                    {% if form.estado.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.estado.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <!-- Contraseña -->
+                                <div class="col-12">
+                                    <h5 class="section-title">
+                                        <i class="fas fa-lock me-2"></i>Contraseña
+                                    </h5>
+                                    <hr class="section-divider">
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    {{ form.contrasena.label(class="form-label") }}
+                                    {{ form.contrasena(class="form-control" + (" is-invalid" if form.contrasena.errors else "")) }}
+                                    {% if form.contrasena.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.contrasena.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    {% if 'Editar' in titulo %}
+                                        <div class="form-text">Deje vacío para mantener la contraseña actual</div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    {{ form.confirmar_contrasena.label(class="form-label") }}
+                                    {{ form.confirmar_contrasena(class="form-control" + (" is-invalid" if form.confirmar_contrasena.errors else "")) }}
+                                    {% if form.confirmar_contrasena.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.confirmar_contrasena.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <!-- Botones -->
+                            <div class="row mt-4">
+                                <div class="col-12">
+                                    <div class="d-flex justify-content-end gap-2">
+                                        <a href="{{ url_for('usuarios') }}" class="btn btn-outline-secondary">
+                                            <i class="fas fa-times me-2"></i>Cancelar
+                                        </a>
+                                        {{ form.submit(class="btn btn-primary") }}
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.formulario-container {
+    padding: 2rem 0;
+}
+
+.page-title {
+    color: var(--primary-color);
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.page-subtitle {
+    color: var(--text-light);
+    margin-bottom: 0;
+}
+
+.section-title {
+    color: var(--primary-color);
+    font-weight: 600;
+    margin-top: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.section-divider {
+    border-color: var(--primary-color);
+    opacity: 0.3;
+}
+
+.card {
+    box-shadow: var(--shadow-lg);
+    border: none;
+}
+
+.form-label {
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(39, 174, 96, 0.25);
+}
+
+.btn-primary {
+    background: var(--gradient-primary);
+    border: none;
+    font-weight: 600;
+}
+
+.btn-primary:hover {
+    background: var(--primary-dark);
+    transform: translateY(-1px);
+}
+
+.btn-outline-secondary {
+    border-color: var(--border-color);
+    color: var(--text-color);
+}
+
+.btn-outline-secondary:hover {
+    background-color: var(--border-color);
+    border-color: var(--border-color);
+    color: var(--text-color);
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Validación en tiempo real
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+    const password = document.getElementById('contrasena');
+    const confirmPassword = document.getElementById('confirmar_contrasena');
+    
+    // Validar contraseñas coincidentes
+    function validatePasswords() {
+        if (password.value && confirmPassword.value) {
+            if (password.value !== confirmPassword.value) {
+                confirmPassword.setCustomValidity('Las contraseñas no coinciden');
+            } else {
+                confirmPassword.setCustomValidity('');
+            }
+        }
+    }
+    
+    password.addEventListener('input', validatePasswords);
+    confirmPassword.addEventListener('input', validatePasswords);
+    
+    // Validación del formulario
+    form.addEventListener('submit', function(e) {
+        validatePasswords();
+        
+        if (!form.checkValidity()) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        
+        form.classList.add('was-validated');
+    });
+});
+</script>
+{% endblock %}

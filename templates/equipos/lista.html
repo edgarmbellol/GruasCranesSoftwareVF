@@ -1,0 +1,346 @@
+{% extends "base.html" %}
+
+{% block title %}Gestión de Equipos - GRÚAS CRANES S.A.S{% endblock %}
+
+{% block content %}
+<div class="equipos-container">
+    <div class="container-fluid">
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h1 class="page-title">
+                            <i class="fas fa-crane me-3"></i>Gestión de Equipos
+                        </h1>
+                        <p class="page-subtitle">Administra los equipos del sistema</p>
+                    </div>
+                    <a href="{{ url_for('nuevo_equipo') }}" class="btn btn-primary btn-lg">
+                        <i class="fas fa-plus me-2"></i>Nuevo Equipo
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filtros de búsqueda -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <form method="GET" class="row g-3">
+                            <div class="col-md-3">
+                                <label for="search" class="form-label">Buscar</label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="search" 
+                                       name="search" 
+                                       value="{{ search }}"
+                                       placeholder="Placa, modelo o referencia...">
+                            </div>
+                            <div class="col-md-2">
+                                <label for="tipo_filter" class="form-label">Tipo</label>
+                                <select class="form-select" id="tipo_filter" name="tipo_filter">
+                                    <option value="0">Todos los tipos</option>
+                                    {% for choice in search_form.tipo_filter.choices[1:] %}
+                                        <option value="{{ choice[0] }}" {% if tipo_filter == choice[0] %}selected{% endif %}>
+                                            {{ choice[1] }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label for="marca_filter" class="form-label">Marca</label>
+                                <select class="form-select" id="marca_filter" name="marca_filter">
+                                    <option value="0">Todas las marcas</option>
+                                    {% for choice in search_form.marca_filter.choices[1:] %}
+                                        <option value="{{ choice[0] }}" {% if marca_filter == choice[0] %}selected{% endif %}>
+                                            {{ choice[1] }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label for="estado_filter" class="form-label">Estado</label>
+                                <select class="form-select" id="estado_filter" name="estado_filter">
+                                    <option value="">Todos los estados</option>
+                                    <option value="activo" {% if estado_filter == 'activo' %}selected{% endif %}>Activo</option>
+                                    <option value="inactivo" {% if estado_filter == 'inactivo' %}selected{% endif %}>Inactivo</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label for="estado_equipo_filter" class="form-label">Estado Equipo</label>
+                                <select class="form-select" id="estado_equipo_filter" name="estado_equipo_filter">
+                                    <option value="0">Todos los estados</option>
+                                    {% for choice in search_form.estado_equipo_filter.choices[1:] %}
+                                        <option value="{{ choice[0] }}" {% if estado_equipo_filter == choice[0] %}selected{% endif %}>
+                                            {{ choice[1] }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-1">
+                                <label class="form-label">&nbsp;</label>
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-outline-primary">
+                                        <i class="fas fa-search me-1"></i>Buscar
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabla de equipos -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-list me-2"></i>Lista de Equipos
+                            <span class="badge bg-secondary ms-2">{{ equipos.total }} equipos</span>
+                        </h5>
+                    </div>
+                    <div class="card-body p-0">
+                        {% if equipos.items %}
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Placa</th>
+                                            <th>Tipo</th>
+                                            <th>Marca</th>
+                                            <th>Modelo</th>
+                                            <th>Capacidad</th>
+                                            <th>Estado</th>
+                                            <th>Estado Equipo</th>
+                                            <th>Fecha Creación</th>
+                                            <th>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for equipo in equipos.items %}
+                                        <tr>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <div class="equipo-icon me-3">
+                                                        <i class="fas fa-crane text-primary"></i>
+                                                    </div>
+                                                    <div>
+                                                        <div class="fw-bold">{{ equipo.Placa }}</div>
+                                                        <small class="text-muted">ID: {{ equipo.IdEquipo }}</small>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-info">
+                                                    {{ equipo.tipo_equipo.descripcion if equipo.tipo_equipo else 'N/A' }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-secondary">
+                                                    {{ equipo.marca.DescripcionMarca if equipo.marca else 'N/A' }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <div>
+                                                    <div class="fw-bold">{{ equipo.Modelo or 'N/A' }}</div>
+                                                    {% if equipo.Referencia %}
+                                                        <small class="text-muted">{{ equipo.Referencia }}</small>
+                                                    {% endif %}
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="text-center">
+                                                    <div class="fw-bold">{{ equipo.Capacidad }} T</div>
+                                                    {% if equipo.Color %}
+                                                        <small class="text-muted">{{ equipo.Color }}</small>
+                                                    {% endif %}
+                                                </div>
+                                            </td>
+                                            <td>
+                                                {% if equipo.Estado == 'activo' %}
+                                                    <span class="badge bg-success">
+                                                        <i class="fas fa-check-circle me-1"></i>Activo
+                                                    </span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">
+                                                        <i class="fas fa-times-circle me-1"></i>Inactivo
+                                                    </span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if equipo.estado_equipo %}
+                                                    {% if equipo.estado_equipo.Descripcion == 'Operativo' %}
+                                                        <span class="badge bg-success">{{ equipo.estado_equipo.Descripcion }}</span>
+                                                    {% elif equipo.estado_equipo.Descripcion == 'Mantenimiento' %}
+                                                        <span class="badge bg-warning">{{ equipo.estado_equipo.Descripcion }}</span>
+                                                    {% elif equipo.estado_equipo.Descripcion == 'Averiado' %}
+                                                        <span class="badge bg-danger">{{ equipo.estado_equipo.Descripcion }}</span>
+                                                    {% else %}
+                                                        <span class="badge bg-info">{{ equipo.estado_equipo.Descripcion }}</span>
+                                                    {% endif %}
+                                                {% else %}
+                                                    <span class="badge bg-secondary">N/A</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <small class="text-muted">
+                                                    {{ equipo.FechaCreacion.strftime('%d/%m/%Y') if equipo.FechaCreacion else 'N/A' }}
+                                                </small>
+                                            </td>
+                                            <td>
+                                                <div class="btn-group" role="group">
+                                                    <a href="{{ url_for('ver_equipo', id=equipo.IdEquipo) }}" 
+                                                       class="btn btn-sm btn-outline-info" 
+                                                       title="Ver detalles">
+                                                        <i class="fas fa-eye"></i>
+                                                    </a>
+                                                    <a href="{{ url_for('editar_equipo', id=equipo.IdEquipo) }}" 
+                                                       class="btn btn-sm btn-outline-warning" 
+                                                       title="Editar">
+                                                        <i class="fas fa-edit"></i>
+                                                    </a>
+                                                    <a href="{{ url_for('registro_horas', equipo_id=equipo.IdEquipo) }}" 
+                                                       class="btn btn-sm btn-outline-success" 
+                                                       title="Registro de Horas">
+                                                        <i class="fas fa-clock"></i>
+                                                    </a>
+                                                    {% if equipo.Estado == 'activo' %}
+                                                        <form method="POST" action="{{ url_for('eliminar_equipo', id=equipo.IdEquipo) }}" 
+                                                              class="d-inline" 
+                                                              onsubmit="return confirm('¿Estás seguro de desactivar este equipo?')">
+                                                            <button type="submit" 
+                                                                    class="btn btn-sm btn-outline-danger" 
+                                                                    title="Desactivar">
+                                                                <i class="fas fa-times"></i>
+                                                            </button>
+                                                        </form>
+                                                    {% else %}
+                                                        <form method="POST" action="{{ url_for('activar_equipo', id=equipo.IdEquipo) }}" 
+                                                              class="d-inline">
+                                                            <button type="submit" 
+                                                                    class="btn btn-sm btn-outline-success" 
+                                                                    title="Activar">
+                                                                <i class="fas fa-check"></i>
+                                                            </button>
+                                                        </form>
+                                                    {% endif %}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <div class="text-center py-5">
+                                <i class="fas fa-crane fa-3x text-muted mb-3"></i>
+                                <h5 class="text-muted">No se encontraron equipos</h5>
+                                <p class="text-muted">Intenta ajustar los filtros de búsqueda</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Paginación -->
+        {% if equipos.pages > 1 %}
+        <div class="row mt-4">
+            <div class="col-12">
+                <nav aria-label="Paginación de equipos">
+                    <ul class="pagination justify-content-center">
+                        {% if equipos.has_prev %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('equipos', page=equipos.prev_num, search=search, tipo_filter=tipo_filter, marca_filter=marca_filter, estado_filter=estado_filter, estado_equipo_filter=estado_equipo_filter) }}">
+                                    <i class="fas fa-chevron-left"></i>
+                                </a>
+                            </li>
+                        {% endif %}
+                        
+                        {% for page_num in equipos.iter_pages() %}
+                            {% if page_num %}
+                                {% if page_num != equipos.page %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('equipos', page=page_num, search=search, tipo_filter=tipo_filter, marca_filter=marca_filter, estado_filter=estado_filter, estado_equipo_filter=estado_equipo_filter) }}">
+                                            {{ page_num }}
+                                        </a>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item active">
+                                        <span class="page-link">{{ page_num }}</span>
+                                    </li>
+                                {% endif %}
+                            {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">...</span>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if equipos.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('equipos', page=equipos.next_num, search=search, tipo_filter=tipo_filter, marca_filter=marca_filter, estado_filter=estado_filter, estado_equipo_filter=estado_equipo_filter) }}">
+                                    <i class="fas fa-chevron-right"></i>
+                                </a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.equipos-container {
+    padding: 2rem 0;
+}
+
+.page-title {
+    color: var(--primary-color);
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.page-subtitle {
+    color: var(--text-light);
+    margin-bottom: 0;
+}
+
+.equipo-icon {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    background: var(--light-bg);
+    border-radius: 50%;
+}
+
+.table th {
+    border-top: none;
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+.btn-group .btn {
+    margin-right: 2px;
+}
+
+.btn-group .btn:last-child {
+    margin-right: 0;
+}
+
+.badge {
+    font-size: 0.75rem;
+    padding: 0.5rem 0.75rem;
+}
+</style>
+{% endblock %}

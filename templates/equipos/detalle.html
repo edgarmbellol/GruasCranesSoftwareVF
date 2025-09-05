@@ -1,0 +1,393 @@
+{% extends "base.html" %}
+
+{% block title %}Detalle de Equipo - GRÚAS CRANES S.A.S{% endblock %}
+
+{% block content %}
+<div class="detalle-container">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-12 col-lg-10">
+                <!-- Header -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h1 class="page-title">
+                                    <i class="fas fa-crane me-3"></i>Detalle de Equipo
+                                </h1>
+                                <p class="page-subtitle">Información completa del equipo</p>
+                            </div>
+                            <div class="btn-group">
+                                <a href="{{ url_for('equipos') }}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-arrow-left me-2"></i>Volver a la Lista
+                                </a>
+                                <a href="{{ url_for('editar_equipo', id=equipo.IdEquipo) }}" class="btn btn-primary">
+                                    <i class="fas fa-edit me-2"></i>Editar
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Información del Equipo -->
+                <div class="row">
+                    <!-- Información Básica -->
+                    <div class="col-12 col-md-6 mb-4">
+                        <div class="card h-100">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">
+                                    <i class="fas fa-info-circle me-2"></i>Información Básica
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row mb-3">
+                                    <div class="col-4">
+                                        <strong>Placa:</strong>
+                                    </div>
+                                    <div class="col-8">
+                                        <code class="fs-5">{{ equipo.Placa }}</code>
+                                    </div>
+                                </div>
+                                
+                                <div class="row mb-3">
+                                    <div class="col-4">
+                                        <strong>Tipo de Equipo:</strong>
+                                    </div>
+                                    <div class="col-8">
+                                        <span class="badge bg-info fs-6">
+                                            {{ equipo.tipo_equipo.descripcion if equipo.tipo_equipo else 'N/A' }}
+                                        </span>
+                                    </div>
+                                </div>
+                                
+                                <div class="row mb-3">
+                                    <div class="col-4">
+                                        <strong>Marca:</strong>
+                                    </div>
+                                    <div class="col-8">
+                                        <span class="badge bg-secondary fs-6">
+                                            {{ equipo.marca.DescripcionMarca if equipo.marca else 'N/A' }}
+                                        </span>
+                                    </div>
+                                </div>
+                                
+                                <div class="row mb-3">
+                                    <div class="col-4">
+                                        <strong>Modelo:</strong>
+                                    </div>
+                                    <div class="col-8">
+                                        {{ equipo.Modelo or 'N/A' }}
+                                    </div>
+                                </div>
+                                
+                                <div class="row mb-3">
+                                    <div class="col-4">
+                                        <strong>Referencia:</strong>
+                                    </div>
+                                    <div class="col-8">
+                                        {{ equipo.Referencia or 'N/A' }}
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-4">
+                                        <strong>Color:</strong>
+                                    </div>
+                                    <div class="col-8">
+                                        {% if equipo.Color %}
+                                            <span class="badge" style="background-color: {{ equipo.Color.lower() }}; color: white;">
+                                                {{ equipo.Color }}
+                                            </span>
+                                        {% else %}
+                                            N/A
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Información Técnica -->
+                    <div class="col-12 col-md-6 mb-4">
+                        <div class="card h-100">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">
+                                    <i class="fas fa-cogs me-2"></i>Información Técnica
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row mb-3">
+                                    <div class="col-4">
+                                        <strong>Capacidad:</strong>
+                                    </div>
+                                    <div class="col-8">
+                                        <span class="fw-bold text-primary fs-5">{{ equipo.Capacidad }} Toneladas</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="row mb-3">
+                                    <div class="col-4">
+                                        <strong>Centro de Costos:</strong>
+                                    </div>
+                                    <div class="col-8">
+                                        {{ equipo.CentroCostos or 'N/A' }}
+                                    </div>
+                                </div>
+                                
+                                <div class="row mb-3">
+                                    <div class="col-4">
+                                        <strong>Estado General:</strong>
+                                    </div>
+                                    <div class="col-8">
+                                        {% if equipo.Estado == 'activo' %}
+                                            <span class="badge bg-success fs-6">
+                                                <i class="fas fa-check-circle me-1"></i>Activo
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-secondary fs-6">
+                                                <i class="fas fa-times-circle me-1"></i>Inactivo
+                                            </span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                <div class="row mb-3">
+                                    <div class="col-4">
+                                        <strong>Estado del Equipo:</strong>
+                                    </div>
+                                    <div class="col-8">
+                                        {% if equipo.estado_equipo %}
+                                            {% if equipo.estado_equipo.Descripcion == 'Operativo' %}
+                                                <span class="badge bg-success fs-6">{{ equipo.estado_equipo.Descripcion }}</span>
+                                            {% elif equipo.estado_equipo.Descripcion == 'Mantenimiento' %}
+                                                <span class="badge bg-warning fs-6">{{ equipo.estado_equipo.Descripcion }}</span>
+                                            {% elif equipo.estado_equipo.Descripcion == 'Averiado' %}
+                                                <span class="badge bg-danger fs-6">{{ equipo.estado_equipo.Descripcion }}</span>
+                                            {% else %}
+                                                <span class="badge bg-info fs-6">{{ equipo.estado_equipo.Descripcion }}</span>
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="badge bg-secondary fs-6">N/A</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-4">
+                                        <strong>ID del Equipo:</strong>
+                                    </div>
+                                    <div class="col-8">
+                                        <code>#{{ equipo.IdEquipo }}</code>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Información de Auditoría -->
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">
+                                    <i class="fas fa-history me-2"></i>Información de Auditoría
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-12 col-md-6">
+                                        <div class="info-item">
+                                            <div class="info-label">
+                                                <i class="fas fa-calendar-plus me-2"></i>Fecha de Creación:
+                                            </div>
+                                            <div class="info-value">
+                                                {% if equipo.FechaCreacion %}
+                                                    {{ equipo.FechaCreacion.strftime('%d/%m/%Y %H:%M') }}
+                                                    <small class="text-muted d-block">
+                                                        {{ equipo.FechaCreacion.strftime('%A, %d de %B de %Y') }}
+                                                    </small>
+                                                {% else %}
+                                                    <span class="text-muted">No disponible</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-12 col-md-6">
+                                        <div class="info-item">
+                                            <div class="info-label">
+                                                <i class="fas fa-user-plus me-2"></i>Usuario Creación:
+                                            </div>
+                                            <div class="info-value">
+                                                {% if equipo.usuario_creacion %}
+                                                    {{ equipo.usuario_creacion.nombre }}
+                                                    <small class="text-muted d-block">{{ equipo.usuario_creacion.documento }}</small>
+                                                {% else %}
+                                                    <span class="text-muted">No disponible</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    {% if equipo.FechaInactivacion %}
+                                    <div class="col-12 col-md-6">
+                                        <div class="info-item">
+                                            <div class="info-label">
+                                                <i class="fas fa-calendar-times me-2"></i>Fecha de Inactivación:
+                                            </div>
+                                            <div class="info-value">
+                                                {{ equipo.FechaInactivacion.strftime('%d/%m/%Y %H:%M') }}
+                                                <small class="text-muted d-block">
+                                                    {{ equipo.FechaInactivacion.strftime('%A, %d de %B de %Y') }}
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-12 col-md-6">
+                                        <div class="info-item">
+                                            <div class="info-label">
+                                                <i class="fas fa-user-times me-2"></i>Usuario Inactivación:
+                                            </div>
+                                            <div class="info-value">
+                                                {% if equipo.usuario_inactivacion %}
+                                                    {{ equipo.usuario_inactivacion.nombre }}
+                                                    <small class="text-muted d-block">{{ equipo.usuario_inactivacion.documento }}</small>
+                                                {% else %}
+                                                    <span class="text-muted">No disponible</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Acciones -->
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">
+                                    <i class="fas fa-tools me-2"></i>Acciones Disponibles
+                                </h5>
+                                <div class="d-flex flex-wrap gap-2">
+                                    <a href="{{ url_for('editar_equipo', id=equipo.IdEquipo) }}" class="btn btn-warning">
+                                        <i class="fas fa-edit me-2"></i>Editar Equipo
+                                    </a>
+                                    
+                                    {% if equipo.Estado == 'activo' %}
+                                        <form method="POST" action="{{ url_for('eliminar_equipo', id=equipo.IdEquipo) }}" 
+                                              class="d-inline" 
+                                              onsubmit="return confirm('¿Estás seguro de desactivar este equipo?')">
+                                            <button type="submit" class="btn btn-danger">
+                                                <i class="fas fa-times me-2"></i>Desactivar Equipo
+                                            </button>
+                                        </form>
+                                    {% else %}
+                                        <form method="POST" action="{{ url_for('activar_equipo', id=equipo.IdEquipo) }}" 
+                                              class="d-inline">
+                                            <button type="submit" class="btn btn-success">
+                                                <i class="fas fa-check me-2"></i>Activar Equipo
+                                            </button>
+                                        </form>
+                                    {% endif %}
+                                    
+                                    <a href="{{ url_for('equipos') }}" class="btn btn-outline-secondary">
+                                        <i class="fas fa-list me-2"></i>Ver Todos los Equipos
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.detalle-container {
+    padding: 2rem 0;
+}
+
+.page-title {
+    color: var(--primary-color);
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.page-subtitle {
+    color: var(--text-light);
+    margin-bottom: 0;
+}
+
+.card {
+    box-shadow: var(--shadow-lg);
+    border: none;
+    transition: transform 0.2s ease;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+}
+
+.card-header {
+    background: var(--gradient-primary);
+    color: var(--light-color);
+    border-bottom: none;
+}
+
+.card-title {
+    font-weight: 600;
+}
+
+.info-item {
+    margin-bottom: 1.5rem;
+}
+
+.info-label {
+    font-weight: 600;
+    color: var(--text-color);
+    margin-bottom: 0.5rem;
+}
+
+.info-value {
+    color: var(--text-light);
+}
+
+.btn-group .btn {
+    margin-right: 0.5rem;
+}
+
+.btn-group .btn:last-child {
+    margin-right: 0;
+}
+
+code {
+    background-color: var(--light-bg);
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.875rem;
+}
+
+.badge {
+    font-size: 0.75rem;
+    padding: 0.5rem 0.75rem;
+}
+
+.fs-5 {
+    font-size: 1.25rem !important;
+}
+
+.fs-6 {
+    font-size: 1rem !important;
+}
+</style>
+{% endblock %}

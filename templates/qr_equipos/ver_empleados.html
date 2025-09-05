@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+
+{% block title %}Códigos QR Equipos - Sistema de Grúas{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="text-primary mb-1">
+                        <i class="fas fa-qrcode me-2"></i>Códigos QR Equipos
+                    </h2>
+                    <p class="text-muted mb-0">Escanea el código QR para acceder al formulario de registro</p>
+                </div>
+                <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Volver al Dashboard
+                </a>
+            </div>
+
+            <!-- Información sobre QR -->
+            <div class="alert alert-info mb-4">
+                <i class="fas fa-info-circle me-2"></i>
+                <strong>Instrucciones:</strong> Escanea el código QR del equipo con tu dispositivo móvil para acceder 
+                directamente al formulario de registro de entrada y salida.
+            </div>
+
+            <!-- Grid de equipos con QR -->
+            <div class="row">
+                {% for item in equipos_con_qr %}
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card qr-equipo-card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-crane me-2"></i>{{ item.equipo.Placa }}
+                            </h5>
+                            {% if item.tiene_qr %}
+                                <span class="badge bg-success">
+                                    <i class="fas fa-check-circle me-1"></i>QR Disponible
+                                </span>
+                            {% else %}
+                                <span class="badge bg-warning">
+                                    <i class="fas fa-exclamation-triangle me-1"></i>QR No Disponible
+                                </span>
+                            {% endif %}
+                        </div>
+                        <div class="card-body text-center">
+                            <!-- Información del equipo -->
+                            <div class="equipo-info mb-3">
+                                <p class="mb-1"><strong>Tipo:</strong> {{ item.equipo.tipo_equipo.descripcion if item.equipo.tipo_equipo else 'N/A' }}</p>
+                                <p class="mb-1"><strong>Marca:</strong> {{ item.equipo.marca.DescripcionMarca if item.equipo.marca else 'N/A' }}</p>
+                                <p class="mb-1"><strong>Capacidad:</strong> {{ item.equipo.Capacidad or 'N/A' }}</p>
+                            </div>
+
+                            <!-- Código QR -->
+                            {% if item.tiene_qr %}
+                            <div class="qr-container mb-3">
+                                <img src="{{ url_for('static', filename=item.qr_url) }}" 
+                                     alt="QR Code para {{ item.equipo.Placa }}" 
+                                     class="qr-image">
+                            </div>
+                            <div class="qr-info">
+                                <small class="text-muted">
+                                    <i class="fas fa-mobile-alt me-1"></i>
+                                    Escanea con tu dispositivo móvil
+                                </small>
+                            </div>
+                            {% else %}
+                            <div class="qr-placeholder mb-3">
+                                <i class="fas fa-qrcode fa-4x text-muted"></i>
+                                <p class="text-muted mt-2">QR no disponible</p>
+                                <small class="text-muted">Contacta al administrador</small>
+                            </div>
+                            {% endif %}
+
+                            <!-- URL del formulario (solo para referencia) -->
+                            <div class="url-info mb-3">
+                                <small class="text-muted">Enlace directo:</small>
+                                <div class="input-group input-group-sm">
+                                    <input type="text" 
+                                           class="form-control form-control-sm" 
+                                           value="{{ item.url_registro }}" 
+                                           readonly>
+                                    <button class="btn btn-outline-secondary btn-sm" 
+                                            type="button" 
+                                            onclick="copiarUrl('{{ item.url_registro }}')">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Acciones -->
+                            <div class="qr-actions">
+                                {% if item.tiene_qr %}
+                                <a href="{{ url_for('static', filename=item.qr_url) }}" 
+                                   class="btn btn-primary btn-sm me-2" 
+                                   download="QR_{{ item.equipo.Placa }}.png">
+                                    <i class="fas fa-download me-1"></i>Descargar QR
+                                </a>
+                                {% endif %}
+                                <a href="{{ url_for('registro_horas', equipo_id=item.equipo.IdEquipo) }}" 
+                                   class="btn btn-outline-primary btn-sm">
+                                    <i class="fas fa-external-link-alt me-1"></i>Ir al Formulario
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            {% if not equipos_con_qr %}
+            <div class="text-center py-5">
+                <i class="fas fa-crane fa-4x text-muted mb-3"></i>
+                <h4 class="text-muted">No hay equipos disponibles</h4>
+                <p class="text-muted">No se encontraron equipos activos con códigos QR.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.qr-equipo-card {
+    transition: all 0.3s ease;
+    border: none;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    height: 100%;
+}
+
+.qr-equipo-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.qr-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 2px dashed #dee2e6;
+}
+
+.qr-image {
+    max-width: 150px;
+    max-height: 150px;
+    width: auto;
+    height: auto;
+}
+
+.qr-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 2px dashed #dee2e6;
+}
+
+.equipo-info p {
+    margin-bottom: 0.25rem;
+    font-size: 0.9rem;
+}
+
+.url-info .input-group {
+    margin-top: 0.5rem;
+}
+
+.qr-actions {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.qr-actions .btn {
+    flex: 1;
+    min-width: 120px;
+}
+
+@media (max-width: 768px) {
+    .qr-actions {
+        flex-direction: column;
+    }
+    
+    .qr-actions .btn {
+        flex: none;
+        width: 100%;
+    }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function copiarUrl(url) {
+    navigator.clipboard.writeText(url).then(function() {
+        // Mostrar notificación de éxito
+        const btn = event.target.closest('button');
+        const originalHTML = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-check"></i>';
+        btn.classList.remove('btn-outline-secondary');
+        btn.classList.add('btn-success');
+        
+        setTimeout(function() {
+            btn.innerHTML = originalHTML;
+            btn.classList.remove('btn-success');
+            btn.classList.add('btn-outline-secondary');
+        }, 2000);
+    }).catch(function(err) {
+        console.error('Error copiando URL: ', err);
+        alert('Error al copiar la URL');
+    });
+}
+</script>
+{% endblock %}
