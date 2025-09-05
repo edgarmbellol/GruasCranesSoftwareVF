@@ -140,6 +140,35 @@ Si ejecutaste `init_demo_data.py`, tendrás estos usuarios adicionales:
 | maria.garcia@empresa.com | 123456 | Empleado |
 | carlos.lopez@empresa.com | 123456 | Empleado |
 
+### 🧹 Scripts de Limpieza
+
+#### **Limpiar Registros de Horas**
+```bash
+# Ver estadísticas
+python limpiar_registros.py stats
+
+# Eliminar todos los registros
+python limpiar_registros.py all
+
+# Eliminar por rango de fechas
+python limpiar_registros.py range 2024-01-01 2024-12-31
+```
+
+#### **Reset Completo (Emergencia)**
+```bash
+# Resetear toda la base de datos (mantiene solo admin y datos maestros)
+python reset_database.py
+```
+
+#### **Backup y Restore**
+```bash
+# Crear backup
+python backup_db.py backup
+
+# Restaurar desde backup
+python backup_db.py restore backups/gruas_cranes_backup_20240904_230500.db
+```
+
 ## 📁 Estructura del Proyecto
 
 ```
