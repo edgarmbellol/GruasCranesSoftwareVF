@@ -6,7 +6,7 @@
 <div class="container-fluid py-4">
     <div class="row">
         <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-4 mt-4">
                 <div>
                     <h2 class="text-primary mb-1">
                         <i class="fas fa-chart-line me-2"></i>Reportes
@@ -57,77 +57,24 @@
                     </div>
                 </div>
 
-                <!-- Reporte de Productividad (Próximamente) -->
+                <!-- Registros Dinámicos -->
                 <div class="col-md-6 col-lg-4 mb-4">
-                    <div class="card report-card disabled">
+                    <div class="card report-card">
                         <div class="card-body text-center">
                             <div class="report-icon mb-3">
-                                <i class="fas fa-chart-bar fa-3x text-muted"></i>
+                                <i class="fas fa-list-alt fa-3x text-info"></i>
                             </div>
-                            <h5 class="card-title">Productividad</h5>
+                            <h5 class="card-title">Registros Dinámicos</h5>
                             <p class="card-text text-muted">
-                                Métricas de productividad y rendimiento del equipo de trabajo.
+                                Visualización dinámica de entradas y salidas con filtros avanzados y exportación.
                             </p>
-                            <button class="btn btn-secondary" disabled>
-                                <i class="fas fa-clock me-2"></i>Próximamente
-                            </button>
+                            <a href="{{ url_for('reporte_registros_dinamicos') }}" class="btn btn-info">
+                                <i class="fas fa-table me-2"></i>Ver Registros
+                            </a>
                         </div>
                     </div>
                 </div>
 
-                <!-- Reporte de Clientes (Próximamente) -->
-                <div class="col-md-6 col-lg-4 mb-4">
-                    <div class="card report-card disabled">
-                        <div class="card-body text-center">
-                            <div class="report-icon mb-3">
-                                <i class="fas fa-building fa-3x text-muted"></i>
-                            </div>
-                            <h5 class="card-title">Trabajos por Cliente</h5>
-                            <p class="card-text text-muted">
-                                Análisis de trabajos realizados por cliente y tiempos de servicio.
-                            </p>
-                            <button class="btn btn-secondary" disabled>
-                                <i class="fas fa-clock me-2"></i>Próximamente
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Reporte de Costos (Próximamente) -->
-                <div class="col-md-6 col-lg-4 mb-4">
-                    <div class="card report-card disabled">
-                        <div class="card-body text-center">
-                            <div class="report-icon mb-3">
-                                <i class="fas fa-dollar-sign fa-3x text-muted"></i>
-                            </div>
-                            <h5 class="card-title">Análisis de Costos</h5>
-                            <p class="card-text text-muted">
-                                Análisis de costos operacionales y rentabilidad por proyecto.
-                            </p>
-                            <button class="btn btn-secondary" disabled>
-                                <i class="fas fa-clock me-2"></i>Próximamente
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Reporte Personalizado (Próximamente) -->
-                <div class="col-md-6 col-lg-4 mb-4">
-                    <div class="card report-card disabled">
-                        <div class="card-body text-center">
-                            <div class="report-icon mb-3">
-                                <i class="fas fa-cogs fa-3x text-muted"></i>
-                            </div>
-                            <h5 class="card-title">Reporte Personalizado</h5>
-                            <p class="card-text text-muted">
-                                Crea reportes personalizados con los datos que necesites.
-                            </p>
-                            <button class="btn btn-secondary" disabled>
-                                <i class="fas fa-clock me-2"></i>Próximamente
-                            </button>
-                        </div>
-                    </div>
-                </div>
             </div>
 
             <!-- Información adicional -->
@@ -141,23 +88,24 @@
                         </div>
                         <div class="card-body">
                             <div class="row">
-                                <div class="col-md-6">
+                                <div class="col-md-8">
                                     <h6>Reportes Disponibles</h6>
                                     <ul class="text-muted">
                                         <li><strong>Horas por Empleado:</strong> Calendario visual con días trabajados y horas totales</li>
                                         <li><strong>Horas por Equipo:</strong> Análisis de horómetro y horas trabajadas por equipo</li>
-                                        <li><strong>Filtros:</strong> Por empleado/equipo, mes y año</li>
+                                        <li><strong>Registros Dinámicos:</strong> Tabla interactiva con filtros avanzados y exportación</li>
+                                        <li><strong>Filtros:</strong> Por empleado/equipo, fecha, tipo de registro</li>
                                         <li><strong>Resumen:</strong> Estadísticas de días trabajados y no trabajados</li>
+                                        <li><strong>Exportación:</strong> Descarga de reportes en formato CSV</li>
                                     </ul>
                                 </div>
-                                <div class="col-md-6">
-                                    <h6>Próximas Funcionalidades</h6>
+                                <div class="col-md-4">
+                                    <h6>Características</h6>
                                     <ul class="text-muted">
-                                        <li>Reportes de uso de equipos</li>
-                                        <li>Análisis de productividad</li>
-                                        <li>Reportes por cliente</li>
-                                        <li>Análisis de costos</li>
-                                        <li>Reportes personalizados</li>
+                                        <li>Interfaz intuitiva</li>
+                                        <li>Filtros avanzados</li>
+                                        <li>Vista de calendario</li>
+                                        <li>Estadísticas detalladas</li>
                                     </ul>
                                 </div>
                             </div>
@@ -179,15 +127,11 @@
     height: 100%;
 }
 
-.report-card:hover:not(.disabled) {
+.report-card:hover {
     transform: translateY(-5px);
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
 }
 
-.report-card.disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-}
 
 .report-icon {
     height: 80px;

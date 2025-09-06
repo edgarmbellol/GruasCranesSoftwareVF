@@ -43,6 +43,53 @@
             border-left: 4px solid var(--primary-color);
         }
 
+        .equipo-details h4 {
+            color: var(--primary-color);
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .equipo-specs {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .spec-item {
+            display: flex;
+            align-items: center;
+            font-size: 0.9rem;
+            color: var(--text-color);
+        }
+
+        .spec-item i {
+            color: var(--primary-color);
+            width: 16px;
+        }
+
+        .empleado-details h5 {
+            color: var(--primary-color);
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .empleado-info {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .empleado-name {
+            font-weight: 600;
+            color: var(--text-color);
+            font-size: 1rem;
+        }
+
+        .empleado-doc {
+            color: var(--text-light);
+            font-size: 0.9rem;
+        }
+
         .form-container {
             background: var(--light-color);
             border-radius: 15px;
@@ -212,6 +259,23 @@
         .validation-message i {
             margin-right: 0.5rem;
         }
+        
+        .entrada-info-section {
+            background: linear-gradient(135deg, #E3F2FD 0%, #F3E5F5 100%);
+            border: 2px solid #2196F3;
+            border-radius: 15px;
+        }
+        
+        .entrada-info-section .section-title {
+            color: #1976D2;
+            font-weight: 600;
+        }
+        
+        .entrada-info-section .alert {
+            border: none;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+        }
 
         .alert {
             border-radius: 10px;
@@ -302,15 +366,35 @@
             .equipo-info {
                 padding: 1rem;
             }
+
+            .equipo-specs {
+                gap: 0.25rem;
+            }
+
+            .spec-item {
+                font-size: 0.85rem;
+            }
+
+            .empleado-info {
+                gap: 0.1rem;
+            }
+
+            .empleado-name {
+                font-size: 0.9rem;
+            }
+
+            .empleado-doc {
+                font-size: 0.8rem;
+            }
         }
     </style>
 </head>
 <body>
-    <!-- Header -->
+    <!-- Header Principal -->
     <div class="header">
         <div class="container">
             <div class="row align-items-center">
-                <div class="col-md-6">
+                <div class="col-md-8">
                     <div class="d-flex align-items-center">
                         <a href="{{ url_for('equipos') }}" class="btn btn-volver me-3" title="Volver a Equipos">
                             <i class="fas fa-arrow-left me-2"></i>
@@ -319,13 +403,13 @@
                         <div>
                             <h1 class="mb-0">
                                 <i class="fas fa-clock me-3"></i>
-                                Registro de Horas
+                                {{ 'Registro de Salida' if entrada_pendiente else 'Registro de Entrada' }}
                             </h1>
                             <p class="mb-0">Sistema de control de tiempo de trabajo</p>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-6 text-end">
+                <div class="col-md-4 text-end">
                     <div class="equipo-badge">
                         <i class="fas fa-crane me-2"></i>
                         {{ equipo.Placa }}
@@ -336,36 +420,38 @@
     </div>
 
     <div class="container mt-4">
-        <!-- Información del equipo -->
+        <!-- Información del equipo y empleado -->
         <div class="equipo-info">
             <div class="row align-items-center">
-                <div class="col-md-8">
-                    <div class="d-flex align-items-center">
-                        <a href="{{ url_for('equipos') }}" class="btn btn-volver-header btn-sm me-3" title="Volver a Equipos">
-                            <i class="fas fa-arrow-left me-1"></i>
-                            Volver
-                        </a>
-                        <div>
-                            <h4 class="mb-2">
-                                <i class="fas fa-crane me-2"></i>
-                                {{ equipo.Placa }} - {{ equipo.tipo_equipo.descripcion if equipo.tipo_equipo else 'N/A' }}
-                            </h4>
-                            <p class="mb-1">
+                <div class="col-md-6">
+                    <div class="equipo-details">
+                        <h4 class="mb-2">
+                            <i class="fas fa-crane me-2"></i>
+                            {{ equipo.Placa }} - {{ equipo.tipo_equipo.descripcion if equipo.tipo_equipo else 'N/A' }}
+                        </h4>
+                        <div class="equipo-specs">
+                            <span class="spec-item">
+                                <i class="fas fa-tag me-1"></i>
                                 <strong>Marca:</strong> {{ equipo.marca.DescripcionMarca if equipo.marca else 'N/A' }}
-                            </p>
+                            </span>
+                            <span class="spec-item">
+                                <i class="fas fa-weight me-1"></i>
+                                <strong>Capacidad:</strong> {{ equipo.Capacidad }} toneladas
+                            </span>
                         </div>
                     </div>
-                    <p class="mb-0">
-                        <strong>Capacidad:</strong> {{ equipo.Capacidad }} toneladas
-                    </p>
                 </div>
-                <div class="col-md-4 text-end">
-                    <div class="cargo-icon">
-                        <i class="fas fa-{{ 'play' if not entrada_pendiente else 'stop' }}"></i>
+                <div class="col-md-6">
+                    <div class="empleado-details">
+                        <h5 class="mb-2">
+                            <i class="fas fa-user me-2"></i>
+                            Empleado
+                        </h5>
+                        <div class="empleado-info">
+                            <span class="empleado-name">{{ empleado.nombre }}</span>
+                            <span class="empleado-doc">{{ empleado.documento }}</span>
+                        </div>
                     </div>
-                    <h5 class="mt-2">
-                        {{ 'Registro de Salida' if entrada_pendiente else 'Registro de Entrada' }}
-                    </h5>
                 </div>
             </div>
         </div>
@@ -498,6 +584,54 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Información de entrada (solo para formularios de salida) -->
+                {% if form.TipoRegistro.data == 'salida' and valores_entrada %}
+                <div class="form-section entrada-info-section">
+                    <h5 class="section-title">
+                        <i class="fas fa-clock me-2"></i>
+                        Información de Entrada
+                    </h5>
+                    <div class="alert alert-info">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="fas fa-calendar-alt me-2 text-primary"></i>
+                                    <strong>Fecha de Entrada:</strong>
+                                    <span class="ms-2">{{ valores_entrada.fecha_entrada }}</span>
+                                </div>
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="fas fa-clock me-2 text-primary"></i>
+                                    <strong>Hora de Entrada:</strong>
+                                    <span class="ms-2">{{ valores_entrada.hora_entrada }}</span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                {% if valores_entrada.kilometraje %}
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="fas fa-road me-2 text-success"></i>
+                                    <strong>Kilometraje Entrada:</strong>
+                                    <span class="ms-2">{{ valores_entrada.kilometraje }}</span>
+                                </div>
+                                {% endif %}
+                                {% if valores_entrada.horometro %}
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="fas fa-tachometer-alt me-2 text-success"></i>
+                                    <strong>Horómetro Entrada:</strong>
+                                    <span class="ms-2">{{ valores_entrada.horometro }}</span>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="mt-2">
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Los valores de salida deben ser mayores o iguales a los de entrada
+                            </small>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
 
                 <!-- Datos del equipo (solo para operadores) -->
                 <div class="form-section" id="datosEquipo">

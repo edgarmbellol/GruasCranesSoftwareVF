@@ -1,87 +1,24 @@
 {% extends "base.html" %}
 
-{% block title %}Panel Principal - Sistema de Grúas{% endblock %}
+{% block title %}Dashboard - Sistema de Grúas{% endblock %}
 
 {% block content %}
 <div class="dashboard-container">
     <div class="container-fluid">
-        <div class="row">
-            <!-- Sidebar -->
-            <div class="col-md-3 col-lg-2 sidebar">
-                <div class="sidebar-content">
-                    <div class="user-info">
-                        <div class="user-avatar">
-                            <i class="fas fa-user-circle"></i>
-                        </div>
-                        <div class="user-details">
-                            <h6 class="user-name">{{ username }}</h6>
-                            <small class="user-role">
-                                {% if user_profile == 'administrador' %}
-                                    Administrador
-                                {% else %}
-                                    Empleado
-                                {% endif %}
-                            </small>
-                        </div>
-                    </div>
-                    
-                    <nav class="sidebar-nav">
-                        <ul class="nav flex-column">
-                            <li class="nav-item">
-                                <a class="nav-link active" href="#">
-                                    <i class="fas fa-tachometer-alt me-2"></i>
-                                    Panel Principal
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" href="{{ url_for('equipos') }}">
-                                    <i class="fas fa-cogs me-2"></i>
-                                    Gestión de Equipos
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" href="{{ url_for('usuarios') }}">
-                                    <i class="fas fa-users me-2"></i>
-                                    Gestión de Usuarios
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" href="{{ url_for('clientes') }}">
-                                    <i class="fas fa-building me-2"></i>
-                                    Clientes
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" href="{{ url_for('reportes') }}">
-                                    <i class="fas fa-chart-bar me-2"></i>
-                                    Reportes
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" href="{{ url_for('tipos_equipos') }}">
-                                    <i class="fas fa-cog me-2"></i>
-                                    Datos Maestros
-                                </a>
-                            </li>
-                        </ul>
-                    </nav>
-                </div>
-            </div>
-            
             <!-- Main Content -->
-            <div class="col-md-9 col-lg-10 main-content">
+        <div class="main-content">
                 <div class="content-header">
-                    <h1 class="page-title">Panel Principal</h1>
-                    <p class="page-subtitle">Bienvenido al sistema de gestión de grúas</p>
+                    <h1 class="page-title">Dashboard</h1>
+
                 </div>
                 
                 <!-- Stats Cards -->
                 <div class="row mb-4">
                     <!-- Equipos Totales -->
                     <div class="col-sm-6 col-lg-3 mb-3">
-                        <div class="stat-card">
+                        <div class="stat-card stat-card-clickable" onclick="scrollToSection('estado-equipos')">
                             <div class="stat-icon">
-                                <i class="fas fa-tachometer-alt"></i>
+                                <span class="material-symbols-outlined">auto_towing</span>
                             </div>
                             <div class="stat-content">
                                 <h3 class="stat-number">{{ stats.get('total_equipos', 0) }}</h3>
@@ -92,7 +29,7 @@
                     
                     <!-- Equipos Operando -->
                     <div class="col-sm-6 col-lg-3 mb-3">
-                        <div class="stat-card stat-card-operando">
+                        <div class="stat-card stat-card-operando stat-card-clickable" onclick="scrollToSection('estado-equipos')">
                             <div class="stat-icon">
                                 <i class="fas fa-play-circle"></i>
                             </div>
@@ -105,7 +42,7 @@
                     
                     <!-- Equipos Disponibles -->
                     <div class="col-sm-6 col-lg-3 mb-3">
-                        <div class="stat-card stat-card-disponible">
+                        <div class="stat-card stat-card-disponible stat-card-clickable" onclick="scrollToSection('estado-equipos')">
                             <div class="stat-icon">
                                 <i class="fas fa-pause-circle"></i>
                             </div>
@@ -118,7 +55,7 @@
                     
                     <!-- Usuarios Activos -->
                     <div class="col-sm-6 col-lg-3 mb-3">
-                        <div class="stat-card">
+                        <div class="stat-card stat-card-clickable" onclick="scrollToSection('estado-empleados')">
                             <div class="stat-icon">
                                 <i class="fas fa-users"></i>
                             </div>
@@ -133,7 +70,7 @@
                 
                             <!-- Estado de Empleados - Solo para Administradores -->
             {% if user_profile == 'administrador' %}
-            <div class="row mb-4">
+            <div class="row mb-4" id="estado-empleados">
                 <div class="col-12">
                     <div class="card">
                         <div class="card-header">
@@ -145,17 +82,15 @@
                         <div class="card-body">
                             <div class="row">
                                 {% for empleado_info in stats.empleados_estado %}
-                                <div class="col-md-6 col-lg-4 mb-3">
-                                    <div class="empleado-card {% if empleado_info.estado == 'trabajando' %}empleado-trabajando{% else %}empleado-libre{% endif %}">
-                                        <div class="empleado-header">
-                                            <div class="empleado-info">
-                                                <h6 class="empleado-nombre">
-                                                    <i class="fas fa-user me-2"></i>
-                                                    {{ empleado_info.empleado.nombre }}
-                                                </h6>
-                                                <p class="empleado-documento">{{ empleado_info.empleado.documento }}</p>
+                                <div class="col-md-6 col-lg-3 mb-3">
+                                    <div class="empleado-card-compact {% if empleado_info.estado == 'trabajando' %}empleado-trabajando{% else %}empleado-libre{% endif %}">
+                                        <div class="empleado-header-compact">
+                                            <div class="empleado-avatar">
+                                                <i class="fas fa-user"></i>
                                             </div>
-                                            <div class="empleado-status">
+                                            <div class="empleado-info-compact">
+                                                <h6 class="empleado-nombre-compact">{{ empleado_info.empleado.nombre }}</h6>
+                                                <div class="empleado-status-compact">
                                                 {% if empleado_info.estado == 'trabajando' %}
                                                     <span class="badge bg-warning">
                                                         <i class="fas fa-clock me-1"></i>Trabajando
@@ -167,36 +102,12 @@
                                                 {% endif %}
                                             </div>
                                         </div>
-                                        <div class="empleado-details">
-                                            {% if empleado_info.estado == 'trabajando' %}
-                                                <div class="equipo-info">
-                                                    <i class="fas fa-crane me-2"></i>
-                                                    <strong>Equipo:</strong> {{ empleado_info.equipo.Placa if empleado_info.equipo else 'N/A' }}
                                                 </div>
-                                                <div class="entrada-info">
-                                                    <i class="fas fa-sign-in-alt me-2"></i>
-                                                    <strong>Entrada:</strong> 
-                                                    {% if empleado_info.entrada %}
-                                                        {{ empleado_info.entrada.FechaEmpleado.strftime('%d/%m/%Y') }} a las {{ empleado_info.entrada.HoraEmpleado.strftime('%H:%M') }}
-                                                    {% else %}
-                                                        N/A
-                                                    {% endif %}
-                                                </div>
-                                                <div class="cargo-info">
-                                                    <i class="fas fa-user-tie me-2"></i>
-                                                    <strong>Cargo:</strong> 
-                                                    {% if empleado_info.entrada and empleado_info.entrada.cargo %}
-                                                        {{ empleado_info.entrada.cargo.descripcionCargo }}
-                                                    {% else %}
-                                                        N/A
-                                                    {% endif %}
-                                                </div>
-                                            {% else %}
-                                                <div class="libre-info">
-                                                    <i class="fas fa-coffee me-2"></i>
-                                                    <strong>Disponible para trabajo</strong>
-                                                </div>
-                                            {% endif %}
+                                        <div class="empleado-actions">
+                                            <button class="btn btn-sm btn-outline-primary" 
+                                                    onclick="openModal('empleadoModal{{ loop.index }}')">
+                                                <i class="fas fa-eye me-1"></i>Detalles
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
@@ -210,7 +121,7 @@
                 
                 <!-- Estado de Equipos - Solo para Administradores -->
                 {% if user_profile == 'administrador' %}
-                <div class="row mb-4">
+                <div class="row mb-4" id="estado-equipos">
                     <div class="col-12">
                         <div class="card">
                             <div class="card-header">
@@ -223,19 +134,21 @@
                                 <div class="row">
                                     {% for equipo_info in stats.equipos_estado_detalle %}
                                     <div class="col-md-6 col-lg-4 mb-3">
-                                        <div class="equipo-card {% if equipo_info.estado == 'trabajando' %}equipo-trabajando{% else %}equipo-quieto{% endif %}">
-                                            <div class="equipo-header">
-                                                <div class="equipo-info">
-                                                    <h6 class="equipo-placa">
-                                                        <i class="fas fa-crane me-2"></i>
-                                                        {{ equipo_info.equipo.Placa }}
-                                                    </h6>
-                                                    <p class="equipo-tipo">{{ equipo_info.equipo.tipo_equipo.descripcion if equipo_info.equipo.tipo_equipo else 'N/A' }}</p>
+                                        <div class="equipo-card-compact {% if equipo_info.estado == 'trabajando' %}equipo-trabajando{% else %}equipo-quieto{% endif %}">
+                                            <div class="equipo-header-compact">
+                                                <div class="equipo-avatar">
+                                                    <span class="material-symbols-outlined">auto_towing</span>
                                                 </div>
-                                                <div class="equipo-status">
+                                                <div class="equipo-info-compact">
+                                                    <h6 class="equipo-placa-compact">{{ equipo_info.equipo.Placa }}</h6>
+                                                    <p class="equipo-tipo-compact">{{ equipo_info.equipo.tipo_equipo.descripcion if equipo_info.equipo.tipo_equipo else 'N/A' }}</p>
+                                                    <div class="equipo-status-compact">
                                                     {% if equipo_info.estado == 'trabajando' %}
                                                         <span class="badge bg-warning">
                                                             <i class="fas fa-play-circle me-1"></i>Trabajando
+                                                                {% if equipo_info.cantidad_operadores > 1 %}
+                                                                    <small>({{ equipo_info.cantidad_operadores }} empleados)</small>
+                                                                {% endif %}
                                                         </span>
                                                     {% else %}
                                                         <span class="badge bg-success">
@@ -244,51 +157,15 @@
                                                     {% endif %}
                                                 </div>
                                             </div>
-                                            <div class="equipo-details">
-                                                {% if equipo_info.estado == 'trabajando' %}
-                                                    <div class="operador-info">
-                                                        <i class="fas fa-user me-2"></i>
-                                                        <strong>Operador:</strong> {{ equipo_info.operador.nombre if equipo_info.operador else 'N/A' }}
-                                                    </div>
-                                                    <div class="cargo-info">
-                                                        <i class="fas fa-user-tie me-2"></i>
-                                                        <strong>Cargo:</strong> 
-                                                        {% if equipo_info.entrada and equipo_info.entrada.cargo %}
-                                                            {{ equipo_info.entrada.cargo.descripcionCargo }}
-                                                        {% else %}
-                                                            N/A
-                                                        {% endif %}
-                                                    </div>
-                                                    <div class="entrada-info">
-                                                        <i class="fas fa-sign-in-alt me-2"></i>
-                                                        <strong>Entrada:</strong> 
-                                                        {% if equipo_info.entrada %}
-                                                            {{ equipo_info.entrada.FechaEmpleado.strftime('%d/%m/%Y') }} a las {{ equipo_info.entrada.HoraEmpleado.strftime('%H:%M') }}
-                                                        {% else %}
-                                                            N/A
-                                                        {% endif %}
-                                                    </div>
-                                                    <div class="equipo-actions">
-                                                        <a href="{{ url_for('registro_horas', equipo_id=equipo_info.equipo.IdEquipo) }}" 
-                                                           class="btn btn-sm btn-outline-primary">
-                                                            <i class="fas fa-clock me-1"></i>
-                                                            Ver Registro
-                                                        </a>
-                                                    </div>
-                                                {% else %}
-                                                    <div class="quieto-info">
-                                                        <i class="fas fa-bed me-2"></i>
-                                                        <strong>Equipo disponible</strong>
-                                                    </div>
-                                                    <div class="equipo-actions">
-                                                        <a href="{{ url_for('registro_horas', equipo_id=equipo_info.equipo.IdEquipo) }}" 
-                                                           class="btn btn-sm btn-outline-success">
-                                                            <i class="fas fa-play me-1"></i>
-                                                            Iniciar Trabajo
-                                                        </a>
-                                                    </div>
-                                                {% endif %}
                                             </div>
+                                                {% if equipo_info.estado == 'trabajando' %}
+                                                    <div class="equipo-actions">
+                                                <button class="btn btn-sm btn-outline-primary" 
+                                                        onclick="openEquipoModal('equipoModal{{ loop.index }}')">
+                                                    <i class="fas fa-clock me-1"></i>Ver Registro
+                                                </button>
+                                            </div>
+                                            {% endif %}
                                         </div>
                                     </div>
                                     {% endfor %}
@@ -301,7 +178,7 @@
                 
                 <!-- Historial de Registros - Solo para Administradores -->
                 {% if user_profile == 'administrador' %}
-                <div class="row mb-4">
+                <div class="row mb-4" id="historial-registros">
                     <div class="col-12">
                         <div class="card">
                             <div class="card-header">
@@ -312,39 +189,43 @@
                             </div>
                             <div class="card-body">
                                 {% if stats.registros_recientes %}
-                                <div class="registros-list">
-                                    {% for registro in stats.registros_recientes %}
-                                    <div class="registro-item {% if registro.TipoRegistro == 'entrada' %}registro-entrada{% else %}registro-salida{% endif %}">
-                                        <div class="registro-icon">
-                                            {% if registro.TipoRegistro == 'entrada' %}
-                                                <i class="fas fa-sign-in-alt text-success"></i>
-                                            {% else %}
-                                                <i class="fas fa-sign-out-alt text-warning"></i>
-                                            {% endif %}
-                                        </div>
-                                        <div class="registro-content">
-                                            <div class="registro-header">
-                                                <h6 class="registro-tipo">
-                                                    {% if registro.TipoRegistro == 'entrada' %}
-                                                        Entrada
-                                                    {% else %}
-                                                        Salida
-                                                    {% endif %}
-                                                </h6>
-                                                <span class="registro-fecha">
-                                                    {{ registro.FechaCreacion.strftime('%d/%m/%Y %H:%M') }}
-                                                </span>
+                                <div class="registros-unificados-list">
+                                    {% for registro in stats.registros_recientes[:10] %}
+                                    <div class="registro-unificado-item">
+                                        <div class="registro-unificado-header">
+                                            <div class="registro-empleado-info">
+                                                <div class="registro-avatar">
+                                                    <i class="fas fa-user"></i>
+                                                </div>
+                                                <div class="registro-info-principal">
+                                                    <h6 class="registro-empleado-nombre">{{ registro.empleado.nombre }}</h6>
+                                                    <p class="registro-equipo">
+                                                        <span class="material-symbols-outlined me-1">auto_towing</span>
+                                                        {{ registro.equipo.Placa }}
+                                                    </p>
+                                                </div>
                                             </div>
-                                            <div class="registro-details">
-                                                <div class="registro-info">
-                                                    <i class="fas fa-user me-2"></i>
-                                                    <strong>Empleado:</strong> {{ registro.empleado.nombre }}
-                                                </div>
-                                                <div class="registro-info">
-                                                    <i class="fas fa-crane me-2"></i>
-                                                    <strong>Equipo:</strong> {{ registro.equipo.Placa }}
-                                                </div>
-                                                <div class="registro-info">
+                                            <div class="registro-fecha-hora">
+                                                <span class="registro-fecha">{{ registro.FechaEmpleado.strftime('%d/%m/%Y') }}</span>
+                                                <span class="registro-hora">{{ registro.HoraEmpleado.strftime('%H:%M') }}</span>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="registro-unificado-content">
+                                            <div class="registro-tipo-badge">
+                                                    {% if registro.TipoRegistro == 'entrada' %}
+                                                    <span class="badge bg-success">
+                                                        <i class="fas fa-sign-in-alt me-1"></i>Entrada
+                                                    </span>
+                                                    {% else %}
+                                                    <span class="badge bg-warning">
+                                                        <i class="fas fa-sign-out-alt me-1"></i>Salida
+                                                    </span>
+                                                    {% endif %}
+                                            </div>
+                                            
+                                            <div class="registro-details-grid">
+                                                <div class="registro-detail-item">
                                                     <i class="fas fa-user-tie me-2"></i>
                                                     <strong>Cargo:</strong> 
                                                     {% if registro.cargo %}
@@ -353,51 +234,23 @@
                                                         N/A
                                                     {% endif %}
                                                 </div>
-                                                {% if registro.TipoRegistro == 'entrada' %}
-                                                    <div class="registro-info">
-                                                        <i class="fas fa-calendar me-2"></i>
-                                                        <strong>Fecha:</strong> {{ registro.FechaEmpleado.strftime('%d/%m/%Y') }}
-                                                    </div>
-                                                    <div class="registro-info">
-                                                        <i class="fas fa-clock me-2"></i>
-                                                        <strong>Hora:</strong> {{ registro.HoraEmpleado.strftime('%H:%M') }}
-                                                    </div>
+                                                
                                                     {% if registro.Kilometraje %}
-                                                        <div class="registro-info">
+                                                <div class="registro-detail-item">
                                                             <i class="fas fa-tachometer-alt me-2"></i>
                                                             <strong>Kilometraje:</strong> {{ registro.Kilometraje }}
                                                         </div>
                                                     {% endif %}
+                                                
                                                     {% if registro.Horometro %}
-                                                        <div class="registro-info">
+                                                <div class="registro-detail-item">
                                                             <i class="fas fa-clock me-2"></i>
                                                             <strong>Horómetro:</strong> {{ registro.Horometro }}
                                                         </div>
-                                                    {% endif %}
-                                                {% else %}
-                                                    <div class="registro-info">
-                                                        <i class="fas fa-calendar me-2"></i>
-                                                        <strong>Fecha:</strong> {{ registro.FechaEmpleado.strftime('%d/%m/%Y') }}
-                                                    </div>
-                                                    <div class="registro-info">
-                                                        <i class="fas fa-clock me-2"></i>
-                                                        <strong>Hora:</strong> {{ registro.HoraEmpleado.strftime('%H:%M') }}
-                                                    </div>
-                                                    {% if registro.Kilometraje %}
-                                                        <div class="registro-info">
-                                                            <i class="fas fa-tachometer-alt me-2"></i>
-                                                            <strong>Kilometraje:</strong> {{ registro.Kilometraje }}
-                                                        </div>
-                                                    {% endif %}
-                                                    {% if registro.Horometro %}
-                                                        <div class="registro-info">
-                                                            <i class="fas fa-clock me-2"></i>
-                                                            <strong>Horómetro:</strong> {{ registro.Horometro }}
-                                                        </div>
-                                                    {% endif %}
                                                 {% endif %}
+                                                
                                                 {% if registro.Observacion %}
-                                                    <div class="registro-info">
+                                                <div class="registro-detail-item observacion">
                                                         <i class="fas fa-comment me-2"></i>
                                                         <strong>Observación:</strong> {{ registro.Observacion }}
                                                     </div>
@@ -424,7 +277,7 @@
                 <!-- Dashboard completo para Administradores -->
                 
                 <!-- QR Equipos - Solo para Administradores -->
-                <div class="row mb-4">
+                <div class="row mb-4" id="qr-equipos">
                     <div class="col-12">
                         <div class="card">
                             <div class="card-header">
@@ -630,7 +483,335 @@
                     </div>
                 </div>
             </div>
+</div>
+
+<!-- Modales de Detalles de Empleados - CSS Puro -->
+{% if user_profile == 'administrador' %}
+{% for empleado_info in stats.empleados_estado %}
+<div class="custom-modal" id="empleadoModal{{ loop.index }}">
+    <div class="custom-modal-backdrop" onclick="closeModal('empleadoModal{{ loop.index }}')"></div>
+    <div class="custom-modal-content">
+        <div class="custom-modal-header">
+            <h3 class="custom-modal-title">
+                <i class="fas fa-user me-2"></i>Detalles del Empleado
+            </h3>
+            <button class="custom-modal-close" onclick="closeModal('empleadoModal{{ loop.index }}')">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="custom-modal-body">
+            <div class="modal-empleado-grid">
+                <div class="modal-empleado-avatar">
+                    <div class="empleado-avatar-large">
+                        <i class="fas fa-user fa-3x"></i>
+                    </div>
+                    <h4>{{ empleado_info.empleado.nombre }}</h4>
+                    <p class="text-muted">{{ empleado_info.empleado.documento }}</p>
+                </div>
+                <div class="modal-empleado-details">
+                    <div class="detail-section">
+                        <h6 class="detail-title">
+                            <i class="fas fa-info-circle me-2 text-primary"></i>Información Personal
+                        </h6>
+                        <div class="detail-item">
+                            <strong>Nombre:</strong> {{ empleado_info.empleado.nombre }}
+                        </div>
+                        <div class="detail-item">
+                            <strong>Documento:</strong> {{ empleado_info.empleado.documento }}
+                        </div>
+                        <div class="detail-item">
+                            <strong>Email:</strong> {{ empleado_info.empleado.email if empleado_info.empleado.email else 'No registrado' }}
+                        </div>
+                    </div>
+                    
+                    <div class="detail-section">
+                        <h6 class="detail-title">
+                            <i class="fas fa-briefcase me-2 text-warning"></i>Estado Laboral
+                        </h6>
+                        <div class="detail-item">
+                            <strong>Estado:</strong> 
+                            {% if empleado_info.estado == 'trabajando' %}
+                                <span class="badge bg-warning">
+                                    <i class="fas fa-clock me-1"></i>Trabajando
+                                </span>
+                            {% else %}
+                                <span class="badge bg-success">
+                                    <i class="fas fa-check-circle me-1"></i>Libre
+                                </span>
+                            {% endif %}
+                        </div>
+                        
+                        {% if empleado_info.estado == 'trabajando' %}
+                            <div class="detail-item">
+                                <strong>Equipo Asignado:</strong> 
+                                {{ empleado_info.equipo.Placa if empleado_info.equipo else 'N/A' }}
+                            </div>
+                            <div class="detail-item">
+                                <strong>Fecha de Entrada:</strong> 
+                                {% if empleado_info.entrada %}
+                                    {{ empleado_info.entrada.FechaEmpleado.strftime('%d/%m/%Y') }}
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </div>
+                            <div class="detail-item">
+                                <strong>Hora de Entrada:</strong> 
+                                {% if empleado_info.entrada %}
+                                    {{ empleado_info.entrada.HoraEmpleado.strftime('%H:%M') }}
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </div>
+                            <div class="detail-item">
+                                <strong>Cargo:</strong> 
+                                {% if empleado_info.entrada and empleado_info.entrada.cargo %}
+                                    {{ empleado_info.entrada.cargo.descripcionCargo }}
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </div>
+                        {% else %}
+                            <div class="detail-item">
+                                <i class="fas fa-coffee me-2 text-success"></i>
+                                <strong>Disponible para trabajo</strong>
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    {% if empleado_info.estado == 'trabajando' and empleado_info.entrada %}
+                    <div class="detail-section">
+                        <h6 class="detail-title">
+                            <i class="fas fa-clock me-2 text-info"></i>Información de Trabajo
+                        </h6>
+                        {% if empleado_info.entrada.Kilometraje %}
+                        <div class="detail-item">
+                            <strong>Kilometraje:</strong> {{ empleado_info.entrada.Kilometraje }}
+                        </div>
+                        {% endif %}
+                        {% if empleado_info.entrada.Horometro %}
+                        <div class="detail-item">
+                            <strong>Horómetro:</strong> {{ empleado_info.entrada.Horometro }}
+                        </div>
+                        {% endif %}
+                        {% if empleado_info.entrada.Observacion %}
+                        <div class="detail-item">
+                            <strong>Observaciones:</strong> {{ empleado_info.entrada.Observacion }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="custom-modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('empleadoModal{{ loop.index }}')">Cerrar</button>
         </div>
     </div>
 </div>
+{% endfor %}
+{% endif %}
+
+<!-- Modales de Detalles de Equipos - CSS Puro -->
+{% if user_profile == 'administrador' %}
+{% for equipo_info in stats.equipos_estado_detalle %}
+{% if equipo_info.estado == 'trabajando' %}
+<div class="custom-modal" id="equipoModal{{ loop.index }}">
+    <div class="custom-modal-backdrop" onclick="closeModal('equipoModal{{ loop.index }}')"></div>
+    <div class="custom-modal-content">
+        <div class="custom-modal-header">
+            <h3 class="custom-modal-title">
+                <span class="material-symbols-outlined me-2">auto_towing</span>Detalles del Equipo
+            </h3>
+            <button class="custom-modal-close" onclick="closeModal('equipoModal{{ loop.index }}')">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="custom-modal-body">
+            <div class="modal-equipo-grid">
+                <div class="modal-equipo-avatar">
+                    <div class="equipo-avatar-large">
+                        <span class="material-symbols-outlined">auto_towing</span>
+                    </div>
+                    <h4>{{ equipo_info.equipo.Placa }}</h4>
+                    <p class="text-muted">{{ equipo_info.equipo.tipo_equipo.descripcion if equipo_info.equipo.tipo_equipo else 'N/A' }}</p>
+                </div>
+                <div class="modal-equipo-details">
+                    <div class="detail-section">
+                        <h6 class="detail-title">
+                            <i class="fas fa-info-circle me-2 text-primary"></i>Información del Equipo
+                        </h6>
+                        <div class="detail-item">
+                            <strong>Placa:</strong> {{ equipo_info.equipo.Placa }}
+                        </div>
+                        <div class="detail-item">
+                            <strong>Tipo:</strong> {{ equipo_info.equipo.tipo_equipo.descripcion if equipo_info.equipo.tipo_equipo else 'N/A' }}
+                        </div>
+                        <div class="detail-item">
+                            <strong>Estado:</strong> 
+                            <span class="badge bg-warning">
+                                <i class="fas fa-play-circle me-1"></i>Trabajando
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div class="detail-section">
+                        <h6 class="detail-title">
+                            <i class="fas fa-users me-2 text-warning"></i>Personal Asignado
+                            {% if equipo_info.cantidad_operadores > 1 %}
+                                <span class="badge bg-info ms-2">{{ equipo_info.cantidad_operadores }} empleados</span>
+                            {% endif %}
+                        </h6>
+                        {% if equipo_info.operadores %}
+                            {% for operador_info in equipo_info.operadores %}
+                            <div class="detail-item operador-item">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="fas fa-user-circle text-primary me-2"></i>
+                                    <div class="flex-grow-1">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div>
+                                                <strong>{{ operador_info.empleado.nombre }}</strong>
+                                                <small class="text-muted d-block">{{ operador_info.empleado.documento }}</small>
+                                            </div>
+                                            {% if operador_info.cargo %}
+                                            <span class="badge bg-success ms-2">
+                                                <i class="fas fa-briefcase me-1"></i>{{ operador_info.cargo.descripcionCargo }}
+                                            </span>
+                                            {% endif %}
+                                        </div>
+                                        {% if operador_info.entrada %}
+                                        <div class="mt-1">
+                                            <small class="text-info">
+                                                <i class="fas fa-clock me-1"></i>
+                                                Entrada: {{ operador_info.entrada.FechaEmpleado.strftime('%d/%m/%Y') }} a las {{ operador_info.entrada.HoraEmpleado.strftime('%H:%M') }}
+                                            </small>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="detail-item">
+                                <span class="text-muted">No hay operadores asignados</span>
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    {% if equipo_info.entrada %}
+                    <div class="detail-section">
+                        <h6 class="detail-title">
+                            <i class="fas fa-clock me-2 text-info"></i>Información de Trabajo
+                        </h6>
+                        {% if equipo_info.entrada.Kilometraje %}
+                        <div class="detail-item">
+                            <strong>Kilometraje:</strong> {{ equipo_info.entrada.Kilometraje }}
+                        </div>
+                        {% endif %}
+                        {% if equipo_info.entrada.Horometro %}
+                        <div class="detail-item">
+                            <strong>Horómetro:</strong> {{ equipo_info.entrada.Horometro }}
+                        </div>
+                        {% endif %}
+                        {% if equipo_info.entrada.Observacion %}
+                        <div class="detail-item">
+                            <strong>Observaciones:</strong> {{ equipo_info.entrada.Observacion }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="custom-modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('equipoModal{{ loop.index }}')">Cerrar</button>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endfor %}
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Funciones para manejar modales personalizados
+function openModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+        modal.classList.add('show');
+        
+        // Animación de entrada
+        setTimeout(() => {
+            modal.querySelector('.custom-modal-content').style.transform = 'scale(1)';
+            modal.querySelector('.custom-modal-content').style.opacity = '1';
+        }, 10);
+    }
+}
+
+function openEquipoModal(modalId) {
+    openModal(modalId);
+}
+
+function closeModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        // Animación de salida
+        modal.querySelector('.custom-modal-content').style.transform = 'scale(0.8)';
+        modal.querySelector('.custom-modal-content').style.opacity = '0';
+        
+        setTimeout(() => {
+            modal.style.display = 'none';
+            modal.classList.remove('show');
+            document.body.style.overflow = '';
+        }, 300);
+    }
+}
+
+// Cerrar modal con tecla Escape
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        const openModal = document.querySelector('.custom-modal.show');
+        if (openModal) {
+            closeModal(openModal.id);
+        }
+    }
+});
+
+// Cerrar modal al hacer clic en el backdrop
+document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('custom-modal-backdrop')) {
+        const modal = e.target.closest('.custom-modal');
+        if (modal) {
+            closeModal(modal.id);
+        }
+    }
+});
+
+// Función para scroll suave a secciones
+function scrollToSection(sectionId) {
+    const element = document.getElementById(sectionId);
+    if (element) {
+        // Calcular la posición considerando el navbar fijo
+        const navbarHeight = 76; // Altura del navbar fijo
+        const elementPosition = element.offsetTop - navbarHeight - 20; // 20px de margen adicional
+        
+        // Scroll suave
+        window.scrollTo({
+            top: elementPosition,
+            behavior: 'smooth'
+        });
+        
+        // Efecto visual de resaltado temporal
+        element.style.transition = 'box-shadow 0.3s ease';
+        element.style.boxShadow = '0 0 20px rgba(39, 174, 96, 0.5)';
+        
+        setTimeout(() => {
+            element.style.boxShadow = '';
+        }, 2000);
+    }
+}
+</script>
 {% endblock %}

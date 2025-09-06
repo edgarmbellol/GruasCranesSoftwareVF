@@ -512,13 +512,9 @@ class RegistroHorasForm(FlaskForm):
         from datetime import datetime, time
         
         if field.data:
-            # Validar que no sea una hora muy temprana (antes de las 5 AM)
-            if field.data < time(5, 0):
-                raise ValidationError('La hora no puede ser antes de las 5:00 AM')
-            
-            # Validar que no sea una hora muy tarde (después de las 11 PM)
-            if field.data > time(23, 0):
-                raise ValidationError('La hora no puede ser después de las 11:00 PM')
+            # Los operarios pueden trabajar a cualquier hora del día (24/7)
+            # Solo validamos que sea una hora válida (0-23 horas, 0-59 minutos)
+            pass
     
     IdCargo = SelectField(
         'Cargo',

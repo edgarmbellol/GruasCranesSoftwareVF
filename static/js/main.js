@@ -21,19 +21,19 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 5000);
     });
 
-    // Sidebar toggle para móviles
-    const sidebarToggle = document.querySelector('.navbar-toggler');
-    const sidebar = document.querySelector('.sidebar');
+    // Navbar toggle para móviles
+    const navbarToggle = document.querySelector('.navbar-toggler');
+    const navbarCollapse = document.querySelector('.navbar-collapse');
     
-    if (sidebarToggle && sidebar) {
-        sidebarToggle.addEventListener('click', function() {
-            sidebar.classList.toggle('show');
+    if (navbarToggle && navbarCollapse) {
+        navbarToggle.addEventListener('click', function() {
+            navbarCollapse.classList.toggle('show');
         });
 
-        // Cerrar sidebar al hacer clic fuera
+        // Cerrar navbar al hacer clic fuera en móviles
         document.addEventListener('click', function(e) {
-            if (!sidebar.contains(e.target) && !sidebarToggle.contains(e.target)) {
-                sidebar.classList.remove('show');
+            if (!navbarCollapse.contains(e.target) && !navbarToggle.contains(e.target)) {
+                navbarCollapse.classList.remove('show');
             }
         });
     }

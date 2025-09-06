@@ -36,7 +36,7 @@
                                 {% for equipo in equipos %}
                                     <option value="{{ equipo.IdEquipo }}" 
                                             {% if equipo_id == equipo.IdEquipo %}selected{% endif %}>
-                                        {{ equipo.Placa }} - {{ equipo.tipo_equipo.Descripcion if equipo.tipo_equipo else 'N/A' }}
+                                        {{ equipo.Placa }} - {{ equipo.tipo_equipo.descripcion if equipo.tipo_equipo else 'N/A' }}
                                     </option>
                                 {% endfor %}
                             </select>
@@ -87,13 +87,13 @@
                     <div class="row">
                         <div class="col-md-2">
                             <div class="text-center">
-                                <div class="h4 text-primary mb-1">{{ resumen.total_horas }}</div>
+                                <div class="h4 text-primary mb-1">{{ "%.1f"|format(resumen.total_horas) }}</div>
                                 <div class="text-muted">Horas Totales</div>
                             </div>
                         </div>
                         <div class="col-md-2">
                             <div class="text-center">
-                                <div class="h4 text-success mb-1">{{ resumen.total_horometro }}</div>
+                                <div class="h4 text-success mb-1">{{ "%.1f"|format(resumen.total_horometro) }}</div>
                                 <div class="text-muted">Horómetro Total</div>
                             </div>
                         </div>
@@ -120,6 +120,18 @@
             </div>
         </div>
     </div>
+
+    {% if resumen.total_horas == 0 %}
+    <!-- Mensaje cuando no hay datos -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                <strong>Sin datos para mostrar:</strong> No se encontraron registros de trabajo para este equipo en el mes seleccionado.
+            </div>
+        </div>
+    </div>
+    {% endif %}
 
     <!-- Calendario -->
     <div class="row">
@@ -157,11 +169,11 @@
                                                         </div>
                                                         <div class="work-details">
                                                             <small class="text-success">
-                                                                <i class="fas fa-clock me-1"></i>{{ calendario_data[day].horas }}h
+                                                                <i class="fas fa-clock me-1"></i>{{ "%.1f"|format(calendario_data[day].horas) }}h
                                                             </small>
                                                             <br>
                                                             <small class="text-info">
-                                                                <i class="fas fa-tachometer-alt me-1"></i>{{ calendario_data[day].horometro }}h
+                                                                <i class="fas fa-tachometer-alt me-1"></i>{{ "%.1f"|format(calendario_data[day].horometro) }}h
                                                             </small>
                                                         </div>
                                                     {% endif %}

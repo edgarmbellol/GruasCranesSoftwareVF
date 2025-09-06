@@ -6,7 +6,7 @@
 <div class="container-fluid py-4">
     <div class="row">
         <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-4 mt-4">
                 <div>
                     <h2 class="text-primary mb-1">
                         <i class="fas fa-qrcode me-2"></i>Códigos QR Equipos
@@ -96,11 +96,13 @@
                             <!-- Acciones -->
                             <div class="qr-actions">
                                 {% if item.tiene_qr %}
-                                <a href="{{ url_for('static', filename=item.qr_url) }}" 
-                                   class="btn btn-primary btn-sm me-2" 
-                                   download="QR_{{ item.equipo.Placa }}.png">
-                                    <i class="fas fa-download me-1"></i>Descargar QR
-                                </a>
+                                <button class="btn btn-success btn-sm me-2" 
+                                        onclick="imprimirQR(this)"
+                                        data-placa="{{ item.equipo.Placa }}"
+                                        data-tipo="{{ item.equipo.tipo_equipo.descripcion if item.equipo.tipo_equipo else 'N/A' }}"
+                                        data-qr-url="{{ url_for('static', filename=item.qr_url) }}">
+                                    <i class="fas fa-print me-1"></i>Imprimir QR
+                                </button>
                                 {% endif %}
                                 <a href="{{ url_for('registro_horas', equipo_id=item.equipo.IdEquipo) }}" 
                                    class="btn btn-outline-primary btn-sm">
@@ -224,6 +226,143 @@ function copiarUrl(url) {
         console.error('Error copiando URL: ', err);
         alert('Error al copiar la URL');
     });
+}
+
+function imprimirQR(button) {
+    // Obtener datos del botón
+    const placa = button.getAttribute('data-placa');
+    const tipo = button.getAttribute('data-tipo');
+    const qrUrl = button.getAttribute('data-qr-url');
+    
+    // Crear ventana de impresión
+    const ventanaImpresion = window.open('', '_blank', 'width=800,height=600');
+    
+    // HTML para la impresión con logo y QR
+    const htmlImpresion = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>QR Code - ${placa}</title>
+            <style>
+                @page {
+                    margin: 20mm;
+                    size: A4;
+                }
+                body {
+                    font-family: Arial, sans-serif;
+                    margin: 0;
+                    padding: 20px;
+                    text-align: center;
+                    background: white;
+                }
+                .qr-print-container {
+                    max-width: 400px;
+                    margin: 0 auto;
+                    padding: 20px;
+                    border: 2px solid #2e7d32;
+                    border-radius: 10px;
+                    background: white;
+                }
+                .logo-section {
+                    margin-bottom: 20px;
+                }
+                .logo-section img {
+                    max-width: 150px;
+                    height: auto;
+                }
+                .company-name {
+                    font-size: 18px;
+                    font-weight: bold;
+                    color: #2e7d32;
+                    margin-top: 10px;
+                }
+                .equipo-info {
+                    margin-bottom: 20px;
+                    padding: 15px;
+                    background: #f8f9fa;
+                    border-radius: 8px;
+                }
+                .equipo-placa {
+                    font-size: 24px;
+                    font-weight: bold;
+                    color: #2e7d32;
+                    margin-bottom: 5px;
+                }
+                .equipo-tipo {
+                    font-size: 16px;
+                    color: #666;
+                    margin-bottom: 0;
+                }
+                .qr-section {
+                    margin-bottom: 20px;
+                }
+                .qr-image {
+                    max-width: 200px;
+                    height: auto;
+                    border: 1px solid #ddd;
+                    border-radius: 8px;
+                    padding: 10px;
+                    background: white;
+                }
+                .qr-instructions {
+                    font-size: 14px;
+                    color: #666;
+                    margin-top: 15px;
+                    padding: 10px;
+                    background: #e8f5e8;
+                    border-radius: 5px;
+                }
+                .footer-info {
+                    font-size: 12px;
+                    color: #888;
+                    margin-top: 20px;
+                    border-top: 1px solid #eee;
+                    padding-top: 10px;
+                }
+                @media print {
+                    body { margin: 0; }
+                    .qr-print-container { border: none; }
+                }
+            </style>
+        </head>
+        <body>
+            <div class="qr-print-container">
+                <div class="logo-section">
+                    <img src="{{ url_for('static', filename='images/logogruas.png') }}" alt="GRÚAS CRANES S.A.S">
+                    <div class="company-name">GRÚAS CRANES S.A.S</div>
+                </div>
+                
+                <div class="equipo-info">
+                    <div class="equipo-placa">${placa}</div>
+                    <div class="equipo-tipo">${tipo}</div>
+                </div>
+                
+                <div class="qr-section">
+                    <img src="${qrUrl}" alt="QR Code para ${placa}" class="qr-image">
+                    <div class="qr-instructions">
+                        <strong>Instrucciones:</strong><br>
+                        Escanea este código QR para acceder al formulario de registro de entrada/salida
+                    </div>
+                </div>
+                
+                <div class="footer-info">
+                    Sistema de Gestión de Grúas - Generado el ${new Date().toLocaleDateString('es-ES')}
+                </div>
+            </div>
+        </body>
+        </html>
+    `;
+    
+    // Escribir el HTML en la ventana
+    ventanaImpresion.document.write(htmlImpresion);
+    ventanaImpresion.document.close();
+    
+    // Esperar a que cargue la imagen y luego imprimir
+    ventanaImpresion.onload = function() {
+        setTimeout(function() {
+            ventanaImpresion.print();
+        }, 500);
+    };
 }
 </script>
 {% endblock %}

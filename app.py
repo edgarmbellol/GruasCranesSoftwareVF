@@ -298,22 +298,21 @@ def dashboard():
         esta_operando = equipo.esta_operando()
         
         if esta_operando:
-            # Equipo está trabajando
-            operador_actual = equipo.obtener_operador_actual()
-            entrada_actual = equipo.obtener_entrada_actual()
+            # Equipo está trabajando - obtener todos los operadores actuales
+            operadores_actuales = equipo.obtener_operadores_actuales()
             equipos_estado_detalle.append({
                 'equipo': equipo,
                 'estado': 'trabajando',
-                'operador': operador_actual,
-                'entrada': entrada_actual
+                'operadores': operadores_actuales,
+                'cantidad_operadores': len(operadores_actuales)
             })
         else:
             # Equipo está quieto/disponible
             equipos_estado_detalle.append({
                 'equipo': equipo,
                 'estado': 'quieto',
-                'operador': None,
-                'entrada': None
+                'operadores': [],
+                'cantidad_operadores': 0
             })
     
     print(f"DEBUG DASHBOARD: Total equipos: {len(equipos)}")
@@ -751,6 +750,96 @@ def api_equipos():
     """API para obtener equipos en formato JSON"""
     equipos = Equipo.query.all()
     return jsonify([equipo.to_dict() for equipo in equipos])
+
+# ===== RUTAS AJAX PARA CREAR DATOS MAESTROS =====
+
+@app.route('/api/crear-tipo-equipo', methods=['POST'])
+@require_admin
+def crear_tipo_equipo_ajax():
+    """Crear nuevo tipo de equipo vía AJAX"""
+    try:
+        data = request.get_json()
+        descripcion = data.get('descripcion', '').strip()
+        
+        if not descripcion:
+            return jsonify({
+                'success': False,
+                'message': 'La descripción es obligatoria'
+            }), 400
+        
+        # Verificar si ya existe
+        if TipoEquipo.query.filter_by(descripcion=descripcion).first():
+            return jsonify({
+                'success': False,
+                'message': 'Ya existe un tipo de equipo con esa descripción'
+            }), 400
+        
+        # Crear nuevo tipo
+        tipo = TipoEquipo(
+            descripcion=descripcion,
+            estado='activo'
+        )
+        
+        db.session.add(tipo)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'id': tipo.IdTipoEquipo,
+            'descripcion': tipo.descripcion,
+            'message': 'Tipo de equipo creado exitosamente'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'message': f'Error al crear el tipo de equipo: {str(e)}'
+        }), 500
+
+@app.route('/api/crear-marca', methods=['POST'])
+@require_admin
+def crear_marca_ajax():
+    """Crear nueva marca vía AJAX"""
+    try:
+        data = request.get_json()
+        descripcion = data.get('descripcion', '').strip()
+        
+        if not descripcion:
+            return jsonify({
+                'success': False,
+                'message': 'La descripción es obligatoria'
+            }), 400
+        
+        # Verificar si ya existe
+        if Marca.query.filter_by(DescripcionMarca=descripcion).first():
+            return jsonify({
+                'success': False,
+                'message': 'Ya existe una marca con esa descripción'
+            }), 400
+        
+        # Crear nueva marca
+        marca = Marca(
+            DescripcionMarca=descripcion,
+            estado='activo'
+        )
+        
+        db.session.add(marca)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'id': marca.IdMarca,
+            'descripcion': marca.DescripcionMarca,
+            'message': 'Marca creada exitosamente'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'message': f'Error al crear la marca: {str(e)}'
+        }), 500
 
 # ===== RUTAS CRUD DATOS MAESTROS =====
 
@@ -1418,8 +1507,16 @@ def procesar_registro_horas(equipo_id):
         
         # Validar que no sea una fecha futura
         if fecha_hora_ingresada > fecha_actual:
-            flash('La fecha y hora no pueden ser futuras', 'error')
-            return redirect(url_for('registro_horas', equipo_id=equipo_id))
+            flash('❌ Error: La fecha y hora no pueden ser futuras. Por favor, ingresa una fecha y hora válida.', 'error')
+            # Mantener datos del formulario y mostrar errores
+            return render_template('registro_horas/formulario.html', 
+                                 equipo=equipo, 
+                                 empleado=empleado, 
+                                 form=form, 
+                                 entrada_pendiente=None,
+                                 cargo_nombre=None,
+                                 cliente_nombre=None,
+                                 valores_entrada=None)
         
         # Si es formulario de salida, validar contra la entrada
         if form.TipoRegistro.data == 'salida':
@@ -1435,14 +1532,40 @@ def procesar_registro_horas(equipo_id):
                 
                 # Validar que la salida no sea anterior a la entrada
                 if fecha_hora_ingresada < fecha_hora_entrada:
-                    flash('La fecha y hora de salida no pueden ser anteriores a la entrada', 'error')
-                    return redirect(url_for('registro_horas', equipo_id=equipo_id))
+                    flash(f'❌ Error: La fecha y hora de salida no pueden ser anteriores a la entrada. Entrada registrada: {entrada.FechaEmpleado.strftime("%d/%m/%Y")} a las {entrada.HoraEmpleado.strftime("%H:%M")}', 'error')
+                    # Mantener datos del formulario y mostrar errores
+                    return render_template('registro_horas/formulario.html', 
+                                         equipo=equipo, 
+                                         empleado=empleado, 
+                                         form=form, 
+                                         entrada_pendiente=entrada,
+                                         cargo_nombre=entrada.cargo.descripcionCargo if entrada.cargo else 'N/A',
+                                         cliente_nombre=entrada.cliente.NombreCliente if entrada.cliente else 'N/A',
+                                         valores_entrada={
+                                             'kilometraje': entrada.Kilometraje,
+                                             'horometro': entrada.Horometro,
+                                             'fecha_entrada': entrada.FechaEmpleado.strftime('%d/%m/%Y'),
+                                             'hora_entrada': entrada.HoraEmpleado.strftime('%H:%M')
+                                         })
                 
                 # Validar que no exceda 24 horas de diferencia
                 diferencia_horas = (fecha_hora_ingresada - fecha_hora_entrada).total_seconds() / 3600
                 if diferencia_horas > 24:
-                    flash('La diferencia entre entrada y salida no puede ser mayor a 24 horas', 'error')
-                    return redirect(url_for('registro_horas', equipo_id=equipo_id))
+                    flash(f'❌ Error: La diferencia entre entrada y salida no puede ser mayor a 24 horas. Diferencia actual: {diferencia_horas:.1f} horas. Por favor, verifica las fechas.', 'error')
+                    # Mantener datos del formulario y mostrar errores
+                    return render_template('registro_horas/formulario.html', 
+                                         equipo=equipo, 
+                                         empleado=empleado, 
+                                         form=form, 
+                                         entrada_pendiente=entrada,
+                                         cargo_nombre=entrada.cargo.descripcionCargo if entrada.cargo else 'N/A',
+                                         cliente_nombre=entrada.cliente.NombreCliente if entrada.cliente else 'N/A',
+                                         valores_entrada={
+                                             'kilometraje': entrada.Kilometraje,
+                                             'horometro': entrada.Horometro,
+                                             'fecha_entrada': entrada.FechaEmpleado.strftime('%d/%m/%Y'),
+                                             'hora_entrada': entrada.HoraEmpleado.strftime('%H:%M')
+                                         })
     
     if form.validate_on_submit():
         try:
@@ -1476,12 +1599,38 @@ def procesar_registro_horas(equipo_id):
                 
                 if entrada and entrada.es_operador():
                     if form.Kilometraje.data and form.Kilometraje.data < entrada.Kilometraje:
-                        flash(f'El kilometraje de salida ({form.Kilometraje.data}) debe ser mayor o igual al de entrada ({entrada.Kilometraje})', 'error')
-                        return redirect(url_for('registro_horas', equipo_id=equipo_id))
+                        flash(f'❌ Error: El kilometraje de salida ({form.Kilometraje.data}) debe ser mayor o igual al de entrada ({entrada.Kilometraje}). El vehículo no puede retroceder en kilometraje.', 'error')
+                        # Mantener datos del formulario y mostrar errores
+                        return render_template('registro_horas/formulario.html', 
+                                             equipo=equipo, 
+                                             empleado=empleado, 
+                                             form=form, 
+                                             entrada_pendiente=entrada,
+                                             cargo_nombre=entrada.cargo.descripcionCargo if entrada.cargo else 'N/A',
+                                             cliente_nombre=entrada.cliente.NombreCliente if entrada.cliente else 'N/A',
+                                             valores_entrada={
+                                                 'kilometraje': entrada.Kilometraje,
+                                                 'horometro': entrada.Horometro,
+                                                 'fecha_entrada': entrada.FechaEmpleado.strftime('%d/%m/%Y'),
+                                                 'hora_entrada': entrada.HoraEmpleado.strftime('%H:%M')
+                                             })
                     
                     if form.Horometro.data and form.Horometro.data < entrada.Horometro:
-                        flash(f'El horómetro de salida ({form.Horometro.data}) debe ser mayor o igual al de entrada ({entrada.Horometro})', 'error')
-                        return redirect(url_for('registro_horas', equipo_id=equipo_id))
+                        flash(f'❌ Error: El horómetro de salida ({form.Horometro.data}) debe ser mayor o igual al de entrada ({entrada.Horometro}). El horómetro no puede retroceder.', 'error')
+                        # Mantener datos del formulario y mostrar errores
+                        return render_template('registro_horas/formulario.html', 
+                                             equipo=equipo, 
+                                             empleado=empleado, 
+                                             form=form, 
+                                             entrada_pendiente=entrada,
+                                             cargo_nombre=entrada.cargo.descripcionCargo if entrada.cargo else 'N/A',
+                                             cliente_nombre=entrada.cliente.NombreCliente if entrada.cliente else 'N/A',
+                                             valores_entrada={
+                                                 'kilometraje': entrada.Kilometraje,
+                                                 'horometro': entrada.Horometro,
+                                                 'fecha_entrada': entrada.FechaEmpleado.strftime('%d/%m/%Y'),
+                                                 'hora_entrada': entrada.HoraEmpleado.strftime('%H:%M')
+                                             })
             
             # Crear registro
             registro = RegistroHoras(
@@ -1749,15 +1898,19 @@ def reporte_horas_equipo():
                         salida_datetime = datetime.combine(salida.FechaEmpleado, salida.HoraEmpleado)
                         horas_trabajadas = (salida_datetime - entrada_datetime).total_seconds() / 3600
                         
-                        # Calcular incremento de horómetro
-                        incremento_horometro = salida.Horometro - registro.Horometro
-                        
-                        if dia not in horas_por_dia:
-                            horas_por_dia[dia] = 0
-                            horometro_por_dia[dia] = 0
-                        
-                        horas_por_dia[dia] += horas_trabajadas
-                        horometro_por_dia[dia] += incremento_horometro
+                        # Validar que las horas sean positivas y razonables (máximo 24 horas)
+                        if horas_trabajadas > 0 and horas_trabajadas <= 24:
+                            # Calcular incremento de horómetro
+                            incremento_horometro = salida.Horometro - registro.Horometro
+                            
+                            # Validar que el incremento de horómetro sea positivo
+                            if incremento_horometro >= 0:
+                                if dia not in horas_por_dia:
+                                    horas_por_dia[dia] = 0
+                                    horometro_por_dia[dia] = 0
+                                
+                                horas_por_dia[dia] += horas_trabajadas
+                                horometro_por_dia[dia] += incremento_horometro
             
             # Llenar calendario
             for dia in range(1, calendar.monthrange(año, mes)[1] + 1):
@@ -1795,6 +1948,66 @@ def reporte_horas_equipo():
                          nombre_mes=nombre_mes,
                          resumen=resumen,
                          calendar=calendar)
+
+@app.route('/reportes/registros-dinamicos')
+@require_admin
+def reporte_registros_dinamicos():
+    """Reporte dinámico de registros de entrada y salida de empleados"""
+    # Parámetros de filtro
+    empleado_id = request.args.get('empleado_id', type=int)
+    equipo_id = request.args.get('equipo_id', type=int)
+    fecha_inicio = request.args.get('fecha_inicio')
+    fecha_fin = request.args.get('fecha_fin')
+    tipo_registro = request.args.get('tipo_registro', '')
+    
+    # Obtener listas para filtros
+    empleados = User.query.filter_by(estado='activo').all()
+    equipos = Equipo.query.filter_by(Estado='activo').all()
+    
+    # Construir consulta base
+    query = RegistroHoras.query.join(User, RegistroHoras.IdEmpleado == User.id).join(Equipo, RegistroHoras.IdEquipo == Equipo.IdEquipo)
+    
+    # Aplicar filtros
+    if empleado_id:
+        query = query.filter(RegistroHoras.IdEmpleado == empleado_id)
+    if equipo_id:
+        query = query.filter(RegistroHoras.IdEquipo == equipo_id)
+    if tipo_registro:
+        query = query.filter(RegistroHoras.TipoRegistro == tipo_registro)
+    if fecha_inicio:
+        query = query.filter(RegistroHoras.FechaEmpleado >= datetime.strptime(fecha_inicio, '%Y-%m-%d').date())
+    if fecha_fin:
+        query = query.filter(RegistroHoras.FechaEmpleado <= datetime.strptime(fecha_fin, '%Y-%m-%d').date())
+    
+    # Ordenar por fecha y hora descendente (más recientes primero)
+    registros = query.order_by(
+        RegistroHoras.FechaEmpleado.desc(),
+        RegistroHoras.HoraEmpleado.desc()
+    ).limit(1000).all()  # Limitar a 1000 registros para rendimiento
+    
+    # Estadísticas rápidas
+    total_registros = len(registros)
+    entradas = len([r for r in registros if r.TipoRegistro == 'entrada'])
+    salidas = len([r for r in registros if r.TipoRegistro == 'salida'])
+    
+    # Empleados únicos en los resultados
+    empleados_unicos = list(set([r.empleado for r in registros]))
+    equipos_unicos = list(set([r.equipo for r in registros]))
+    
+    return render_template('reportes/registros_dinamicos.html',
+                         registros=registros,
+                         empleados=empleados,
+                         equipos=equipos,
+                         empleados_unicos=empleados_unicos,
+                         equipos_unicos=equipos_unicos,
+                         empleado_id=empleado_id,
+                         equipo_id=equipo_id,
+                         fecha_inicio=fecha_inicio,
+                         fecha_fin=fecha_fin,
+                         tipo_registro=tipo_registro,
+                         total_registros=total_registros,
+                         entradas=entradas,
+                         salidas=salidas)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=app.config['DEBUG'])

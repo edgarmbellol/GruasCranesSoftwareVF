@@ -364,46 +364,61 @@ class Equipo(db.Model):
         }
     
     def esta_operando(self):
-        """Verifica si el equipo está siendo operado actualmente"""
-        # Buscar la entrada más reciente para este equipo
-        ultima_entrada = RegistroHoras.query.filter_by(
+        """Verifica si el equipo está siendo operado actualmente (al menos un empleado trabajando)"""
+        # Buscar TODAS las entradas para este equipo
+        entradas = RegistroHoras.query.filter_by(
             IdEquipo=self.IdEquipo,
             TipoRegistro='entrada'
-        ).order_by(RegistroHoras.FechaCreacion.desc()).first()
+        ).all()
         
-        if not ultima_entrada:
-            print(f"DEBUG MODELO: Equipo {self.Placa} - No hay entradas")
-            return False
+        # Para cada entrada, verificar si tiene salida correspondiente
+        entradas_sin_salida = []
+        for entrada in entradas:
+            salida_correspondiente = RegistroHoras.query.filter(
+                RegistroHoras.IdEquipo == self.IdEquipo,
+                RegistroHoras.IdEmpleado == entrada.IdEmpleado,
+                RegistroHoras.TipoRegistro == 'salida',
+                RegistroHoras.FechaCreacion > entrada.FechaCreacion
+            ).first()
+            
+            if not salida_correspondiente:
+                entradas_sin_salida.append(entrada)
         
-        # Verificar si esta entrada tiene una salida correspondiente
-        salida_correspondiente = RegistroHoras.query.filter_by(
-            IdEquipo=self.IdEquipo,
-            TipoRegistro='salida'
-        ).filter(RegistroHoras.FechaCreacion > ultima_entrada.FechaCreacion).first()
-        
-        esta_operando = salida_correspondiente is None
-        print(f"DEBUG MODELO: Equipo {self.Placa} - Última entrada: {ultima_entrada.IdRegistro}, Salida correspondiente: {salida_correspondiente.IdRegistro if salida_correspondiente else 'None'}, Operando: {esta_operando}")
+        esta_operando = len(entradas_sin_salida) > 0
+        print(f"DEBUG MODELO: Equipo {self.Placa} - Entradas sin salida: {len(entradas_sin_salida)}, Operando: {esta_operando}")
         
         return esta_operando
     
-    def obtener_operador_actual(self):
-        """Obtiene el operador actual del equipo si está siendo operado"""
+    def obtener_operadores_actuales(self):
+        """Obtiene todos los operadores actuales del equipo si está siendo operado"""
         if not self.esta_operando():
-            return None
+            return []
             
-        entrada_pendiente = RegistroHoras.query.filter_by(
+        # Buscar todas las entradas sin salida para este equipo
+        entradas = RegistroHoras.query.filter_by(
             IdEquipo=self.IdEquipo,
             TipoRegistro='entrada'
-        ).filter(
-            ~RegistroHoras.IdRegistro.in_(
-                db.session.query(RegistroHoras.IdRegistro).filter_by(
-                    IdEquipo=self.IdEquipo,
-                    TipoRegistro='salida'
-                )
-            )
-        ).first()
+        ).all()
         
-        return entrada_pendiente.empleado if entrada_pendiente else None
+        operadores_actuales = []
+        for entrada in entradas:
+            salida_correspondiente = RegistroHoras.query.filter(
+                RegistroHoras.IdEquipo == self.IdEquipo,
+                RegistroHoras.IdEmpleado == entrada.IdEmpleado,
+                RegistroHoras.TipoRegistro == 'salida',
+                RegistroHoras.FechaCreacion > entrada.FechaCreacion
+            ).first()
+            
+            if not salida_correspondiente:
+                # Incluir información del cargo y entrada
+                operador_info = {
+                    'empleado': entrada.empleado,
+                    'cargo': entrada.cargo,
+                    'entrada': entrada
+                }
+                operadores_actuales.append(operador_info)
+        
+        return operadores_actuales
     
     def obtener_entrada_actual(self):
         """Obtiene el registro de entrada actual si el equipo está siendo operado"""
