@@ -5,8 +5,8 @@
 
 set -e
 
-APP_DIR="/home/$(whoami)/apps/flask_app"
-SERVICE_USER="gruas"
+APP_DIR="$(pwd)"
+SERVICE_USER="$(whoami)"
 
 echo "🚀 Iniciando despliegue del Sistema de Grúas (SCP)..."
 
