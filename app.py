@@ -4,6 +4,10 @@ from models import db, User, Equipo, TipoEquipo, Marca, EstadoEquipo, Cargo, Cli
 from forms import UserForm, UserEditForm, UserSearchForm, EquipoForm, EquipoSearchForm, TipoEquipoForm, MarcaForm, EstadoEquipoForm, CargoForm, ClienteForm, ClienteSearchForm, RegistroHorasForm, CambiarContrasenaForm
 import os
 from datetime import timedelta, datetime, date
+from openpyxl import Workbook
+from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+from openpyxl.utils import get_column_letter
+from io import BytesIO
 from functools import wraps
 import qrcode
 from PIL import Image
@@ -15,7 +19,26 @@ app.secret_key = os.environ.get('SECRET_KEY', 'tu-clave-secreta-muy-segura-aqui'
 app.permanent_session_lifetime = timedelta(hours=24)
 
 # Configuración de base de datos
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///gruas_cranes.db'
+# Configuración PostgreSQL
+DB_HOST = os.environ.get('DB_HOST', 'localhost')
+DB_PORT = os.environ.get('DB_PORT', '5432')
+DB_NAME = os.environ.get('DB_NAME', 'gruas_db')
+DB_USER = os.environ.get('DB_USER', 'gruas_user')
+DB_PASSWORD = os.environ.get('DB_PASSWORD', 'gruas_password')
+
+# Construir URL de conexión
+from urllib.parse import quote_plus
+app.config['SQLALCHEMY_DATABASE_URI'] = f"postgresql://{DB_USER}:{quote_plus(DB_PASSWORD)}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+
+# Configuraciones de rendimiento
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+    'pool_size': 20,           # Número de conexiones en el pool
+    'max_overflow': 30,        # Conexiones adicionales permitidas
+    'pool_timeout': 30,        # Tiempo de espera para conexión
+    'pool_recycle': 3600,      # Reciclar conexiones cada hora
+    'pool_pre_ping': True,     # Verificar conexiones antes de usar
+    'echo': False              # Cambiar a True para debug de SQL
+}
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
@@ -1826,6 +1849,179 @@ def reporte_horas_empleado():
                          resumen=resumen,
                          calendar=calendar)
 
+
+@app.route('/reportes/horas-empleado/excel')
+@require_admin
+def exportar_horas_empleado_excel():
+    """Exportar reporte de horas por empleado a Excel con detalles de cargos"""
+    # Obtener parámetros de filtro
+    empleado_id = request.args.get('empleado_id', type=int)
+    mes = request.args.get('mes', datetime.now().month, type=int)
+    año = request.args.get('año', datetime.now().year, type=int)
+    
+    if not empleado_id:
+        flash('Debe seleccionar un empleado para exportar el reporte', 'error')
+        return redirect(url_for('reporte_horas_empleado'))
+    
+    empleado = User.query.get(empleado_id)
+    if not empleado:
+        flash('Empleado no encontrado', 'error')
+        return redirect(url_for('reporte_horas_empleado'))
+    
+    # Crear workbook
+    wb = Workbook()
+    ws = wb.active
+    ws.title = f"Horas_{empleado.nombre}_{mes}_{año}"
+    
+    # Estilos
+    header_font = Font(bold=True, color="FFFFFF")
+    header_fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+    border = Border(
+        left=Side(style='thin'),
+        right=Side(style='thin'),
+        top=Side(style='thin'),
+        bottom=Side(style='thin')
+    )
+    center_alignment = Alignment(horizontal='center', vertical='center')
+    
+    # Título principal
+    ws.merge_cells('A1:H1')
+    ws['A1'] = f"REPORTE DE HORAS TRABAJADAS - {empleado.nombre.upper()}"
+    ws['A1'].font = Font(bold=True, size=16, color="366092")
+    ws['A1'].alignment = center_alignment
+    
+    # Información del empleado
+    ws['A3'] = "Empleado:"
+    ws['B3'] = empleado.nombre
+    ws['A4'] = "Documento:"
+    ws['B4'] = empleado.documento
+    ws['A5'] = "Período:"
+    ws['B5'] = f"{calendar.month_name[mes]} {año}"
+    
+    # Encabezados de la tabla
+    headers = [
+        'Fecha', 'Equipo', 'Tipo Equipo', 'Cargo', 'Hora Entrada', 
+        'Hora Salida', 'Horas Trabajadas', 'Observaciones'
+    ]
+    
+    for col, header in enumerate(headers, 1):
+        cell = ws.cell(row=7, column=col, value=header)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.border = border
+        cell.alignment = center_alignment
+    
+    # Obtener registros del empleado para el mes/año
+    fecha_inicio = date(año, mes, 1)
+    fecha_fin = date(año, mes, calendar.monthrange(año, mes)[1])
+    
+    registros = RegistroHoras.query.filter(
+        RegistroHoras.IdEmpleado == empleado_id,
+        RegistroHoras.FechaEmpleado >= fecha_inicio,
+        RegistroHoras.FechaEmpleado <= fecha_fin
+    ).order_by(RegistroHoras.FechaEmpleado, RegistroHoras.HoraEmpleado).all()
+    
+    # Procesar registros
+    row = 8
+    total_horas = 0
+    dias_trabajados = set()
+    
+    # Agrupar registros por fecha y equipo
+    registros_por_fecha_equipo = {}
+    for registro in registros:
+        key = (registro.FechaEmpleado, registro.IdEquipo)
+        if key not in registros_por_fecha_equipo:
+            registros_por_fecha_equipo[key] = {'entrada': None, 'salida': None}
+        
+        if registro.TipoRegistro == 'entrada':
+            registros_por_fecha_equipo[key]['entrada'] = registro
+        else:
+            registros_por_fecha_equipo[key]['salida'] = registro
+    
+    # Procesar cada grupo de registros
+    for (fecha, equipo_id), registros_grupo in registros_por_fecha_equipo.items():
+        entrada = registros_grupo['entrada']
+        salida = registros_grupo['salida']
+        
+        if entrada:
+            dias_trabajados.add(fecha.day)
+            
+            # Obtener información del equipo y cargo
+            equipo = Equipo.query.get(equipo_id)
+            cargo = Cargo.query.get(entrada.IdCargo) if entrada.IdCargo else None
+            
+            # Calcular horas trabajadas
+            horas_trabajadas = 0
+            hora_salida_str = "Sin salida"
+            
+            if salida:
+                entrada_datetime = datetime.combine(entrada.FechaEmpleado, entrada.HoraEmpleado)
+                salida_datetime = datetime.combine(salida.FechaEmpleado, salida.HoraEmpleado)
+                horas_trabajadas = (salida_datetime - entrada_datetime).total_seconds() / 3600
+                hora_salida_str = salida.HoraEmpleado.strftime('%H:%M')
+                total_horas += horas_trabajadas
+            
+            # Escribir fila
+            ws.cell(row=row, column=1, value=fecha.strftime('%d/%m/%Y')).border = border
+            ws.cell(row=row, column=2, value=equipo.Placa if equipo else "N/A").border = border
+            ws.cell(row=row, column=3, value=equipo.tipo_equipo.descripcion if equipo and equipo.tipo_equipo else "N/A").border = border
+            ws.cell(row=row, column=4, value=cargo.descripcionCargo if cargo else "N/A").border = border
+            ws.cell(row=row, column=5, value=entrada.HoraEmpleado.strftime('%H:%M')).border = border
+            ws.cell(row=row, column=6, value=hora_salida_str).border = border
+            ws.cell(row=row, column=7, value=round(horas_trabajadas, 2)).border = border
+            ws.cell(row=row, column=8, value=entrada.Observacion or "").border = border
+            
+            # Aplicar alineación
+            for col in range(1, 9):
+                ws.cell(row=row, column=col).alignment = center_alignment
+            
+            row += 1
+    
+    # Resumen al final
+    row += 2
+    ws.merge_cells(f'A{row}:H{row}')
+    ws[f'A{row}'] = "RESUMEN"
+    ws[f'A{row}'].font = Font(bold=True, size=14, color="366092")
+    ws[f'A{row}'].alignment = center_alignment
+    
+    row += 1
+    ws[f'A{row}'] = "Total de Horas Trabajadas:"
+    ws[f'B{row}'] = round(total_horas, 2)
+    ws[f'A{row}'].font = Font(bold=True)
+    ws[f'B{row}'].font = Font(bold=True)
+    
+    row += 1
+    ws[f'A{row}'] = "Días Trabajados:"
+    ws[f'B{row}'] = len(dias_trabajados)
+    ws[f'A{row}'].font = Font(bold=True)
+    ws[f'B{row}'].font = Font(bold=True)
+    
+    row += 1
+    ws[f'A{row}'] = "Días No Trabajados:"
+    ws[f'B{row}'] = calendar.monthrange(año, mes)[1] - len(dias_trabajados)
+    ws[f'A{row}'].font = Font(bold=True)
+    ws[f'B{row}'].font = Font(bold=True)
+    
+    # Ajustar ancho de columnas
+    column_widths = [12, 20, 15, 15, 12, 12, 15, 25]
+    for i, width in enumerate(column_widths, 1):
+        ws.column_dimensions[get_column_letter(i)].width = width
+    
+    # Crear respuesta
+    output = BytesIO()
+    wb.save(output)
+    output.seek(0)
+    
+    # Nombre del archivo
+    nombre_archivo = f"Reporte_Horas_{empleado.nombre.replace(' ', '_')}_{mes}_{año}.xlsx"
+    
+    from flask import Response
+    return Response(
+        output.getvalue(),
+        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        headers={'Content-Disposition': f'attachment; filename="{nombre_archivo}"'}
+    )
+
 @app.route('/reportes/horas-equipo')
 @require_admin
 def reporte_horas_equipo():
@@ -1948,6 +2144,199 @@ def reporte_horas_equipo():
                          nombre_mes=nombre_mes,
                          resumen=resumen,
                          calendar=calendar)
+
+
+@app.route('/reportes/horas-equipo/excel')
+@require_admin
+def exportar_horas_equipo_excel():
+    """Exportar reporte de horas por equipo a Excel con detalles de empleados y cargos"""
+    # Obtener parámetros de filtro
+    equipo_id = request.args.get('equipo_id', type=int)
+    mes = request.args.get('mes', datetime.now().month, type=int)
+    año = request.args.get('año', datetime.now().year, type=int)
+    
+    if not equipo_id:
+        flash('Debe seleccionar un equipo para exportar el reporte', 'error')
+        return redirect(url_for('reporte_horas_equipo'))
+    
+    equipo = Equipo.query.get(equipo_id)
+    if not equipo:
+        flash('Equipo no encontrado', 'error')
+        return redirect(url_for('reporte_horas_equipo'))
+    
+    # Crear workbook
+    wb = Workbook()
+    ws = wb.active
+    ws.title = f"Horas_{equipo.Placa}_{mes}_{año}"
+    
+    # Estilos
+    header_font = Font(bold=True, color="FFFFFF")
+    header_fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+    border = Border(
+        left=Side(style='thin'),
+        right=Side(style='thin'),
+        top=Side(style='thin'),
+        bottom=Side(style='thin')
+    )
+    center_alignment = Alignment(horizontal='center', vertical='center')
+    
+    # Título principal
+    ws.merge_cells('A1:J1')
+    ws['A1'] = f"REPORTE DE HORAS POR EQUIPO - {equipo.Placa.upper()}"
+    ws['A1'].font = Font(bold=True, size=16, color="366092")
+    ws['A1'].alignment = center_alignment
+    
+    # Información del equipo
+    ws['A3'] = "Equipo:"
+    ws['B3'] = equipo.Placa
+    ws['A4'] = "Tipo:"
+    ws['B4'] = equipo.tipo_equipo.descripcion if equipo.tipo_equipo else 'N/A'
+    ws['A5'] = "Capacidad:"
+    ws['B5'] = f"{equipo.Capacidad} toneladas"
+    ws['A6'] = "Período:"
+    ws['B6'] = f"{calendar.month_name[mes]} {año}"
+    
+    # Encabezados de la tabla
+    headers = [
+        'Fecha', 'Empleado', 'Documento', 'Cargo', 'Hora Entrada', 
+        'Hora Salida', 'Horas Trabajadas', 'Horómetro Entrada', 'Horómetro Salida', 'Observaciones'
+    ]
+    
+    for col, header in enumerate(headers, 1):
+        cell = ws.cell(row=8, column=col, value=header)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.border = border
+        cell.alignment = center_alignment
+    
+    # Obtener registros del equipo para el mes/año
+    fecha_inicio = date(año, mes, 1)
+    fecha_fin = date(año, mes, calendar.monthrange(año, mes)[1])
+    
+    registros = RegistroHoras.query.filter(
+        RegistroHoras.IdEquipo == equipo_id,
+        RegistroHoras.FechaEmpleado >= fecha_inicio,
+        RegistroHoras.FechaEmpleado <= fecha_fin
+    ).order_by(RegistroHoras.FechaEmpleado, RegistroHoras.HoraEmpleado).all()
+    
+    # Procesar registros
+    row = 9
+    total_horas = 0
+    total_horometro = 0
+    dias_trabajados = set()
+    
+    # Agrupar registros por fecha y empleado
+    registros_por_fecha_empleado = {}
+    for registro in registros:
+        key = (registro.FechaEmpleado, registro.IdEmpleado)
+        if key not in registros_por_fecha_empleado:
+            registros_por_fecha_empleado[key] = {'entrada': None, 'salida': None}
+        
+        if registro.TipoRegistro == 'entrada':
+            registros_por_fecha_empleado[key]['entrada'] = registro
+        else:
+            registros_por_fecha_empleado[key]['salida'] = registro
+    
+    # Procesar cada grupo de registros
+    for (fecha, empleado_id), registros_grupo in registros_por_fecha_empleado.items():
+        entrada = registros_grupo['entrada']
+        salida = registros_grupo['salida']
+        
+        if entrada:
+            dias_trabajados.add(fecha.day)
+            
+            # Obtener información del empleado y cargo
+            empleado = User.query.get(empleado_id)
+            cargo = Cargo.query.get(entrada.IdCargo) if entrada.IdCargo else None
+            
+            # Calcular horas trabajadas y horómetro
+            horas_trabajadas = 0
+            hora_salida_str = "Sin salida"
+            horometro_entrada = entrada.Horometro if entrada.Horometro else 0
+            horometro_salida = 0
+            incremento_horometro = 0
+            
+            if salida:
+                entrada_datetime = datetime.combine(entrada.FechaEmpleado, entrada.HoraEmpleado)
+                salida_datetime = datetime.combine(salida.FechaEmpleado, salida.HoraEmpleado)
+                horas_trabajadas = (salida_datetime - entrada_datetime).total_seconds() / 3600
+                hora_salida_str = salida.HoraEmpleado.strftime('%H:%M')
+                
+                if salida.Horometro:
+                    horometro_salida = salida.Horometro
+                    incremento_horometro = horometro_salida - horometro_entrada
+                    total_horometro += incremento_horometro
+                
+                total_horas += horas_trabajadas
+            
+            # Escribir fila
+            ws.cell(row=row, column=1, value=fecha.strftime('%d/%m/%Y')).border = border
+            ws.cell(row=row, column=2, value=empleado.nombre if empleado else "N/A").border = border
+            ws.cell(row=row, column=3, value=empleado.documento if empleado else "N/A").border = border
+            ws.cell(row=row, column=4, value=cargo.descripcionCargo if cargo else "N/A").border = border
+            ws.cell(row=row, column=5, value=entrada.HoraEmpleado.strftime('%H:%M')).border = border
+            ws.cell(row=row, column=6, value=hora_salida_str).border = border
+            ws.cell(row=row, column=7, value=round(horas_trabajadas, 2)).border = border
+            ws.cell(row=row, column=8, value=round(horometro_entrada, 1)).border = border
+            ws.cell(row=row, column=9, value=round(horometro_salida, 1) if horometro_salida > 0 else "N/A").border = border
+            ws.cell(row=row, column=10, value=entrada.Observacion or "").border = border
+            
+            # Aplicar alineación
+            for col in range(1, 11):
+                ws.cell(row=row, column=col).alignment = center_alignment
+            
+            row += 1
+    
+    # Resumen al final
+    row += 2
+    ws.merge_cells(f'A{row}:J{row}')
+    ws[f'A{row}'] = "RESUMEN"
+    ws[f'A{row}'].font = Font(bold=True, size=14, color="366092")
+    ws[f'A{row}'].alignment = center_alignment
+    
+    row += 1
+    ws[f'A{row}'] = "Total de Horas Trabajadas:"
+    ws[f'B{row}'] = round(total_horas, 2)
+    ws[f'A{row}'].font = Font(bold=True)
+    ws[f'B{row}'].font = Font(bold=True)
+    
+    row += 1
+    ws[f'A{row}'] = "Total Horómetro:"
+    ws[f'B{row}'] = round(total_horometro, 1)
+    ws[f'A{row}'].font = Font(bold=True)
+    ws[f'B{row}'].font = Font(bold=True)
+    
+    row += 1
+    ws[f'A{row}'] = "Días Trabajados:"
+    ws[f'B{row}'] = len(dias_trabajados)
+    ws[f'A{row}'].font = Font(bold=True)
+    ws[f'B{row}'].font = Font(bold=True)
+    
+    row += 1
+    ws[f'A{row}'] = "Días Sin Trabajo:"
+    ws[f'B{row}'] = calendar.monthrange(año, mes)[1] - len(dias_trabajados)
+    ws[f'A{row}'].font = Font(bold=True)
+    ws[f'B{row}'].font = Font(bold=True)
+    
+    # Ajustar ancho de columnas
+    column_widths = [12, 20, 15, 15, 12, 12, 15, 15, 15, 25]
+    for i, width in enumerate(column_widths, 1):
+        ws.column_dimensions[get_column_letter(i)].width = width
+    
+    # Crear respuesta
+    output = BytesIO()
+    wb.save(output)
+    output.seek(0)
+    
+    # Nombre del archivo
+    nombre_archivo = f"Reporte_Horas_Equipo_{equipo.Placa}_{mes}_{año}.xlsx"
+    
+    from flask import Response
+    return Response(
+        output.getvalue(),
+        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        headers={'Content-Disposition': f'attachment; filename="{nombre_archivo}"'}
+    )
 
 @app.route('/reportes/registros-dinamicos')
 @require_admin

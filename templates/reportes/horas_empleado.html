@@ -14,6 +14,12 @@
                     <p class="text-muted mb-0">Visualización de días trabajados y horas en formato calendario</p>
                 </div>
                 <div>
+                    {% if empleado_id %}
+                    <a href="{{ url_for('exportar_horas_empleado_excel', empleado_id=empleado_id, mes=mes, año=año) }}" 
+                       class="btn btn-success me-2">
+                        <i class="fas fa-file-excel me-2"></i>Exportar Excel
+                    </a>
+                    {% endif %}
                     <a href="{{ url_for('reportes') }}" class="btn btn-outline-secondary me-2">
                         <i class="fas fa-arrow-left me-2"></i>Volver a Reportes
                     </a>
@@ -111,6 +117,21 @@
                             <h6 class="card-title">Días No Trabajados</h6>
                             <p class="card-text h4 text-warning">{{ resumen.dias_no_trabajados }}</p>
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Información de Exportación -->
+            <div class="alert alert-info mb-4">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-info-circle fa-2x me-3"></i>
+                    <div>
+                        <h6 class="alert-heading mb-1">📊 Reporte Detallado Disponible</h6>
+                        <p class="mb-0">
+                            Puede exportar un reporte completo en Excel que incluye:
+                            <strong>fechas, equipos trabajados, tipos de equipos, cargos desempeñados, 
+                            horas de entrada y salida, horas trabajadas y observaciones</strong>.
+                        </p>
                     </div>
                 </div>
             </div>

@@ -11,9 +11,17 @@
                     <i class="fas fa-chart-line me-2"></i>
                     Reporte de Horas por Equipo
                 </h2>
-                <a href="{{ url_for('reportes') }}" class="btn btn-outline-secondary">
-                    <i class="fas fa-arrow-left me-1"></i>Volver a Reportes
-                </a>
+                <div>
+                    {% if equipo_id %}
+                    <a href="{{ url_for('exportar_horas_equipo_excel', equipo_id=equipo_id, mes=mes, año=año) }}" 
+                       class="btn btn-success me-2">
+                        <i class="fas fa-file-excel me-2"></i>Exportar Excel
+                    </a>
+                    {% endif %}
+                    <a href="{{ url_for('reportes') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-1"></i>Volver a Reportes
+                    </a>
+                </div>
             </div>
         </div>
     </div>
@@ -117,6 +125,21 @@
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Información de Exportación -->
+    <div class="alert alert-info mb-4">
+        <div class="d-flex align-items-center">
+            <i class="fas fa-info-circle fa-2x me-3"></i>
+            <div>
+                <h6 class="alert-heading mb-1">📊 Reporte Detallado Disponible</h6>
+                <p class="mb-0">
+                    Puede exportar un reporte completo en Excel que incluye:
+                    <strong>fechas, empleados que trabajaron, cargos desempeñados, 
+                    horas de entrada y salida, horas trabajadas, horómetro y observaciones</strong>.
+                </p>
             </div>
         </div>
     </div>

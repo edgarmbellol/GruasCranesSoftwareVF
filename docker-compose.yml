@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: gruas_postgres
+    environment:
+      POSTGRES_DB: gruas_db
+      POSTGRES_USER: gruas_user
+      POSTGRES_PASSWORD: gruas_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./setup_postgresql.sql:/docker-entrypoint-initdb.d/setup.sql
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: gruas_redis
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+
+  app:
+    build: .
+    container_name: gruas_app
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=production
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=gruas_db
+      - DB_USER=gruas_user
+      - DB_PASSWORD=gruas_password
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - postgres
+      - redis
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

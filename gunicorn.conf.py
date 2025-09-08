@@ -4,7 +4,7 @@ import os
 
 # Configuración del servidor
 bind = f"0.0.0.0:{os.environ.get('PORT', 5000)}"
-workers = multiprocessing.cpu_count() * 2 + 1
+workers = min(multiprocessing.cpu_count() * 2 + 1, 4)  # Máximo 4 workers para VPS pequeña
 worker_class = "sync"
 worker_connections = 1000
 timeout = 30
