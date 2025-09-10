@@ -13,6 +13,10 @@ import qrcode
 from PIL import Image
 from dateutil.relativedelta import relativedelta
 import calendar
+from dotenv import load_dotenv
+
+# Cargar variables de entorno desde .env
+load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'tu-clave-secreta-muy-segura-aqui')

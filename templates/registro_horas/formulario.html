@@ -1022,6 +1022,12 @@
             document.getElementById('IdCargo').addEventListener('change', controlarCampos);
             document.getElementById('IdEstadoEquipo').addEventListener('change', controlarCampos);
             
+            // Event listeners para validación en tiempo real de fecha y hora
+            document.getElementById('FechaEmpleado').addEventListener('change', validarFechaHora);
+            document.getElementById('HoraEmpleado').addEventListener('change', validarFechaHora);
+            document.getElementById('FechaEmpleado').addEventListener('input', validarFechaHora);
+            document.getElementById('HoraEmpleado').addEventListener('input', validarFechaHora);
+            
             // Establecer fecha y hora actual
             const ahora = new Date();
             const fecha = ahora.toISOString().split('T')[0];
@@ -1110,7 +1116,7 @@
             horaMensaje.style.display = 'none';
             
             if (!fechaCampo.value || !horaCampo.value) {
-                return;
+                return false;
             }
             
             const fechaActual = new Date();
@@ -1121,7 +1127,7 @@
                 fechaCampo.classList.add('is-invalid');
                 fechaMensaje.innerHTML = '<i class="fas fa-exclamation-triangle me-1"></i>La fecha y hora no pueden ser futuras';
                 fechaMensaje.style.display = 'block';
-                return;
+                return false;
             }
             
             // Si es formulario de salida, validar contra la entrada
@@ -1134,7 +1140,7 @@
                     horaCampo.classList.add('is-invalid');
                     fechaMensaje.innerHTML = '<i class="fas fa-exclamation-triangle me-1"></i>La fecha y hora de salida no pueden ser anteriores a la entrada';
                     fechaMensaje.style.display = 'block';
-                    return;
+                    return false;
                 }
                 
                 // Validar que no exceda 24 horas de diferencia
@@ -1144,7 +1150,7 @@
                     horaCampo.classList.add('is-invalid');
                     fechaMensaje.innerHTML = '<i class="fas fa-exclamation-triangle me-1"></i>La diferencia no puede ser mayor a 24 horas';
                     fechaMensaje.style.display = 'block';
-                    return;
+                    return false;
                 }
                 
                 // Mostrar información de la diferencia
@@ -1155,54 +1161,24 @@
                     fechaMensaje.style.display = 'block';
                     fechaCampo.classList.add('is-valid');
                     horaCampo.classList.add('is-valid');
+                    return true;
                 }
             } else {
                 // Para formularios de entrada, solo validar que no sea futuro
                 fechaCampo.classList.add('is-valid');
                 horaCampo.classList.add('is-valid');
+                return true;
             }
+            
+            return true;
         }
         
         // Validación del formulario
         document.getElementById('registroForm').addEventListener('submit', function(e) {
-            // Validar fecha y hora primero
-            const fechaCampo = document.getElementById('FechaEmpleado');
-            const horaCampo = document.getElementById('HoraEmpleado');
-            
-            if (!fechaCampo.value || !horaCampo.value) {
+            // Validar fecha y hora usando la función mejorada
+            if (!validarFechaHora()) {
                 e.preventDefault();
-                alert('La fecha y hora son obligatorias');
                 return false;
-            }
-            
-            const fechaActual = new Date();
-            const fechaIngresada = new Date(fechaCampo.value + 'T' + horaCampo.value);
-            
-            // Validar que no sea una fecha futura
-            if (fechaIngresada > fechaActual) {
-                e.preventDefault();
-                alert('La fecha y hora no pueden ser futuras');
-                return false;
-            }
-            
-            // Si es formulario de salida, validar contra la entrada
-            if (valoresEntrada && valoresEntrada.fecha_entrada && valoresEntrada.hora_entrada) {
-                const fechaEntrada = new Date(valoresEntrada.fecha_entrada + 'T' + valoresEntrada.hora_entrada);
-                
-                // Validar que la salida no sea anterior a la entrada
-                if (fechaIngresada < fechaEntrada) {
-                    e.preventDefault();
-                    alert('La fecha y hora de salida no pueden ser anteriores a la entrada');
-                    return false;
-                }
-                
-                // Validar que no exceda 24 horas de diferencia
-                const diferenciaHoras = (fechaIngresada - fechaEntrada) / (1000 * 60 * 60);
-                if (diferenciaHoras > 24) {
-                    e.preventDefault();
-                    alert('La diferencia entre entrada y salida no puede ser mayor a 24 horas');
-                    return false;
-                }
             }
             
             // Obtener cargo del select o del div de solo lectura

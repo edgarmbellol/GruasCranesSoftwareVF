@@ -516,6 +516,33 @@ class RegistroHorasForm(FlaskForm):
             # Solo validamos que sea una hora válida (0-23 horas, 0-59 minutos)
             pass
     
+    def validate_fecha_hora_salida(self, fecha_entrada, hora_entrada):
+        """Validar que la fecha y hora de salida sean posteriores a la entrada"""
+        from datetime import datetime, date, time
+        
+        if not self.FechaEmpleado.data or not self.HoraEmpleado.data:
+            return True
+            
+        if not fecha_entrada or not hora_entrada:
+            return True
+            
+        # Crear datetime de entrada
+        entrada_datetime = datetime.combine(fecha_entrada, hora_entrada)
+        
+        # Crear datetime de salida
+        salida_datetime = datetime.combine(self.FechaEmpleado.data, self.HoraEmpleado.data)
+        
+        # Validar que la salida sea posterior a la entrada
+        if salida_datetime <= entrada_datetime:
+            raise ValidationError('La fecha y hora de salida deben ser posteriores a la entrada')
+        
+        # Validar que no exceda 24 horas de diferencia
+        diferencia = salida_datetime - entrada_datetime
+        if diferencia.total_seconds() > 24 * 3600:  # 24 horas en segundos
+            raise ValidationError('La diferencia entre entrada y salida no puede ser mayor a 24 horas')
+        
+        return True
+    
     IdCargo = SelectField(
         'Cargo',
         coerce=int,
