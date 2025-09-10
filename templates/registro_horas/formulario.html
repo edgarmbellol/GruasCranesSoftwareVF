@@ -396,9 +396,9 @@
             <div class="row align-items-center">
                 <div class="col-md-8">
                     <div class="d-flex align-items-center">
-                        <a href="{{ url_for('equipos') }}" class="btn btn-volver me-3" title="Volver a Equipos">
-                            <i class="fas fa-arrow-left me-2"></i>
-                            Volver
+                        <a href="{{ url_for('qr_equipos') }}" class="btn btn-volver me-3" title="Ver Códigos QR">
+                            <i class="fas fa-qrcode me-2"></i>
+                            Ver Códigos QR
                         </a>
                         <div>
                             <h1 class="mb-0">
@@ -831,9 +831,9 @@
 
                 <!-- Botones de acción -->
                 <div class="text-center">
-                    <a href="{{ url_for('equipos') }}" class="btn btn-volver btn-lg me-3">
-                        <i class="fas fa-arrow-left me-2"></i>
-                        Volver a Equipos
+                    <a href="{{ url_for('qr_equipos') }}" class="btn btn-volver btn-lg me-3">
+                        <i class="fas fa-qrcode me-2"></i>
+                        Ver Códigos QR
                     </a>
                     {{ form.submit(class="btn btn-primary btn-lg") }}
                 </div>
