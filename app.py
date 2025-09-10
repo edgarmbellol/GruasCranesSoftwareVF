@@ -56,7 +56,11 @@ def generar_qr_equipo(equipo_id, placa):
             os.makedirs(qr_dir)
         
         # URL del formulario de registro para este equipo
-        url_registro = f"{request.url_root}registro/{equipo_id}"
+        # Usar BASE_URL del entorno si está disponible, sino usar request.url_root
+        base_url = os.environ.get('BASE_URL')
+        if not base_url:
+            base_url = request.url_root.rstrip('/')
+        url_registro = f"{base_url}/registro/{equipo_id}"
         
         # Crear código QR
         qr = qrcode.QRCode(
@@ -1225,7 +1229,7 @@ def qr_equipos():
             'equipo': equipo,
             'tiene_qr': tiene_qr,
             'qr_url': f"qr_codes/{qr_filename}" if tiene_qr else None,
-            'url_registro': f"{request.url_root}registro/{equipo.IdEquipo}"
+            'url_registro': f"{os.environ.get('BASE_URL', request.url_root.rstrip('/'))}/registro/{equipo.IdEquipo}"
         })
     
     return render_template('qr_equipos/index.html', equipos_con_qr=equipos_con_qr)
@@ -1262,7 +1266,7 @@ def ver_qr_equipos():
             'equipo': equipo,
             'tiene_qr': tiene_qr,
             'qr_url': f"qr_codes/{qr_filename}" if tiene_qr else None,
-            'url_registro': f"{request.url_root}registro/{equipo.IdEquipo}"
+            'url_registro': f"{os.environ.get('BASE_URL', request.url_root.rstrip('/'))}/registro/{equipo.IdEquipo}"
         })
     
     return render_template('qr_equipos/ver_empleados.html', equipos_con_qr=equipos_con_qr)
