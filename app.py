@@ -62,6 +62,10 @@ def generar_qr_equipo(equipo_id, placa):
             base_url = request.url_root.rstrip('/')
         url_registro = f"{base_url}/registro/{equipo_id}"
         
+        # DEBUG: Agregar prints para verificar la URL
+        print(f"🔍 DEBUG QR: equipo_id={equipo_id}, base_url={base_url}")
+        print(f"🔍 DEBUG QR: url_registro={url_registro}")
+        
         # Crear código QR
         qr = qrcode.QRCode(
             version=1,
@@ -79,6 +83,8 @@ def generar_qr_equipo(equipo_id, placa):
         filename = f"qr_equipo_{equipo_id}_{placa}.png"
         filepath = os.path.join(qr_dir, filename)
         img.save(filepath)
+        
+        print(f"✅ DEBUG QR: QR guardado en {filepath}")
         
         return f"qr_codes/{filename}"
     except Exception as e:
