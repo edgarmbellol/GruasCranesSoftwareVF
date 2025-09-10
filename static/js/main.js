@@ -168,8 +168,8 @@ document.addEventListener('DOMContentLoaded', function() {
     images.forEach(img => imageObserver.observe(img));
 
     // Prevenir envío doble de formularios
-    const forms = document.querySelectorAll('form');
-    forms.forEach(form => {
+    const allForms = document.querySelectorAll('form');
+    allForms.forEach(form => {
         form.addEventListener('submit', function(e) {
             if (this.classList.contains('submitting')) {
                 e.preventDefault();
