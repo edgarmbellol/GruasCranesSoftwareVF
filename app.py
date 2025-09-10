@@ -967,6 +967,22 @@ def eliminar_tipo_equipo(id):
     
     return redirect(url_for('tipos_equipos'))
 
+@app.route('/tipos-equipos/activar/<int:id>', methods=['POST'])
+@require_admin
+def activar_tipo_equipo(id):
+    """Activar tipo de equipo"""
+    tipo = TipoEquipo.query.get_or_404(id)
+    
+    try:
+        tipo.estado = 'activo'
+        db.session.commit()
+        flash(f'Tipo de equipo "{tipo.descripcion}" activado exitosamente.', 'success')
+        
+    except Exception as e:
+        flash(f'Error al activar el tipo de equipo: {str(e)}', 'error')
+    
+    return redirect(url_for('tipos_equipos'))
+
 # ===== MARCAS =====
 
 @app.route('/marcas')
@@ -1047,6 +1063,22 @@ def eliminar_marca(id):
         
     except Exception as e:
         flash(f'Error al eliminar la marca: {str(e)}', 'error')
+    
+    return redirect(url_for('marcas'))
+
+@app.route('/marcas/activar/<int:id>', methods=['POST'])
+@require_admin
+def activar_marca(id):
+    """Activar marca"""
+    marca = Marca.query.get_or_404(id)
+    
+    try:
+        marca.estado = 'activo'
+        db.session.commit()
+        flash(f'Marca "{marca.DescripcionMarca}" activada exitosamente.', 'success')
+        
+    except Exception as e:
+        flash(f'Error al activar la marca: {str(e)}', 'error')
     
     return redirect(url_for('marcas'))
 
@@ -1133,6 +1165,22 @@ def eliminar_estado_equipo(id):
     
     return redirect(url_for('estados_equipos'))
 
+@app.route('/estados-equipos/activar/<int:id>', methods=['POST'])
+@require_admin
+def activar_estado_equipo(id):
+    """Activar estado de equipo"""
+    estado = EstadoEquipo.query.get_or_404(id)
+    
+    try:
+        estado.Estado = 'activo'
+        db.session.commit()
+        flash(f'Estado de equipo "{estado.Descripcion}" activado exitosamente.', 'success')
+        
+    except Exception as e:
+        flash(f'Error al activar el estado de equipo: {str(e)}', 'error')
+    
+    return redirect(url_for('estados_equipos'))
+
 # ===== CARGOS =====
 
 @app.route('/cargos')
@@ -1213,6 +1261,22 @@ def eliminar_cargo(id):
         
     except Exception as e:
         flash(f'Error al eliminar el cargo: {str(e)}', 'error')
+    
+    return redirect(url_for('cargos'))
+
+@app.route('/cargos/activar/<int:id>', methods=['POST'])
+@require_admin
+def activar_cargo(id):
+    """Activar cargo"""
+    cargo = Cargo.query.get_or_404(id)
+    
+    try:
+        cargo.Estado = 'activo'
+        db.session.commit()
+        flash(f'Cargo "{cargo.descripcionCargo}" activado exitosamente.', 'success')
+        
+    except Exception as e:
+        flash(f'Error al activar el cargo: {str(e)}', 'error')
     
     return redirect(url_for('cargos'))
 
