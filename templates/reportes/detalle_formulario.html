@@ -1,0 +1,239 @@
+{% extends "base.html" %}
+
+{% block title %}Detalle del Formulario #{{ registro.IdRegistro }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-clipboard-list me-2"></i>Detalle del Formulario #{{ registro.IdRegistro }}</h2>
+                <a href="{{ url_for('revision_formularios') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-1"></i>Volver a Lista
+                </a>
+            </div>
+
+            <div class="row">
+                <!-- Información Principal -->
+                <div class="col-lg-8">
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Información del Registro</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6 class="text-muted">Empleado</h6>
+                                    <p class="mb-3">
+                                        <strong>{{ registro.empleado.nombre }}</strong><br>
+                                        <small class="text-muted">{{ registro.empleado.documento }}</small><br>
+                                        <span class="badge bg-info">{{ registro.cargo.NombreCargo }}</span>
+                                    </p>
+                                    
+                                    <h6 class="text-muted">Equipo</h6>
+                                    <p class="mb-3">
+                                        <strong>{{ registro.equipo.Placa }}</strong><br>
+                                        <small class="text-muted">{{ registro.equipo.Referencia or registro.equipo.Modelo or 'Sin referencia' }}</small><br>
+                                        <span class="badge bg-{{ 'success' if registro.estado_equipo.NombreEstado == 'Operativo' else 'danger' }}">
+                                            {{ registro.estado_equipo.NombreEstado }}
+                                        </span>
+                                    </p>
+                                    
+                                    <h6 class="text-muted">Tipo de Registro</h6>
+                                    <p class="mb-3">
+                                        {% if registro.TipoRegistro == 'entrada' %}
+                                            <span class="badge bg-success fs-6">
+                                                <i class="fas fa-sign-in-alt me-1"></i>Entrada
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-warning fs-6">
+                                                <i class="fas fa-sign-out-alt me-1"></i>Salida
+                                            </span>
+                                        {% endif %}
+                                    </p>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <h6 class="text-muted">Fechas y Horas</h6>
+                                    <div class="mb-3">
+                                        <strong>Fecha del Empleado:</strong><br>
+                                        {{ registro.FechaEmpleado.strftime('%d/%m/%Y') }} a las {{ registro.HoraEmpleado.strftime('%H:%M') }}
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <strong>Fecha del Sistema:</strong><br>
+                                        {{ format_colombia_datetime(registro.FechaCreacion).strftime('%d/%m/%Y %H:%M:%S') }}
+                                    </div>
+                                    
+                                    {% if registro.Ubicacion %}
+                                    <h6 class="text-muted">Ubicación</h6>
+                                    <p class="mb-3">
+                                        <i class="fas fa-map-marker-alt me-1"></i>{{ registro.Ubicacion }}
+                                        {% if registro.Latitud and registro.Longitud %}
+                                            <br><small class="text-muted">
+                                                Coordenadas: {{ "%.6f"|format(registro.Latitud) }}, {{ "%.6f"|format(registro.Longitud) }}
+                                            </small>
+                                        {% endif %}
+                                    </p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            {% if registro.Observacion %}
+                            <h6 class="text-muted">Observaciones</h6>
+                            <p class="mb-0">{{ registro.Observacion }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Datos del Equipo (solo para operadores) -->
+                    {% if registro.Kilometraje is not none or registro.Horometro is not none %}
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-tachometer-alt me-2"></i>Datos del Equipo</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                {% if registro.Kilometraje is not none %}
+                                <div class="col-md-6">
+                                    <h6 class="text-muted">Kilometraje</h6>
+                                    <p class="fs-4 mb-0">{{ "%.1f"|format(registro.Kilometraje) }} km</p>
+                                </div>
+                                {% endif %}
+                                
+                                {% if registro.Horometro is not none %}
+                                <div class="col-md-6">
+                                    <h6 class="text-muted">Horómetro</h6>
+                                    <p class="fs-4 mb-0">{{ "%.1f"|format(registro.Horometro) }} hrs</p>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Imágenes -->
+                <div class="col-lg-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-images me-2"></i>Evidencia Fotográfica</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if registro.FotoKilometraje or registro.FotoHorometro or registro.FotoGrua %}
+                                {% if registro.FotoKilometraje %}
+                                <div class="mb-4">
+                                    <h6 class="text-muted mb-2">
+                                        <i class="fas fa-tachometer-alt me-1"></i>Foto del Kilometraje
+                                    </h6>
+                                    <div class="image-container">
+                                        <img src="{{ url_for('static', filename='uploads/' + registro.FotoKilometraje) }}" 
+                                             class="img-fluid rounded shadow-sm" 
+                                             alt="Foto del Kilometraje"
+                                             onclick="openImageModal(this.src, 'Foto del Kilometraje')"
+                                             style="cursor: pointer;">
+                                    </div>
+                                </div>
+                                {% endif %}
+                                
+                                {% if registro.FotoHorometro %}
+                                <div class="mb-4">
+                                    <h6 class="text-muted mb-2">
+                                        <i class="fas fa-clock me-1"></i>Foto del Horómetro
+                                    </h6>
+                                    <div class="image-container">
+                                        <img src="{{ url_for('static', filename='uploads/' + registro.FotoHorometro) }}" 
+                                             class="img-fluid rounded shadow-sm" 
+                                             alt="Foto del Horómetro"
+                                             onclick="openImageModal(this.src, 'Foto del Horómetro')"
+                                             style="cursor: pointer;">
+                                    </div>
+                                </div>
+                                {% endif %}
+                                
+                                {% if registro.FotoGrua %}
+                                <div class="mb-4">
+                                    <h6 class="text-muted mb-2">
+                                        <i class="fas fa-camera me-1"></i>Foto de la Grúa
+                                    </h6>
+                                    <div class="image-container">
+                                        <img src="{{ url_for('static', filename='uploads/' + registro.FotoGrua) }}" 
+                                             class="img-fluid rounded shadow-sm" 
+                                             alt="Foto de la Grúa"
+                                             onclick="openImageModal(this.src, 'Foto de la Grúa')"
+                                             style="cursor: pointer;">
+                                    </div>
+                                </div>
+                                {% endif %}
+                            {% else %}
+                                <div class="text-center py-4">
+                                    <i class="fas fa-image fa-3x text-muted mb-3"></i>
+                                    <p class="text-muted">No hay imágenes disponibles</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para visualizar imágenes -->
+<div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="imageModalLabel">Imagen</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img id="modalImage" src="" class="img-fluid" alt="Imagen">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <a id="downloadImage" href="" download class="btn btn-primary">
+                    <i class="fas fa-download me-1"></i>Descargar
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.image-container {
+    position: relative;
+    overflow: hidden;
+    border-radius: 8px;
+    background: #f8f9fa;
+    min-height: 150px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.image-container img {
+    max-height: 300px;
+    width: auto;
+    transition: transform 0.3s ease;
+}
+
+.image-container img:hover {
+    transform: scale(1.05);
+}
+
+#modalImage {
+    max-height: 70vh;
+    width: auto;
+}
+</style>
+
+<script>
+function openImageModal(src, title) {
+    document.getElementById('imageModalLabel').textContent = title;
+    document.getElementById('modalImage').src = src;
+    document.getElementById('downloadImage').href = src;
+    new bootstrap.Modal(document.getElementById('imageModal')).show();
+}
+</script>
+{% endblock %}

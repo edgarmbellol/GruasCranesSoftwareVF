@@ -6,12 +6,12 @@
 <div class="container-fluid py-4">
     <div class="row">
         <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-4 mt-4">
                 <div>
                     <h2 class="text-primary mb-1">
                         <i class="fas fa-qrcode me-2"></i>Códigos QR Equipos
                     </h2>
-                    <p class="text-muted mb-0">Escanea el código QR para acceder al formulario de registro</p>
+                    <p class="text-muted mb-0">Códigos QR para acceso directo al formulario de registro de cada equipo</p>
                 </div>
                 <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">
                     <i class="fas fa-arrow-left me-2"></i>Volver al Dashboard
@@ -21,8 +21,8 @@
             <!-- Información sobre QR -->
             <div class="alert alert-info mb-4">
                 <i class="fas fa-info-circle me-2"></i>
-                <strong>Instrucciones:</strong> Escanea el código QR del equipo con tu dispositivo móvil para acceder 
-                directamente al formulario de registro de entrada y salida.
+                <strong>Información:</strong> Los códigos QR contienen el enlace directo al formulario de registro de cada equipo. 
+                Los empleados pueden escanear estos códigos para acceder rápidamente al formulario de entrada/salida.
             </div>
 
             <!-- Grid de equipos con QR -->
@@ -40,7 +40,7 @@
                                 </span>
                             {% else %}
                                 <span class="badge bg-warning">
-                                    <i class="fas fa-exclamation-triangle me-1"></i>QR No Disponible
+                                    <i class="fas fa-exclamation-triangle me-1"></i>QR Pendiente
                                 </span>
                             {% endif %}
                         </div>
@@ -98,9 +98,9 @@
                                     <i class="fas fa-download me-1"></i>Descargar QR
                                 </a>
                                 {% endif %}
-                                <a href="{{ url_for('registro_horas', equipo_id=item.equipo.IdEquipo) }}" 
+                                <a href="{{ url_for('panel_equipo', equipo_id=item.equipo.IdEquipo) }}" 
                                    class="btn btn-outline-primary btn-sm">
-                                    <i class="fas fa-external-link-alt me-1"></i>Ir al Formulario
+                                    <i class="fas fa-external-link-alt me-1"></i>Ver Panel
                                 </a>
                             </div>
                         </div>
@@ -170,6 +170,45 @@
 
 .url-info .input-group {
     margin-top: 0.5rem;
+}
+
+.url-display {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 0.75rem;
+    margin-top: 0.5rem;
+}
+
+.url-text {
+    display: flex;
+    align-items: center;
+    flex-grow: 1;
+    font-family: 'Courier New', monospace;
+    font-size: 0.85rem;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.url-domain {
+    color: #2e7d32;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 200px;
+}
+
+.url-path {
+    color: #007bff;
+    font-weight: 500;
+    margin-left: 0.25rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .qr-actions {

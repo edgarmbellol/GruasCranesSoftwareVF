@@ -1,0 +1,15 @@
+[Unit]
+Description=QR Code Sync Daemon
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/home/mauricio/apps/flask_app
+ExecStart=/usr/bin/python3 /home/mauricio/apps/flask_app/sync_qr_daemon.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+

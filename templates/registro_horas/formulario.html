@@ -1028,13 +1028,8 @@
             document.getElementById('FechaEmpleado').addEventListener('input', validarFechaHora);
             document.getElementById('HoraEmpleado').addEventListener('input', validarFechaHora);
             
-            // Establecer fecha y hora actual
-            const ahora = new Date();
-            const fecha = ahora.toISOString().split('T')[0];
-            const hora = ahora.toTimeString().split(' ')[0].substring(0, 5);
-            
-            document.getElementById('FechaEmpleado').value = fecha;
-            document.getElementById('HoraEmpleado').value = hora;
+            // Los valores de fecha y hora ya vienen configurados desde el servidor
+            // con la zona horaria de Colombia, no es necesario sobrescribirlos
         });
 
         // Variables globales para validación

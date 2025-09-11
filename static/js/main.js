@@ -1,5 +1,9 @@
-// Main JavaScript para la aplicación de grúas
+// Main JavaScript para la aplicación de grúas - Versión Simplificada
+console.log('JavaScript cargando...');
+
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM cargado - JavaScript ejecutándose');
+    
     // Inicializar tooltips de Bootstrap
     var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
     var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
@@ -21,23 +25,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 5000);
     });
 
-    // Navbar toggle para móviles
-    const navbarToggle = document.querySelector('.navbar-toggler');
-    const navbarCollapse = document.querySelector('.navbar-collapse');
-    
-    if (navbarToggle && navbarCollapse) {
-        navbarToggle.addEventListener('click', function() {
-            navbarCollapse.classList.toggle('show');
-        });
-
-        // Cerrar navbar al hacer clic fuera en móviles
-        document.addEventListener('click', function(e) {
-            if (!navbarCollapse.contains(e.target) && !navbarToggle.contains(e.target)) {
-                navbarCollapse.classList.remove('show');
-            }
-        });
-    }
-
     // Efectos de hover para las tarjetas
     const statCards = document.querySelectorAll('.stat-card');
     statCards.forEach(function(card) {
@@ -47,48 +34,6 @@ document.addEventListener('DOMContentLoaded', function() {
         
         card.addEventListener('mouseleave', function() {
             this.style.transform = 'translateY(0)';
-        });
-    });
-
-    // Animación de carga para botones
-    const buttons = document.querySelectorAll('.btn');
-    buttons.forEach(function(button) {
-        button.addEventListener('click', function(e) {
-            // Solo para botones de formulario
-            if (this.type === 'submit') {
-                const originalText = this.innerHTML;
-                this.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Procesando...';
-                this.disabled = true;
-                
-                // Re-habilitar después de 3 segundos (en caso de error)
-                setTimeout(() => {
-                    this.innerHTML = originalText;
-                    this.disabled = false;
-                }, 3000);
-            }
-        });
-    });
-
-    // Validación de formularios
-    const forms = document.querySelectorAll('form');
-    forms.forEach(function(form) {
-        form.addEventListener('submit', function(e) {
-            const requiredFields = form.querySelectorAll('[required]');
-            let isValid = true;
-            
-            requiredFields.forEach(function(field) {
-                if (!field.value.trim()) {
-                    field.classList.add('is-invalid');
-                    isValid = false;
-                } else {
-                    field.classList.remove('is-invalid');
-                }
-            });
-            
-            if (!isValid) {
-                e.preventDefault();
-                showNotification('Por favor, completa todos los campos requeridos', 'error');
-            }
         });
     });
 
@@ -141,43 +86,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     };
-
-    // Efecto de parallax sutil en el login
-    const loginContainer = document.querySelector('.login-container');
-    if (loginContainer) {
-        window.addEventListener('scroll', function() {
-            const scrolled = window.pageYOffset;
-            const parallax = scrolled * 0.5;
-            loginContainer.style.transform = `translateY(${parallax}px)`;
-        });
-    }
-
-    // Lazy loading para imágenes
-    const images = document.querySelectorAll('img[data-src]');
-    const imageObserver = new IntersectionObserver((entries, observer) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                const img = entry.target;
-                img.src = img.dataset.src;
-                img.classList.remove('lazy');
-                imageObserver.unobserve(img);
-            }
-        });
-    });
-
-    images.forEach(img => imageObserver.observe(img));
-
-    // Prevenir envío doble de formularios
-    const allForms = document.querySelectorAll('form');
-    allForms.forEach(form => {
-        form.addEventListener('submit', function(e) {
-            if (this.classList.contains('submitting')) {
-                e.preventDefault();
-                return false;
-            }
-            this.classList.add('submitting');
-        });
-    });
 
     console.log('Sistema de Grúas - Aplicación cargada correctamente');
 });

@@ -489,13 +489,13 @@ class RegistroHorasForm(FlaskForm):
     FechaEmpleado = DateField(
         'Fecha',
         validators=[DataRequired(message='La fecha es requerida')],
-        render_kw={'class': 'form-control'}
+        render_kw={'class': 'form-control', 'type': 'date'}
     )
     
     HoraEmpleado = TimeField(
         'Hora',
         validators=[DataRequired(message='La hora es requerida')],
-        render_kw={'class': 'form-control'}
+        render_kw={'class': 'form-control', 'type': 'time'}
     )
     
     def validate_FechaEmpleado(self, field):
@@ -598,7 +598,7 @@ class RegistroHorasForm(FlaskForm):
     
     IdCliente = SelectField(
         'Cliente',
-        coerce=int,
+        coerce=lambda x: int(x) if x and x != '' else None,
         validators=[Optional()],
         render_kw={'class': 'form-select'}
     )
@@ -687,7 +687,7 @@ class RegistroHorasForm(FlaskForm):
             if estado and 'operativo' in estado.Descripcion.lower():
                 # Solo validar si el campo no es de solo lectura
                 if not hasattr(self, 'IdCliente') or not (self.IdCliente.render_kw and self.IdCliente.render_kw.get('readonly')):
-                    if not field.data or field.data == 0:
+                    if not field.data or field.data is None:
                         raise ValidationError('El cliente es requerido cuando el equipo está operativo')
 
 class CambiarContrasenaForm(FlaskForm):
@@ -729,7 +729,7 @@ class CambiarContrasenaForm(FlaskForm):
         
         if field.data:
             user = User.query.get(session.get('user_id'))
-            if user and not check_password_hash(user.contrasena, field.data):
+            if user and not check_password_hash(user.contrasena_hash, field.data):
                 raise ValidationError('La contraseña actual es incorrecta')
     
     def validate_nueva_contrasena(self, field):
@@ -740,5 +740,5 @@ class CambiarContrasenaForm(FlaskForm):
         
         if field.data and self.contrasena_actual.data:
             user = User.query.get(session.get('user_id'))
-            if user and check_password_hash(user.contrasena, field.data):
+            if user and check_password_hash(user.contrasena_hash, field.data):
                 raise ValidationError('La nueva contraseña debe ser diferente a la actual')

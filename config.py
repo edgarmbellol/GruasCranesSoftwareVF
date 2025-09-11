@@ -9,6 +9,9 @@ class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'clave-desarrollo-no-usar-en-produccion'
     DEBUG = os.environ.get('FLASK_DEBUG', 'False').lower() == 'true'
     
+    # Configuración de zona horaria
+    TIMEZONE = 'America/Bogota'  # Zona horaria de Colombia
+    
     # Configuración PostgreSQL
     DB_HOST = os.environ.get('DB_HOST') or 'localhost'
     DB_PORT = os.environ.get('DB_PORT') or '5432'

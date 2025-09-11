@@ -75,6 +75,24 @@
                     </div>
                 </div>
 
+                <!-- Revisión de Formularios -->
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card report-card">
+                        <div class="card-body text-center">
+                            <div class="report-icon mb-3">
+                                <i class="fas fa-clipboard-check fa-3x text-warning"></i>
+                            </div>
+                            <h5 class="card-title">Revisión de Formularios</h5>
+                            <p class="card-text text-muted">
+                                Revisa todos los formularios enviados por empleados con filtros por fecha, empleado y equipo. Incluye visualización de imágenes.
+                            </p>
+                            <a href="{{ url_for('revision_formularios') }}" class="btn btn-warning">
+                                <i class="fas fa-clipboard-check me-2"></i>Revisar Formularios
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
             </div>
 
             <!-- Información adicional -->
@@ -94,6 +112,7 @@
                                         <li><strong>Horas por Empleado:</strong> Calendario visual con días trabajados y horas totales</li>
                                         <li><strong>Horas por Equipo:</strong> Análisis de horómetro y horas trabajadas por equipo</li>
                                         <li><strong>Registros Dinámicos:</strong> Tabla interactiva con filtros avanzados y exportación</li>
+                                        <li><strong>Revisión de Formularios:</strong> Revisión completa de formularios con imágenes y filtros</li>
                                         <li><strong>Filtros:</strong> Por empleado/equipo, fecha, tipo de registro</li>
                                         <li><strong>Resumen:</strong> Estadísticas de días trabajados y no trabajados</li>
                                         <li><strong>Exportación:</strong> Descarga de reportes en formato CSV</li>

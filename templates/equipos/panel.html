@@ -1,0 +1,272 @@
+{% extends "base.html" %}
+
+{% block title %}Panel de Equipo - {{ equipo.Placa }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4 mt-4">
+                <div>
+                    <h2 class="text-primary mb-1">
+                        <i class="fas fa-crane me-2"></i>{{ equipo.Placa }}
+                    </h2>
+                    <p class="text-muted mb-0">{{ tipo_equipo }} - {{ marca }} | {{ estado_equipo }}</p>
+                </div>
+                <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Volver al Dashboard
+                </a>
+            </div>
+
+            <!-- Información del Usuario -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="user-avatar me-3">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                                <div>
+                                    <h5 class="mb-1">{{ usuario.nombre }}</h5>
+                                    <p class="text-muted mb-0">{{ usuario.documento }} - {{ usuario.perfil_usuario|title }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Grid de Opciones del Equipo -->
+            <div class="row">
+                <!-- Control de Horas -->
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card report-card">
+                        <div class="card-body text-center">
+                            <div class="report-icon mb-3">
+                                <i class="fas fa-clock fa-3x text-primary"></i>
+                            </div>
+                            <h5 class="card-title">Control de Horas</h5>
+                            <p class="card-text text-muted">
+                                Gestiona el registro de entrada y salida para este equipo. 
+                                Incluye seguimiento de horómetro y tiempo de trabajo.
+                            </p>
+                            {% if entrada_pendiente %}
+                                <div class="alert alert-warning mb-3">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                    Tienes una entrada pendiente de salida
+                                </div>
+                            {% endif %}
+                            <a href="{{ url_for('registro_horas', equipo_id=equipo.IdEquipo) }}" class="btn btn-primary">
+                                <i class="fas fa-play me-2"></i>
+                                {% if entrada_pendiente %}
+                                    Continuar Registro
+                                {% else %}
+                                    Iniciar Registro
+                                {% endif %}
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Estadísticas del Equipo -->
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card report-card">
+                        <div class="card-body text-center">
+                            <div class="report-icon mb-3">
+                                <i class="fas fa-chart-bar fa-3x text-success"></i>
+                            </div>
+                            <h5 class="card-title">Estadísticas</h5>
+                            <p class="card-text text-muted">
+                                Resumen de actividad del equipo con registros de hoy y del mes actual.
+                            </p>
+                            <div class="stats-container mb-3">
+                                <div class="stat-item">
+                                    <span class="stat-number">{{ registros_hoy }}</span>
+                                    <span class="stat-label">Registros Hoy</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-number">{{ registros_mes }}</span>
+                                    <span class="stat-label">Este Mes</span>
+                                </div>
+                            </div>
+                            <button class="btn btn-success" disabled>
+                                <i class="fas fa-chart-line me-2"></i>Ver Detalles
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Información del Equipo -->
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card report-card">
+                        <div class="card-body text-center">
+                            <div class="report-icon mb-3">
+                                <i class="fas fa-info-circle fa-3x text-info"></i>
+                            </div>
+                            <h5 class="card-title">Información</h5>
+                            <p class="card-text text-muted">
+                                Detalles técnicos y especificaciones del equipo seleccionado.
+                            </p>
+                            <div class="equipo-details mb-3">
+                                <div class="detail-item">
+                                    <strong>Capacidad:</strong> {{ equipo.Capacidad or 'N/A' }} T
+                                </div>
+                                <div class="detail-item">
+                                    <strong>Modelo:</strong> {{ equipo.Modelo or 'N/A' }}
+                                </div>
+                                <div class="detail-item">
+                                    <strong>Estado:</strong> 
+                                    <span class="badge bg-success">{{ equipo.Estado|title }}</span>
+                                </div>
+                            </div>
+                            <button class="btn btn-info" disabled>
+                                <i class="fas fa-cog me-2"></i>Ver Especificaciones
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Información adicional -->
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-info-circle me-2"></i>Información del Equipo
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <h6>Detalles Técnicos</h6>
+                                    <ul class="text-muted">
+                                        <li><strong>Placa:</strong> {{ equipo.Placa }}</li>
+                                        <li><strong>Tipo:</strong> {{ tipo_equipo }}</li>
+                                        <li><strong>Marca:</strong> {{ marca }}</li>
+                                        <li><strong>Capacidad:</strong> {{ equipo.Capacidad or 'N/A' }} T</li>
+                                        <li><strong>Modelo:</strong> {{ equipo.Modelo or 'N/A' }}</li>
+                                        <li><strong>Referencia:</strong> {{ equipo.Referencia or 'N/A' }}</li>
+                                        <li><strong>Color:</strong> {{ equipo.Color or 'N/A' }}</li>
+                                        <li><strong>Estado:</strong> {{ equipo.Estado|title }}</li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-4">
+                                    <h6>Actividad Reciente</h6>
+                                    <ul class="text-muted">
+                                        <li>{{ registros_hoy }} registros hoy</li>
+                                        <li>{{ registros_mes }} registros este mes</li>
+                                        <li>Estado: {{ estado_equipo }}</li>
+                                        <li>Última actualización: {{ equipo.FechaCreacion.strftime('%d/%m/%Y') if equipo.FechaCreacion else 'N/A' }}</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.report-card {
+    transition: all 0.3s ease;
+    border: none;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    height: 100%;
+}
+
+.report-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.report-icon {
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.report-card .btn {
+    border-radius: 8px;
+    font-weight: 500;
+    padding: 0.75rem 1.5rem;
+}
+
+.user-avatar {
+    width: 50px;
+    height: 50px;
+    background: #2e7d32;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    color: white;
+}
+
+.stats-container {
+    display: flex;
+    justify-content: space-around;
+    gap: 1rem;
+}
+
+.stat-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.stat-number {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #2e7d32;
+}
+
+.stat-label {
+    font-size: 0.8rem;
+    color: #666;
+    margin-top: 0.25rem;
+}
+
+.equipo-details {
+    text-align: left;
+}
+
+.detail-item {
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.detail-item .badge {
+    font-size: 0.8rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .stats-container {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .stat-item {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .stat-number {
+        font-size: 1.2rem;
+    }
+    
+    .stat-label {
+        font-size: 0.75rem;
+    }
+}
+</style>
+{% endblock %}

@@ -3,7 +3,10 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from models import db, User, Equipo, TipoEquipo, Marca, EstadoEquipo, Cargo, Cliente, RegistroHoras
 from forms import UserForm, UserEditForm, UserSearchForm, EquipoForm, EquipoSearchForm, TipoEquipoForm, MarcaForm, EstadoEquipoForm, CargoForm, ClienteForm, ClienteSearchForm, RegistroHorasForm, CambiarContrasenaForm
 import os
+import shutil
+import hashlib
 from datetime import timedelta, datetime, date
+import pytz
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
@@ -18,9 +21,44 @@ from dotenv import load_dotenv
 # Cargar variables de entorno desde .env
 load_dotenv()
 
+def get_colombia_datetime():
+    """Obtiene la fecha y hora actual de Colombia"""
+    colombia_tz = pytz.timezone('America/Bogota')
+    return datetime.now(colombia_tz)
+
+def get_file_version(file_path):
+    """Genera una versión única basada en el hash del archivo para evitar problemas de caché"""
+    try:
+        if os.path.exists(file_path):
+            with open(file_path, 'rb') as f:
+                file_hash = hashlib.md5(f.read()).hexdigest()
+                return file_hash[:8]  # Solo los primeros 8 caracteres
+    except:
+        pass
+    return str(int(datetime.now().timestamp()))  # Fallback a timestamp
+
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'tu-clave-secreta-muy-segura-aqui')
 app.permanent_session_lifetime = timedelta(hours=24)
+
+# Hacer las funciones disponibles en todos los templates
+@app.context_processor
+def inject_functions():
+    def format_colombia_datetime(dt):
+        """Convertir datetime a zona horaria de Colombia"""
+        if dt is None:
+            return None
+        if dt.tzinfo is None:
+            # Si no tiene zona horaria, asumir que es UTC
+            colombia_tz = pytz.timezone('America/Bogota')
+            dt = pytz.utc.localize(dt)
+        return dt.astimezone(pytz.timezone('America/Bogota'))
+    
+    return {
+        'get_file_version': get_file_version,
+        'get_colombia_datetime': get_colombia_datetime,
+        'format_colombia_datetime': format_colombia_datetime
+    }
 
 # Configuración de base de datos
 # Configuración PostgreSQL
@@ -59,16 +97,14 @@ def generar_qr_equipo(equipo_id, placa):
         if not os.path.exists(qr_dir):
             os.makedirs(qr_dir)
         
-        # URL del formulario de registro para este equipo
-        # Usar BASE_URL del entorno si está disponible, sino usar request.url_root
-        base_url = os.environ.get('BASE_URL')
-        if not base_url:
-            base_url = request.url_root.rstrip('/')
-        url_registro = f"{base_url}/registro/{equipo_id}"
+        # URL del panel del equipo (nueva funcionalidad)
+        # Usar BASE_URL del entorno si está disponible, sino usar URL fija
+        base_url = os.environ.get('BASE_URL', 'https://gestor.gruascranes.com')
+        url_panel = f"{base_url}/equipo/{equipo_id}"
         
         # DEBUG: Agregar prints para verificar la URL
         print(f"🔍 DEBUG QR: equipo_id={equipo_id}, base_url={base_url}")
-        print(f"🔍 DEBUG QR: url_registro={url_registro}")
+        print(f"🔍 DEBUG QR: url_panel={url_panel}")
         
         # Crear código QR
         qr = qrcode.QRCode(
@@ -77,7 +113,7 @@ def generar_qr_equipo(equipo_id, placa):
             box_size=10,
             border=4,
         )
-        qr.add_data(url_registro)
+        qr.add_data(url_panel)
         qr.make(fit=True)
         
         # Crear imagen del QR
@@ -90,10 +126,34 @@ def generar_qr_equipo(equipo_id, placa):
         
         print(f"✅ DEBUG QR: QR guardado en {filepath}")
         
+        # Sincronizar con directorio de producción si existe
+        sync_to_production(filepath, filename)
+        
         return f"qr_codes/{filename}"
     except Exception as e:
         print(f"Error generando QR para equipo {equipo_id}: {str(e)}")
         return None
+
+def sync_to_production(filepath, filename):
+    """Registra archivo QR para sincronización con producción"""
+    try:
+        # Construir la ruta completa del archivo
+        full_filepath = os.path.join(app.static_folder, filepath)
+        
+        if os.path.exists(full_filepath):
+            # Solo registrar que se necesita sincronización
+            # La sincronización real se hará por un proceso externo
+            print(f"📝 QR generado localmente: {filename} - Pendiente de sincronización")
+            
+            # Crear un archivo de marcador para indicar que hay QR pendientes de sincronizar
+            sync_marker = os.path.join(app.static_folder, 'qr_codes', '.sync_pending')
+            with open(sync_marker, 'a') as f:
+                f.write(f"{filename}\n")
+                
+        else:
+            print(f"⚠️  Archivo QR no encontrado: {full_filepath}")
+    except Exception as e:
+        print(f"⚠️  Error registrando QR para sincronización: {e}")
 
 def regenerar_todos_qr():
     """Regenera todos los códigos QR para equipos existentes"""
@@ -107,6 +167,20 @@ def regenerar_todos_qr():
             qr_generados += 1
         else:
             errores += 1
+    
+    # Ejecutar sincronización completa con el script Python
+    try:
+        import subprocess
+        result = subprocess.run(['python3', '/home/mauricio/apps/flask_app/sync_qr_auto.py'], 
+                              capture_output=True, text=True, timeout=60)
+        if result.returncode == 0:
+            print("✅ Sincronización completa ejecutada exitosamente")
+        else:
+            print(f"⚠️  Error en sincronización completa: {result.stderr}")
+    except subprocess.TimeoutExpired:
+        print("⏰ Timeout en sincronización completa")
+    except Exception as e:
+        print(f"⚠️  Error ejecutando sincronización completa: {e}")
     
     return qr_generados, errores
 
@@ -190,24 +264,12 @@ def crear_datos_maestros():
 with app.app_context():
     db.create_all()
     
-    # Crear usuario administrador por defecto si no existe
-    admin_user = User.query.filter_by(documento='admin').first()
-    if not admin_user:
-        admin = User(
-            tipo_documento='CC',
-            documento='admin',
-            nombre='Administrador del Sistema',
-            email='admin@gruascranes.com',
-            celular='3000000000',
-            contrasena='admin123',
-            perfil_usuario='administrador'
-        )
-        db.session.add(admin)
-        db.session.commit()
-        print("Usuario administrador creado: admin / admin123")
+    # Usuario administrador ya creado por script de inicialización
+    # No crear automáticamente para evitar conflictos
     
-    # Crear datos maestros por defecto si no existen
-    crear_datos_maestros()
+    # Datos maestros ya creados por script de inicialización
+    # No crear automáticamente para evitar conflictos
+    # crear_datos_maestros()
 
 @app.route('/')
 def index():
@@ -223,6 +285,7 @@ def login():
         username = request.form['username']
         password = request.form['password']
         remember = request.form.get('remember')
+        next_page = request.form.get('next')  # Obtener la página de destino
         
         # Buscar usuario por documento o email
         user = User.query.filter(
@@ -241,11 +304,24 @@ def login():
             if remember:
                 session.permanent = True
             flash(f'¡Bienvenido {user.nombre}! Has iniciado sesión correctamente.', 'success')
-            return redirect(url_for('dashboard'))
+            
+            # Redirigir a la página de destino si existe, sino al dashboard
+            if next_page:
+                # Si la URL es completa, extraer solo la ruta
+                if next_page.startswith('http'):
+                    from urllib.parse import urlparse
+                    parsed_url = urlparse(next_page)
+                    next_page = parsed_url.path
+                
+                return redirect(next_page)
+            else:
+                return redirect(url_for('dashboard'))
         else:
             flash('Usuario, contraseña incorrectos o cuenta inactiva. Inténtalo de nuevo.', 'error')
     
-    return render_template('login.html')
+    # Obtener la página de destino desde los parámetros GET
+    next_page = request.args.get('next')
+    return render_template('login.html', next_page=next_page)
 
 @app.route('/dashboard')
 def dashboard():
@@ -332,11 +408,14 @@ def dashboard():
     equipos_estado_detalle = []
     
     for equipo in equipos:
+        # Siempre obtener todos los operadores actuales (empleados trabajando)
+        operadores_actuales = equipo.obtener_operadores_actuales()
+        
+        # Determinar si está "trabajando" (solo si hay formularios de salida pendientes)
         esta_operando = equipo.esta_operando()
         
         if esta_operando:
-            # Equipo está trabajando - obtener todos los operadores actuales
-            operadores_actuales = equipo.obtener_operadores_actuales()
+            # Equipo está trabajando (hay formularios de salida pendientes)
             equipos_estado_detalle.append({
                 'equipo': equipo,
                 'estado': 'trabajando',
@@ -344,12 +423,13 @@ def dashboard():
                 'cantidad_operadores': len(operadores_actuales)
             })
         else:
-            # Equipo está quieto/disponible
+            # Equipo está quieto/disponible (no hay formularios de salida pendientes)
+            # Pero aún puede mostrar empleados trabajando
             equipos_estado_detalle.append({
                 'equipo': equipo,
                 'estado': 'quieto',
-                'operadores': [],
-                'cantidad_operadores': 0
+                'operadores': operadores_actuales,
+                'cantidad_operadores': len(operadores_actuales)
             })
     
     print(f"DEBUG DASHBOARD: Total equipos: {len(equipos)}")
@@ -381,6 +461,11 @@ def dashboard():
         'registros_recientes': registros_recientes
     }
     
+    # Debug logs
+    print(f"DEBUG DASHBOARD: user_profile en sesión: {session.get('user_profile')}")
+    print(f"DEBUG DASHBOARD: user_id en sesión: {session.get('user_id')}")
+    print(f"DEBUG DASHBOARD: user en sesión: {session.get('user')}")
+    
     return render_template('dashboard.html', 
                          username=session.get('user_name', session['user']),
                          user_profile=session.get('user_profile'),
@@ -405,12 +490,16 @@ def cambiar_contrasena():
     if form.validate_on_submit():
         user = User.query.get(session['user_id'])
         if user:
-            # Actualizar la contraseña
-            user.contrasena = generate_password_hash(form.nueva_contrasena.data)
-            db.session.commit()
-            
-            flash('Contraseña cambiada exitosamente', 'success')
-            return redirect(url_for('dashboard'))
+            # Verificar contraseña actual
+            if user.check_password(form.contrasena_actual.data):
+                # Actualizar la contraseña usando el método correcto
+                user.set_password(form.nueva_contrasena.data)
+                db.session.commit()
+                
+                flash('Contraseña cambiada exitosamente', 'success')
+                return redirect(url_for('dashboard'))
+            else:
+                flash('La contraseña actual es incorrecta', 'error')
         else:
             flash('Error: Usuario no encontrado', 'error')
     
@@ -497,7 +586,7 @@ def nuevo_usuario():
             if form.estado.data != 'activo':
                 user.estado = form.estado.data
                 if form.estado.data == 'inactivo':
-                    user.fecha_inactividad = datetime.utcnow()
+                    user.fecha_inactividad = get_colombia_datetime()
             
             db.session.add(user)
             db.session.commit()
@@ -536,7 +625,7 @@ def editar_usuario(id):
             
             # Manejar fecha de inactividad
             if form.estado.data == 'inactivo' and user.estado != 'inactivo':
-                user.fecha_inactividad = datetime.utcnow()
+                user.fecha_inactividad = get_colombia_datetime()
             elif form.estado.data == 'activo' and user.estado == 'inactivo':
                 user.fecha_inactividad = None
             
@@ -680,18 +769,25 @@ def nuevo_equipo():
             if form.Estado.data != 'activo':
                 equipo.Estado = form.Estado.data
                 if form.Estado.data == 'inactivo':
-                    equipo.FechaInactivacion = datetime.utcnow()
+                    equipo.FechaInactivacion = get_colombia_datetime()
                     equipo.UsuarioInactivacion = session.get('user_id')
             
             db.session.add(equipo)
             db.session.commit()
             
             # Generar código QR para el nuevo equipo
-            qr_path = generar_qr_equipo(equipo.IdEquipo, equipo.Placa)
-            if qr_path:
-                flash(f'Equipo {equipo.Placa} creado exitosamente. Código QR generado.', 'success')
-            else:
-                flash(f'Equipo {equipo.Placa} creado exitosamente. Error generando código QR.', 'warning')
+            try:
+                qr_path = generar_qr_equipo(equipo.IdEquipo, equipo.Placa)
+                if qr_path:
+                    # Sincronizar con producción
+                    filename = f"qr_equipo_{equipo.IdEquipo}_{equipo.Placa}.png"
+                    sync_to_production(qr_path, filename)
+                    flash(f'Equipo {equipo.Placa} creado exitosamente. Código QR generado y sincronizado.', 'success')
+                else:
+                    flash(f'Equipo {equipo.Placa} creado exitosamente. Error generando código QR.', 'warning')
+            except Exception as qr_error:
+                print(f"❌ Error generando QR para equipo {equipo.IdEquipo}: {str(qr_error)}")
+                flash(f'Equipo {equipo.Placa} creado exitosamente. Error generando código QR: {str(qr_error)}', 'warning')
             return redirect(url_for('equipos'))
             
         except Exception as e:
@@ -724,7 +820,7 @@ def editar_equipo(id):
             
             # Manejar fecha de inactivación
             if form.Estado.data == 'inactivo' and equipo.Estado != 'inactivo':
-                equipo.FechaInactivacion = datetime.utcnow()
+                equipo.FechaInactivacion = get_colombia_datetime()
                 equipo.UsuarioInactivacion = session.get('user_id')
             elif form.Estado.data == 'activo' and equipo.Estado == 'inactivo':
                 equipo.FechaInactivacion = None
@@ -1303,7 +1399,7 @@ def qr_equipos():
             'equipo': equipo,
             'tiene_qr': tiene_qr,
             'qr_url': f"qr_codes/{qr_filename}" if tiene_qr else None,
-            'url_registro': f"{os.environ.get('BASE_URL', request.url_root.rstrip('/'))}/registro/{equipo.IdEquipo}"
+            'url_registro': f"{os.environ.get('BASE_URL', request.url_root.rstrip('/'))}/equipo/{equipo.IdEquipo}"
         })
     
     return render_template('qr_equipos/index.html', equipos_con_qr=equipos_con_qr)
@@ -1340,7 +1436,7 @@ def ver_qr_equipos():
             'equipo': equipo,
             'tiene_qr': tiene_qr,
             'qr_url': f"qr_codes/{qr_filename}" if tiene_qr else None,
-            'url_registro': f"{os.environ.get('BASE_URL', request.url_root.rstrip('/'))}/registro/{equipo.IdEquipo}"
+            'url_registro': f"{os.environ.get('BASE_URL', request.url_root.rstrip('/'))}/equipo/{equipo.IdEquipo}"
         })
     
     return render_template('qr_equipos/ver_empleados.html', equipos_con_qr=equipos_con_qr)
@@ -1499,11 +1595,60 @@ def api_clientes():
 
 # ===== REGISTRO DE HORAS =====
 
+@app.route('/equipo/<int:equipo_id>')
+def panel_equipo(equipo_id):
+    """Panel principal del equipo con opciones disponibles"""
+    equipo = Equipo.query.get_or_404(equipo_id)
+    
+    # Verificar si el usuario está autenticado
+    if 'user' not in session:
+        # Redirigir al login con la página de destino
+        return redirect(url_for('login', next=request.url))
+    
+    # Obtener el usuario logueado
+    usuario = User.query.get(session['user_id'])
+    
+    # Obtener información adicional del equipo
+    tipo_equipo = equipo.tipo_equipo.descripcion if equipo.tipo_equipo else 'N/A'
+    marca = equipo.marca.DescripcionMarca if equipo.marca else 'N/A'
+    estado_equipo = equipo.estado_equipo.Descripcion if equipo.estado_equipo else 'N/A'
+    
+    # Obtener estadísticas del equipo
+    registros_hoy = RegistroHoras.query.filter(
+        RegistroHoras.IdEquipo == equipo_id,
+        db.func.date(RegistroHoras.FechaEmpleado) == db.func.current_date()
+    ).count()
+    
+    registros_mes = RegistroHoras.query.filter(
+        RegistroHoras.IdEquipo == equipo_id,
+        db.extract('month', RegistroHoras.FechaEmpleado) == db.extract('month', db.func.current_date()),
+        db.extract('year', RegistroHoras.FechaEmpleado) == db.extract('year', db.func.current_date())
+    ).count()
+    
+    # Verificar si hay entrada pendiente (buscar registros sin salida)
+    entrada_pendiente = None
+    # Nota: El modelo RegistroHoras no tiene campo FechaSalida, 
+    # por lo que no podemos verificar entradas pendientes de esta manera
+    
+    return render_template('equipos/panel.html', 
+                         equipo=equipo,
+                         usuario=usuario,
+                         tipo_equipo=tipo_equipo,
+                         marca=marca,
+                         estado_equipo=estado_equipo,
+                         registros_hoy=registros_hoy,
+                         registros_mes=registros_mes,
+                         entrada_pendiente=entrada_pendiente)
+
 @app.route('/registro/<int:equipo_id>')
-@login_required
 def registro_horas(equipo_id):
     """Página de registro de horas para una grúa específica"""
     equipo = Equipo.query.get_or_404(equipo_id)
+    
+    # Verificar si el usuario está autenticado
+    if 'user' not in session:
+        # Redirigir al login con la página de destino
+        return redirect(url_for('login', next=request.url))
     
     # Obtener el usuario logueado
     empleado_id = session['user_id']
@@ -1549,11 +1694,19 @@ def registro_horas(equipo_id):
     form.IdEmpleado.data = str(empleado_id)
     form.TipoRegistro.data = 'salida' if entrada_pendiente else 'entrada'
     
+    # Establecer fecha y hora actuales de Colombia como predeterminadas
+    now_colombia = get_colombia_datetime()
+    
     # Establecer fecha y hora actuales como predeterminadas
-    from datetime import datetime, date, time
-    now = datetime.now()
-    form.FechaEmpleado.data = now.date()
-    form.HoraEmpleado.data = now.time()
+    form.FechaEmpleado.data = now_colombia.date()
+    form.HoraEmpleado.data = now_colombia.time()
+    
+    # Forzar el renderizado del campo de tiempo con el valor correcto
+    form.HoraEmpleado.render_kw = {
+        'class': 'form-control',
+        'type': 'time',
+        'value': now_colombia.strftime('%H:%M')
+    }
     
     # Si es salida, cargar datos de la entrada
     cargo_nombre = None
@@ -1603,13 +1756,29 @@ def procesar_registro_horas(equipo_id):
     
     # Validaciones adicionales de fecha y hora
     if form.FechaEmpleado.data and form.HoraEmpleado.data:
-        fecha_hora_ingresada = datetime.combine(form.FechaEmpleado.data, form.HoraEmpleado.data)
-        fecha_actual = datetime.now()
-        
-        # Validar que no sea una fecha futura
-        if fecha_hora_ingresada > fecha_actual:
-            flash('❌ Error: La fecha y hora no pueden ser futuras. Por favor, ingresa una fecha y hora válida.', 'error')
-            # Mantener datos del formulario y mostrar errores
+        try:
+            fecha_hora_ingresada = datetime.combine(form.FechaEmpleado.data, form.HoraEmpleado.data)
+            fecha_actual = get_colombia_datetime()
+            
+            # Convertir fecha_hora_ingresada a timezone-aware para comparar
+            colombia_tz = pytz.timezone('America/Bogota')
+            fecha_hora_ingresada = colombia_tz.localize(fecha_hora_ingresada)
+            
+            # Validar que no sea una fecha futura
+            if fecha_hora_ingresada > fecha_actual:
+                flash('❌ Error: La fecha y hora no pueden ser futuras. Por favor, ingresa una fecha y hora válida.', 'error')
+                # Mantener datos del formulario y mostrar errores
+                return render_template('registro_horas/formulario.html', 
+                                     equipo=equipo, 
+                                     empleado=empleado, 
+                                     form=form, 
+                                     entrada_pendiente=None,
+                                     cargo_nombre=None,
+                                     cliente_nombre=None,
+                                     valores_entrada=None)
+        except Exception as e:
+            print(f"ERROR en validación de fecha: {e}")
+            flash('❌ Error en validación de fecha y hora. Intenta nuevamente.', 'error')
             return render_template('registro_horas/formulario.html', 
                                  equipo=equipo, 
                                  empleado=empleado, 
@@ -1630,6 +1799,8 @@ def procesar_registro_horas(equipo_id):
             
             if entrada:
                 fecha_hora_entrada = datetime.combine(entrada.FechaEmpleado, entrada.HoraEmpleado)
+                # Convertir fecha_hora_entrada a timezone-aware para comparar
+                fecha_hora_entrada = colombia_tz.localize(fecha_hora_entrada)
                 
                 # Validar que la salida no sea anterior a la entrada
                 if fecha_hora_ingresada < fecha_hora_entrada:
@@ -1835,14 +2006,85 @@ def reportes():
     """Página principal de reportes"""
     return render_template('reportes/index.html')
 
+@app.route('/revision-formularios')
+@login_required
+def revision_formularios():
+    """Revisión de formularios con filtros"""
+    # Obtener parámetros de filtro
+    empleado_id = request.args.get('empleado_id', type=int)
+    fecha_desde = request.args.get('fecha_desde')
+    fecha_hasta = request.args.get('fecha_hasta')
+    tipo_registro = request.args.get('tipo_registro', '')
+    equipo_id = request.args.get('equipo_id', type=int)
+    
+    # Construir consulta base con JOINs explícitos
+    query = RegistroHoras.query.join(User, RegistroHoras.IdEmpleado == User.id).join(Equipo, RegistroHoras.IdEquipo == Equipo.IdEquipo).join(Cargo, RegistroHoras.IdCargo == Cargo.IdCargo)
+    
+    # Aplicar filtros
+    if empleado_id:
+        query = query.filter(RegistroHoras.IdEmpleado == empleado_id)
+    
+    if fecha_desde:
+        try:
+            fecha_desde_obj = datetime.strptime(fecha_desde, '%Y-%m-%d').date()
+            query = query.filter(RegistroHoras.FechaEmpleado >= fecha_desde_obj)
+        except ValueError:
+            pass
+    
+    if fecha_hasta:
+        try:
+            fecha_hasta_obj = datetime.strptime(fecha_hasta, '%Y-%m-%d').date()
+            query = query.filter(RegistroHoras.FechaEmpleado <= fecha_hasta_obj)
+        except ValueError:
+            pass
+    
+    if tipo_registro:
+        query = query.filter(RegistroHoras.TipoRegistro == tipo_registro)
+    
+    if equipo_id:
+        query = query.filter(RegistroHoras.IdEquipo == equipo_id)
+    
+    # Ordenar por fecha de creación (más recientes primero)
+    query = query.order_by(RegistroHoras.FechaCreacion.desc())
+    
+    # Paginación
+    page = request.args.get('page', 1, type=int)
+    per_page = 20
+    registros = query.paginate(
+        page=page, per_page=per_page, error_out=False
+    )
+    
+    # Obtener datos para filtros
+    empleados = User.query.filter_by(estado='activo').order_by(User.nombre).all()
+    equipos = Equipo.query.filter_by(Estado='activo').order_by(Equipo.Placa).all()
+    
+    return render_template('reportes/revision_formularios.html',
+                         registros=registros,
+                         empleados=empleados,
+                         equipos=equipos,
+                         empleado_id=empleado_id,
+                         fecha_desde=fecha_desde,
+                         fecha_hasta=fecha_hasta,
+                         tipo_registro=tipo_registro,
+                         equipo_id=equipo_id)
+
+@app.route('/revision-formularios/<int:registro_id>')
+@login_required
+def detalle_formulario(registro_id):
+    """Detalle de un formulario específico"""
+    registro = RegistroHoras.query.get_or_404(registro_id)
+    
+    return render_template('reportes/detalle_formulario.html', registro=registro)
+
 @app.route('/reportes/horas-empleado')
 @require_admin
 def reporte_horas_empleado():
     """Reporte de horas trabajadas por empleado con calendario"""
     # Obtener parámetros de filtro
     empleado_id = request.args.get('empleado_id', type=int)
-    mes = request.args.get('mes', datetime.now().month, type=int)
-    año = request.args.get('año', datetime.now().year, type=int)
+    now_colombia = get_colombia_datetime()
+    mes = request.args.get('mes', now_colombia.month, type=int)
+    año = request.args.get('año', now_colombia.year, type=int)
     
     # Obtener lista de empleados activos
     empleados = User.query.filter_by(estado='activo', perfil_usuario='empleado').all()
@@ -1934,8 +2176,9 @@ def exportar_horas_empleado_excel():
     """Exportar reporte de horas por empleado a Excel con detalles de cargos"""
     # Obtener parámetros de filtro
     empleado_id = request.args.get('empleado_id', type=int)
-    mes = request.args.get('mes', datetime.now().month, type=int)
-    año = request.args.get('año', datetime.now().year, type=int)
+    now_colombia = get_colombia_datetime()
+    mes = request.args.get('mes', now_colombia.month, type=int)
+    año = request.args.get('año', now_colombia.year, type=int)
     
     if not empleado_id:
         flash('Debe seleccionar un empleado para exportar el reporte', 'error')
@@ -2105,8 +2348,9 @@ def exportar_horas_empleado_excel():
 def reporte_horas_equipo():
     """Reporte de horas trabajadas por equipo con horómetro"""
     equipo_id = request.args.get('equipo_id', type=int)
-    mes = request.args.get('mes', datetime.now().month, type=int)
-    año = request.args.get('año', datetime.now().year, type=int)
+    now_colombia = get_colombia_datetime()
+    mes = request.args.get('mes', now_colombia.month, type=int)
+    año = request.args.get('año', now_colombia.year, type=int)
     
     equipos = Equipo.query.filter_by(Estado='activo').all()
     
@@ -2230,8 +2474,9 @@ def exportar_horas_equipo_excel():
     """Exportar reporte de horas por equipo a Excel con detalles de empleados y cargos"""
     # Obtener parámetros de filtro
     equipo_id = request.args.get('equipo_id', type=int)
-    mes = request.args.get('mes', datetime.now().month, type=int)
-    año = request.args.get('año', datetime.now().year, type=int)
+    now_colombia = get_colombia_datetime()
+    mes = request.args.get('mes', now_colombia.month, type=int)
+    año = request.args.get('año', now_colombia.year, type=int)
     
     if not equipo_id:
         flash('Debe seleccionar un equipo para exportar el reporte', 'error')

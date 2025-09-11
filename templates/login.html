@@ -21,6 +21,9 @@
                     </div>
                     
                     <form method="POST" class="login-form">
+                        {% if next_page %}
+                        <input type="hidden" name="next" value="{{ next_page }}">
+                        {% endif %}
                         <div class="mb-3">
                             <label for="username" class="form-label">
                                 <i class="fas fa-user me-2"></i>Usuario

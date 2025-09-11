@@ -1,0 +1,241 @@
+{% extends "base.html" %}
+
+{% block title %}Revisión de Formularios{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-clipboard-check me-2"></i>Revisión de Formularios</h2>
+                <a href="{{ url_for('reportes') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-1"></i>Volver a Reportes
+                </a>
+            </div>
+
+            <!-- Filtros -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-filter me-2"></i>Filtros de Búsqueda</h5>
+                </div>
+                <div class="card-body">
+                    <form method="GET" class="row g-3">
+                        <div class="col-md-3">
+                            <label for="empleado_id" class="form-label">Empleado</label>
+                            <select class="form-select" id="empleado_id" name="empleado_id">
+                                <option value="">Todos los empleados</option>
+                                {% for empleado in empleados %}
+                                <option value="{{ empleado.id }}" {% if empleado_id == empleado.id %}selected{% endif %}>
+                                    {{ empleado.nombre }} ({{ empleado.documento }})
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-3">
+                            <label for="equipo_id" class="form-label">Equipo</label>
+                            <select class="form-select" id="equipo_id" name="equipo_id">
+                                <option value="">Todos los equipos</option>
+                                {% for equipo in equipos %}
+                                <option value="{{ equipo.IdEquipo }}" {% if equipo_id == equipo.IdEquipo %}selected{% endif %}>
+                                    {{ equipo.Placa }} - {{ equipo.Referencia or equipo.Modelo or 'Sin referencia' }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-2">
+                            <label for="tipo_registro" class="form-label">Tipo</label>
+                            <select class="form-select" id="tipo_registro" name="tipo_registro">
+                                <option value="">Todos</option>
+                                <option value="entrada" {% if tipo_registro == 'entrada' %}selected{% endif %}>Entrada</option>
+                                <option value="salida" {% if tipo_registro == 'salida' %}selected{% endif %}>Salida</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-2">
+                            <label for="fecha_desde" class="form-label">Fecha Desde</label>
+                            <input type="date" class="form-control" id="fecha_desde" name="fecha_desde" 
+                                   value="{{ fecha_desde }}">
+                        </div>
+                        
+                        <div class="col-md-2">
+                            <label for="fecha_hasta" class="form-label">Fecha Hasta</label>
+                            <input type="date" class="form-control" id="fecha_hasta" name="fecha_hasta" 
+                                   value="{{ fecha_hasta }}">
+                        </div>
+                        
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-search me-1"></i>Filtrar
+                            </button>
+                            <a href="{{ url_for('revision_formularios') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-1"></i>Limpiar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Lista de Formularios -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-list me-2"></i>Formularios Registrados
+                        <span class="badge bg-primary ms-2">{{ registros.total }} registros</span>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if registros.items %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Empleado</th>
+                                        <th>Equipo</th>
+                                        <th>Tipo</th>
+                                        <th>Fecha Empleado</th>
+                                        <th>Hora Empleado</th>
+                                        <th>Fecha Sistema</th>
+                                        <th>Estado</th>
+                                        <th>Imágenes</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for registro in registros.items %}
+                                    <tr>
+                                        <td>
+                                            <span class="badge bg-secondary">#{{ registro.IdRegistro }}</span>
+                                        </td>
+                                        <td>
+                                            <div>
+                                                <strong>{{ registro.empleado.nombre }}</strong><br>
+                                                <small class="text-muted">{{ registro.empleado.documento }}</small><br>
+                                                <span class="badge bg-info">{{ registro.cargo.NombreCargo }}</span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div>
+                                                <strong>{{ registro.equipo.Placa }}</strong><br>
+                                                <small class="text-muted">{{ registro.equipo.Referencia or registro.equipo.Modelo or 'Sin referencia' }}</small>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            {% if registro.TipoRegistro == 'entrada' %}
+                                                <span class="badge bg-success">
+                                                    <i class="fas fa-sign-in-alt me-1"></i>Entrada
+                                                </span>
+                                            {% else %}
+                                                <span class="badge bg-warning">
+                                                    <i class="fas fa-sign-out-alt me-1"></i>Salida
+                                                </span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <strong>{{ registro.FechaEmpleado.strftime('%d/%m/%Y') }}</strong>
+                                        </td>
+                                        <td>
+                                            <strong>{{ registro.HoraEmpleado.strftime('%H:%M') }}</strong>
+                                        </td>
+                                        <td>
+                                            <div>
+                                                <strong>{{ format_colombia_datetime(registro.FechaCreacion).strftime('%d/%m/%Y') }}</strong><br>
+                                                <small class="text-muted">{{ format_colombia_datetime(registro.FechaCreacion).strftime('%H:%M:%S') }}</small>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-{{ 'success' if registro.estado_equipo.NombreEstado == 'Operativo' else 'danger' }}">
+                                                {{ registro.estado_equipo.NombreEstado }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div class="d-flex gap-1">
+                                                {% if registro.FotoKilometraje %}
+                                                    <span class="badge bg-primary" title="Foto Kilometraje">
+                                                        <i class="fas fa-tachometer-alt"></i>
+                                                    </span>
+                                                {% endif %}
+                                                {% if registro.FotoHorometro %}
+                                                    <span class="badge bg-info" title="Foto Horómetro">
+                                                        <i class="fas fa-clock"></i>
+                                                    </span>
+                                                {% endif %}
+                                                {% if registro.FotoGrua %}
+                                                    <span class="badge bg-success" title="Foto Grúa">
+                                                        <i class="fas fa-camera"></i>
+                                                    </span>
+                                                {% endif %}
+                                                {% if not registro.FotoKilometraje and not registro.FotoHorometro and not registro.FotoGrua %}
+                                                    <span class="text-muted">Sin imágenes</span>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <a href="{{ url_for('detalle_formulario', registro_id=registro.IdRegistro) }}" 
+                                               class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-eye me-1"></i>Ver Detalle
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Paginación -->
+                        {% if registros.pages > 1 %}
+                        <nav aria-label="Paginación de formularios">
+                            <ul class="pagination justify-content-center">
+                                {% if registros.has_prev %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('revision_formularios', page=registros.prev_num, empleado_id=empleado_id, fecha_desde=fecha_desde, fecha_hasta=fecha_hasta, tipo_registro=tipo_registro, equipo_id=equipo_id) }}">
+                                            <i class="fas fa-chevron-left"></i>
+                                        </a>
+                                    </li>
+                                {% endif %}
+                                
+                                {% for page_num in registros.iter_pages() %}
+                                    {% if page_num %}
+                                        {% if page_num != registros.page %}
+                                            <li class="page-item">
+                                                <a class="page-link" href="{{ url_for('revision_formularios', page=page_num, empleado_id=empleado_id, fecha_desde=fecha_desde, fecha_hasta=fecha_hasta, tipo_registro=tipo_registro, equipo_id=equipo_id) }}">
+                                                    {{ page_num }}
+                                                </a>
+                                            </li>
+                                        {% else %}
+                                            <li class="page-item active">
+                                                <span class="page-link">{{ page_num }}</span>
+                                            </li>
+                                        {% endif %}
+                                    {% else %}
+                                        <li class="page-item disabled">
+                                            <span class="page-link">...</span>
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+                                
+                                {% if registros.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('revision_formularios', page=registros.next_num, empleado_id=empleado_id, fecha_desde=fecha_desde, fecha_hasta=fecha_hasta, tipo_registro=tipo_registro, equipo_id=equipo_id) }}">
+                                            <i class="fas fa-chevron-right"></i>
+                                        </a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                        {% endif %}
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-clipboard-list fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No se encontraron formularios</h5>
+                            <p class="text-muted">No hay registros que coincidan con los filtros seleccionados.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

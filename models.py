@@ -1,6 +1,12 @@
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
+import pytz
 from werkzeug.security import generate_password_hash, check_password_hash
+
+def get_colombia_datetime():
+    """Obtiene la fecha y hora actual de Colombia"""
+    colombia_tz = pytz.timezone('America/Bogota')
+    return datetime.now(colombia_tz)
 
 db = SQLAlchemy()
 
@@ -19,7 +25,7 @@ class User(db.Model):
     contrasena_hash = db.Column(db.String(255), nullable=False)
     
     # Información del sistema
-    fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)
+    fecha_creacion = db.Column(db.DateTime, default=get_colombia_datetime)
     ultimo_login = db.Column(db.DateTime)
     estado = db.Column(db.String(20), default='activo')  # activo, inactivo, suspendido
     perfil_usuario = db.Column(db.String(20), nullable=False)  # administrador, empleado
@@ -46,13 +52,13 @@ class User(db.Model):
     
     def update_last_login(self):
         """Actualiza el último login"""
-        self.ultimo_login = datetime.utcnow()
+        self.ultimo_login = get_colombia_datetime()
         db.session.commit()
     
     def deactivate_user(self):
         """Desactiva el usuario"""
         self.estado = 'inactivo'
-        self.fecha_inactividad = datetime.utcnow()
+        self.fecha_inactividad = get_colombia_datetime()
         db.session.commit()
     
     def activate_user(self):
@@ -173,7 +179,7 @@ class Cliente(db.Model):
     IdCliente = db.Column(db.Integer, primary_key=True)
     NombreCliente = db.Column(db.String(200), nullable=False)
     Nit = db.Column(db.String(20), unique=True, nullable=False)
-    FechaCreacion = db.Column(db.DateTime, default=datetime.utcnow)
+    FechaCreacion = db.Column(db.DateTime, default=get_colombia_datetime)
     UsuarioCrea = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     Estado = db.Column(db.String(20), default='activo')
     UsuarioInactiva = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
@@ -199,7 +205,7 @@ class Cliente(db.Model):
         """Inactivar cliente"""
         self.Estado = 'inactivo'
         self.UsuarioInactiva = usuario_id
-        self.FechaInactiva = datetime.utcnow()
+        self.FechaInactiva = get_colombia_datetime()
     
     def activar(self):
         """Activar cliente"""
@@ -222,7 +228,7 @@ class RegistroHoras(db.Model):
     IdEstadoEquipo = db.Column(db.Integer, db.ForeignKey('estado_equipos.IdEstadoEquipo'), nullable=False)
     
     # Fechas y horas
-    FechaAutomatica = db.Column(db.DateTime, default=datetime.utcnow)
+    FechaAutomatica = db.Column(db.DateTime, default=get_colombia_datetime)
     FechaEmpleado = db.Column(db.Date, nullable=False)
     HoraEmpleado = db.Column(db.Time, nullable=False)
     
@@ -243,7 +249,7 @@ class RegistroHoras(db.Model):
     
     # Control de entrada/salida
     TipoRegistro = db.Column(db.String(20), nullable=False)  # 'entrada' o 'salida'
-    FechaCreacion = db.Column(db.DateTime, default=datetime.utcnow)
+    FechaCreacion = db.Column(db.DateTime, default=get_colombia_datetime)
     
     # Relaciones
     equipo = db.relationship('Equipo', backref='registros_horas')
@@ -302,7 +308,7 @@ class Equipo(db.Model):
     IdEstadoEquipo = db.Column(db.Integer, db.ForeignKey('estado_equipos.IdEstadoEquipo'), nullable=False)
     
     # Información de auditoría
-    FechaCreacion = db.Column(db.DateTime, default=datetime.utcnow)
+    FechaCreacion = db.Column(db.DateTime, default=get_colombia_datetime)
     UsuarioCreacion = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     FechaInactivacion = db.Column(db.DateTime, nullable=True)
     UsuarioInactivacion = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
@@ -329,7 +335,7 @@ class Equipo(db.Model):
     def inactivar_equipo(self, usuario_id):
         """Inactiva el equipo"""
         self.Estado = 'inactivo'
-        self.FechaInactivacion = datetime.utcnow()
+        self.FechaInactivacion = get_colombia_datetime()
         self.UsuarioInactivacion = usuario_id
         db.session.commit()
     
@@ -364,7 +370,7 @@ class Equipo(db.Model):
         }
     
     def esta_operando(self):
-        """Verifica si el equipo está siendo operado actualmente (al menos un empleado trabajando)"""
+        """Verifica si el equipo está siendo operado actualmente (solo si hay formulario de salida pendiente)"""
         # Buscar TODAS las entradas para este equipo
         entradas = RegistroHoras.query.filter_by(
             IdEquipo=self.IdEquipo,
@@ -384,16 +390,15 @@ class Equipo(db.Model):
             if not salida_correspondiente:
                 entradas_sin_salida.append(entrada)
         
+        # NUEVO CRITERIO: Solo está operando si hay al menos una entrada sin salida
+        # (esto significa que hay un formulario de salida pendiente)
         esta_operando = len(entradas_sin_salida) > 0
         print(f"DEBUG MODELO: Equipo {self.Placa} - Entradas sin salida: {len(entradas_sin_salida)}, Operando: {esta_operando}")
         
         return esta_operando
     
     def obtener_operadores_actuales(self):
-        """Obtiene todos los operadores actuales del equipo si está siendo operado"""
-        if not self.esta_operando():
-            return []
-            
+        """Obtiene todos los operadores actuales del equipo (siempre muestra todos los empleados trabajando)"""
         # Buscar todas las entradas sin salida para este equipo
         entradas = RegistroHoras.query.filter_by(
             IdEquipo=self.IdEquipo,

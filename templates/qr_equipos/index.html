@@ -62,7 +62,8 @@
                             <div class="qr-container mb-3">
                                 <img src="{{ url_for('static', filename=item.qr_url) }}" 
                                      alt="QR Code para {{ item.equipo.Placa }}" 
-                                     class="qr-image">
+                                     class="qr-image"
+                                     id="qr-{{ item.equipo.IdEquipo }}">
                             </div>
                             <div class="qr-info">
                                 <small class="text-muted">
@@ -77,19 +78,17 @@
                             </div>
                             {% endif %}
 
-                            <!-- URL del formulario -->
+                            <!-- URL del panel -->
                             <div class="url-info mb-3">
-                                <small class="text-muted">URL del formulario:</small>
-                                <div class="input-group input-group-sm">
-                                    <input type="text" 
-                                           class="form-control form-control-sm" 
-                                           value="{{ item.url_registro }}" 
-                                           readonly>
-                                    <button class="btn btn-outline-secondary btn-sm" 
-                                            type="button" 
-                                            onclick="copiarUrl('{{ item.url_registro }}')">
-                                        <i class="fas fa-copy"></i>
-                                    </button>
+                                <small class="text-muted">
+                                    <i class="fas fa-link me-1"></i>Panel del Equipo:
+                                </small>
+                                <div class="url-display">
+                                    <div class="url-text">
+                                        <i class="fas fa-external-link-alt me-2"></i>
+                                        <span class="url-domain">gestor.gruascranes.com</span>
+                                        <span class="url-path">/equipo/{{ item.equipo.IdEquipo }}</span>
+                                    </div>
                                 </div>
                             </div>
 
@@ -104,9 +103,9 @@
                                     <i class="fas fa-print me-1"></i>Imprimir QR
                                 </button>
                                 {% endif %}
-                                <a href="{{ url_for('registro_horas', equipo_id=item.equipo.IdEquipo) }}" 
+                                <a href="{{ url_for('panel_equipo', equipo_id=item.equipo.IdEquipo) }}" 
                                    class="btn btn-outline-primary btn-sm">
-                                    <i class="fas fa-external-link-alt me-1"></i>Ver Formulario
+                                    <i class="fas fa-external-link-alt me-1"></i>Ver Panel
                                 </a>
                             </div>
                         </div>
@@ -181,6 +180,51 @@
     margin-top: 0.5rem;
 }
 
+.url-display {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 0.75rem;
+    margin-top: 0.5rem;
+}
+
+.url-text {
+    display: flex;
+    align-items: center;
+    flex-grow: 1;
+    font-family: 'Courier New', monospace;
+    font-size: 0.85rem;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.url-domain {
+    color: #2e7d32;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 200px;
+}
+
+.url-path {
+    color: #007bff;
+    font-weight: 500;
+    margin-left: 0.25rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 150px;
+}
+
+.url-display .btn {
+    margin-left: 0.5rem;
+    border-radius: 6px;
+}
+
 .qr-actions {
     display: flex;
     justify-content: center;
@@ -208,25 +252,17 @@
 
 {% block extra_js %}
 <script>
-function copiarUrl(url) {
-    navigator.clipboard.writeText(url).then(function() {
-        // Mostrar notificación de éxito
-        const btn = event.target.closest('button');
-        const originalHTML = btn.innerHTML;
-        btn.innerHTML = '<i class="fas fa-check"></i>';
-        btn.classList.remove('btn-outline-secondary');
-        btn.classList.add('btn-success');
-        
-        setTimeout(function() {
-            btn.innerHTML = originalHTML;
-            btn.classList.remove('btn-success');
-            btn.classList.add('btn-outline-secondary');
-        }, 2000);
-    }).catch(function(err) {
-        console.error('Error copiando URL: ', err);
-        alert('Error al copiar la URL');
+// Forzar recarga de imágenes QR para evitar caché
+document.addEventListener('DOMContentLoaded', function() {
+    const qrImages = document.querySelectorAll('.qr-image');
+    const timestamp = Date.now();
+    qrImages.forEach(function(img) {
+        if (img.src.indexOf('?v=') === -1) {
+            img.src = img.src + '?v=' + timestamp;
+        }
     });
-}
+});
+
 
 function imprimirQR(button) {
     // Obtener datos del botón
