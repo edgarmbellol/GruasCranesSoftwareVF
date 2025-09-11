@@ -682,11 +682,12 @@ class RegistroHorasForm(FlaskForm):
     
     def validate_IdCliente(self, field):
         """Validar cliente según estado del equipo"""
-        if self.IdEstadoEquipo.data:
+        # Solo validar si es un registro de entrada (no salida)
+        if self.TipoRegistro.data == 'entrada' and self.IdEstadoEquipo.data:
             estado = EstadoEquipo.query.get(self.IdEstadoEquipo.data)
             if estado and 'operativo' in estado.Descripcion.lower():
                 # Solo validar si el campo no es de solo lectura
-                if not hasattr(self, 'IdCliente') or not (self.IdCliente.render_kw and self.IdCliente.render_kw.get('readonly')):
+                if not (self.IdCliente.render_kw and self.IdCliente.render_kw.get('readonly')):
                     if not field.data or field.data is None:
                         raise ValidationError('El cliente es requerido cuando el equipo está operativo')
 
