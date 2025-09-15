@@ -1716,7 +1716,7 @@ def registro_horas(equipo_id):
         form.IdCargo.data = entrada_pendiente.IdCargo
         form.IdCargo.render_kw = {'readonly': True, 'style': 'background-color: #f8f9fa;'}
         # Pre-seleccionar el mismo cliente que se usó en la entrada
-        form.IdCliente.data = entrada_pendiente.IdCliente
+        form.IdCliente.data = entrada_pendiente.IdCliente if entrada_pendiente.IdCliente else None
         form.IdCliente.render_kw = {'readonly': True, 'style': 'background-color: #f8f9fa;'}
         # El estado del equipo puede cambiar (se puede dañar), así que es editable
         form.IdEstadoEquipo.data = entrada_pendiente.IdEstadoEquipo

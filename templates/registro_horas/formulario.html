@@ -704,7 +704,9 @@
                                     <strong>{{ cliente_nombre or 'N/A' }}</strong>
                                 </div>
                                 <!-- Campo oculto para enviar el valor -->
+                                {% if form.IdCliente.data %}
                                 <input type="hidden" name="IdCliente" value="{{ form.IdCliente.data }}">
+                                {% endif %}
                             {% else %}
                                 {{ form.IdCliente(class="form-select" + (" is-invalid" if form.IdCliente.errors else "")) }}
                                 {% if form.IdCliente.errors %}

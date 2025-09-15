@@ -638,9 +638,16 @@ class RegistroHorasForm(FlaskForm):
         estados = EstadoEquipo.query.filter_by(Estado='activo').order_by(EstadoEquipo.Descripcion).all()
         self.IdEstadoEquipo.choices = [(estado.IdEstadoEquipo, estado.Descripcion) for estado in estados]
         
-        # Clientes
-        clientes = Cliente.query.filter_by(Estado='activo').order_by(Cliente.NombreCliente).all()
-        self.IdCliente.choices = [(0, 'Seleccionar cliente...')] + [(cliente.IdCliente, cliente.NombreCliente) for cliente in clientes]
+        # Clientes - Incluir todos los clientes (activos e inactivos) para formularios de salida
+        clientes_activos = Cliente.query.filter_by(Estado='activo').order_by(Cliente.NombreCliente).all()
+        clientes_inactivos = Cliente.query.filter_by(Estado='inactivo').order_by(Cliente.NombreCliente).all()
+        
+        # Crear opciones con todos los clientes
+        opciones_clientes = [(0, 'Seleccionar cliente...')]
+        opciones_clientes.extend([(cliente.IdCliente, cliente.NombreCliente) for cliente in clientes_activos])
+        opciones_clientes.extend([(cliente.IdCliente, f"{cliente.NombreCliente} (Inactivo)") for cliente in clientes_inactivos])
+        
+        self.IdCliente.choices = opciones_clientes
     
     def validate_Kilometraje(self, field):
         """Validar kilometraje para operadores"""
@@ -682,14 +689,16 @@ class RegistroHorasForm(FlaskForm):
     
     def validate_IdCliente(self, field):
         """Validar cliente según estado del equipo"""
-        # Solo validar si es un registro de entrada (no salida)
+        # Si el campo es de solo lectura, no validar (es un formulario de salida)
+        if self.IdCliente.render_kw and self.IdCliente.render_kw.get('readonly'):
+            return
+        
+        # Solo validar si es un registro de entrada
         if self.TipoRegistro.data == 'entrada' and self.IdEstadoEquipo.data:
             estado = EstadoEquipo.query.get(self.IdEstadoEquipo.data)
             if estado and 'operativo' in estado.Descripcion.lower():
-                # Solo validar si el campo no es de solo lectura
-                if not (self.IdCliente.render_kw and self.IdCliente.render_kw.get('readonly')):
-                    if not field.data or field.data is None:
-                        raise ValidationError('El cliente es requerido cuando el equipo está operativo')
+                if not field.data or field.data is None:
+                    raise ValidationError('El cliente es requerido cuando el equipo está operativo')
 
 class CambiarContrasenaForm(FlaskForm):
     """Formulario para cambiar contraseña"""
