@@ -2721,5 +2721,20 @@ def reporte_registros_dinamicos():
                          entradas=entradas,
                          salidas=salidas)
 
+@app.route('/backups/<filename>')
+def download_backup(filename):
+    """Servir archivos de backup para descarga"""
+    import os
+    from flask import send_from_directory
+    
+    # Verificar que el archivo existe en el directorio de backups
+    backup_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'backups')
+    file_path = os.path.join(backup_dir, filename)
+    
+    if os.path.exists(file_path) and os.path.isfile(file_path):
+        return send_from_directory(backup_dir, filename, as_attachment=True)
+    else:
+        return "Archivo no encontrado", 404
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=app.config['DEBUG'])

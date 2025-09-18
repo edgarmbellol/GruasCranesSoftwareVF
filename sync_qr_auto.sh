@@ -8,3 +8,5 @@ sudo python3 /home/mauricio/apps/flask_app/sync_qr_root.py
 
 echo "✅ Sincronización automática completada"
 
+
+

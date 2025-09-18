@@ -159,15 +159,15 @@ body {
 
 /* Contenido principal */
 .main-content {
-    margin-top: 25px; /* Altura del navbar fijo */
-    min-height: calc(100vh - 76px);
+    margin-top: 50px; /* Altura del navbar fijo + padding adicional */
+    min-height: calc(100vh - 50px);
     position: relative;
     z-index: 1;
 }
 
 /* ===== LOGIN LIMPIO Y ELEGANTE ===== */
 .login-container {
-    min-height: calc(100vh - 76px);
+    min-height: calc(100vh - 50px);
     display: flex;
     align-items: center;
     background: var(--gradient-bg);
@@ -1287,13 +1287,13 @@ body {
 
 /* ===== DASHBOARD STYLES ===== */
 .dashboard-container {
-    min-height: calc(100vh - 76px);
+    min-height: calc(100vh - 50px);
 }
 
 .main-content {
     padding: 2rem 4rem;
     background: var(--light-color);
-    min-height: calc(100vh - 76px);
+    min-height: calc(100vh - 50px);
 }
 
 .content-header {
@@ -1693,6 +1693,7 @@ body {
     
     .main-content {
         padding: 1rem 1rem;
+        margin-top: 120px; /* Ajuste para móviles */
     }
     
     /* Mejoras específicas para dashboard en móvil */
@@ -2915,7 +2916,7 @@ body {
 
 /* Dashboard del Empleado - Solo Logo Didáctico */
 .employee-dashboard {
-    min-height: calc(100vh - 76px); /* Altura total menos navbar */
+    min-height: calc(100vh - 50px); /* Altura total menos navbar */
     display: flex;
     align-items: flex-start;
     justify-content: center;

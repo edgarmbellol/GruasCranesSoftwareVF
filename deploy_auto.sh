@@ -15,11 +15,11 @@ pip install -r requirements.txt
 # Regenerar códigos QR
 echo "🔲 Regenerando códigos QR..."
 python3 -c "
-from app import app, db, Equipo
+from app import app, db, Equipo, generar_qr_equipo
 with app.app_context():
-    equipos = Equipo.query.filter_by(Activo=True).all()
+    equipos = Equipo.query.filter_by(Estado='activo').all()
     for equipo in equipos:
-        app.generar_qr_equipo(equipo.id)
+        generar_qr_equipo(equipo.IdEquipo, equipo.Placa)
     print(f'✅ {len(equipos)} códigos QR regenerados')
 "
 

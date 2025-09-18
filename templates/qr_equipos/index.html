@@ -99,6 +99,7 @@
                                         onclick="imprimirQR(this)"
                                         data-placa="{{ item.equipo.Placa }}"
                                         data-tipo="{{ item.equipo.tipo_equipo.descripcion if item.equipo.tipo_equipo else 'N/A' }}"
+                                        data-referencia="{{ item.equipo.Referencia or 'N/A' }}"
                                         data-qr-url="{{ url_for('static', filename=item.qr_url) }}">
                                     <i class="fas fa-print me-1"></i>Imprimir QR
                                 </button>
@@ -268,6 +269,7 @@ function imprimirQR(button) {
     // Obtener datos del botón
     const placa = button.getAttribute('data-placa');
     const tipo = button.getAttribute('data-tipo');
+    const referencia = button.getAttribute('data-referencia');
     const qrUrl = button.getAttribute('data-qr-url');
     
     // Crear ventana de impresión
@@ -324,6 +326,12 @@ function imprimirQR(button) {
                     color: #2e7d32;
                     margin-bottom: 5px;
                 }
+                .equipo-referencia {
+                    font-size: 18px;
+                    font-weight: 600;
+                    color: #1976d2;
+                    margin-bottom: 5px;
+                }
                 .equipo-tipo {
                     font-size: 16px;
                     color: #666;
@@ -370,6 +378,7 @@ function imprimirQR(button) {
                 
                 <div class="equipo-info">
                     <div class="equipo-placa">${placa}</div>
+                    <div class="equipo-referencia">${referencia}</div>
                     <div class="equipo-tipo">${tipo}</div>
                 </div>
                 
