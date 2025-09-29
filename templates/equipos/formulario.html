@@ -33,7 +33,7 @@
                 <!-- Formulario -->
                 <div class="card">
                     <div class="card-body">
-                        <form method="POST" novalidate>
+                        <form method="POST" enctype="multipart/form-data" novalidate>
                             {{ form.hidden_tag() }}
                             
                             <div class="row">
@@ -193,6 +193,73 @@
                                             {% endfor %}
                                         </div>
                                     {% endif %}
+                                </div>
+                                
+                                <div class="col-12 mb-3">
+                                    <div class="form-check">
+                                        {{ form.TieneDosMotores(class="form-check-input" + (" is-invalid" if form.TieneDosMotores.errors else "")) }}
+                                        {{ form.TieneDosMotores.label(class="form-check-label") }}
+                                        <small class="form-text text-muted d-block mt-1">
+                                            Marca esta opción si el equipo tiene dos motores independientes (requiere dos horómetros)
+                                        </small>
+                                        {% if form.TieneDosMotores.errors %}
+                                            <div class="invalid-feedback">
+                                                {% for error in form.TieneDosMotores.errors %}
+                                                    {{ error }}
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <!-- Imagen del Equipo -->
+                                <div class="col-12">
+                                    <h5 class="section-title">
+                                        <i class="fas fa-image me-2"></i>Imagen del Equipo
+                                    </h5>
+                                    <hr class="section-divider">
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    {{ form.ImagenEquipo.label(class="form-label") }}
+                                    <div class="file-upload-wrapper">
+                                        {{ form.ImagenEquipo(class="form-control" + (" is-invalid" if form.ImagenEquipo.errors else "")) }}
+                                        <small class="form-text text-muted">
+                                            Formatos permitidos: JPG, JPEG, PNG, GIF. Tamaño máximo: 5MB
+                                        </small>
+                                    </div>
+                                    {% if form.ImagenEquipo.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.ImagenEquipo.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Vista Previa</label>
+                                    <div class="image-preview-container">
+                                        {% if 'Editar' in titulo and equipo and equipo.ImagenEquipo %}
+                                            <img id="preview-equipo-imagen" 
+                                                 src="{{ url_for('static', filename='uploads/' + equipo.ImagenEquipo) }}" 
+                                                 alt="Imagen actual del equipo" 
+                                                 class="img-preview">
+                                            <small class="form-text text-muted">Imagen actual del equipo</small>
+                                        {% else %}
+                                            <img id="preview-equipo-imagen" 
+                                                 src="{{ url_for('static', filename='images/logogruas.png') }}" 
+                                                 alt="Logo por defecto" 
+                                                 class="img-preview" 
+                                                 style="display: none;">
+                                            <div id="default-preview" class="default-preview">
+                                                <i class="fas fa-image fa-3x text-muted"></i>
+                                                <p class="text-muted mt-2">Se mostrará el logo por defecto</p>
+                                            </div>
+                                        {% endif %}
+                                    </div>
                                 </div>
                             </div>
                             
@@ -479,6 +546,51 @@
     gap: 0.5rem;
     background: var(--light-bg);
 }
+
+/* Estilos para carga de imágenes */
+.file-upload-wrapper {
+    position: relative;
+}
+
+.image-preview-container {
+    border: 2px dashed #dee2e6;
+    border-radius: 8px;
+    padding: 1rem;
+    text-align: center;
+    min-height: 150px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: #f8f9fa;
+    transition: all 0.3s ease;
+}
+
+.image-preview-container:hover {
+    border-color: var(--primary-color);
+    background: #f0f8ff;
+}
+
+.img-preview {
+    max-width: 100%;
+    max-height: 200px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    object-fit: cover;
+}
+
+.default-preview {
+    color: #6c757d;
+}
+
+.default-preview i {
+    opacity: 0.5;
+}
+
+.default-preview p {
+    font-size: 0.9rem;
+    margin: 0;
+}
 </style>
 {% endblock %}
 
@@ -722,6 +834,44 @@ document.addEventListener('keydown', function(e) {
         } else if (modalMarca.classList.contains('show')) {
             cerrarModalMarca();
         }
+    }
+});
+
+// Función personalizada para preview de imagen de equipo
+function previewImageEquipo(input) {
+    const preview = document.getElementById('preview-equipo-imagen');
+    const defaultPreview = document.getElementById('default-preview');
+    
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+            preview.src = e.target.result;
+            preview.style.display = 'block';
+            
+            // Ocultar vista por defecto si existe
+            if (defaultPreview) {
+                defaultPreview.style.display = 'none';
+            }
+        };
+        
+        reader.readAsDataURL(input.files[0]);
+    } else {
+        // Si no hay archivo, mostrar vista por defecto
+        preview.style.display = 'none';
+        if (defaultPreview) {
+            defaultPreview.style.display = 'block';
+        }
+    }
+}
+
+// Configurar el evento para el campo de imagen
+document.addEventListener('DOMContentLoaded', function() {
+    const imagenInput = document.querySelector('input[name="ImagenEquipo"]');
+    if (imagenInput) {
+        imagenInput.addEventListener('change', function() {
+            previewImageEquipo(this);
+        });
     }
 });
 </script>

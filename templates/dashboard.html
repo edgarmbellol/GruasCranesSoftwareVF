@@ -12,7 +12,7 @@
         <!-- Main Content -->
         <div class="main-content">
             <div class="content-header">
-                <h1 class="page-title">Dashboard</h1>
+                <h1 class="page-title">Sistema de Gestión</h1>
             </div>
             
             <!-- Stats Cards -->
@@ -83,31 +83,57 @@
                         <div class="card-body">
                             <div class="row">
                                 {% for empleado_info in stats.empleados_estado %}
-                                <div class="col-md-6 col-lg-3 mb-3">
-                                    <div class="empleado-card-compact {% if empleado_info.estado == 'trabajando' %}empleado-trabajando{% else %}empleado-libre{% endif %}">
-                                        <div class="empleado-header-compact">
-                                            <div class="empleado-avatar">
+                                <div class="col-6 col-sm-4 col-md-3 col-lg-2 mb-3">
+                                    <div class="empleado-card-mejorada {% if empleado_info.estado == 'trabajando' %}empleado-trabajando{% else %}empleado-libre{% endif %}">
+                                        <!-- Header con avatar y estado -->
+                                        <div class="empleado-header-mejorada">
+                                            <div class="empleado-avatar-container">
+                                                <div class="empleado-avatar-principal">
                                                 <i class="fas fa-user"></i>
                                             </div>
-                                            <div class="empleado-info-compact">
-                                                <h6 class="empleado-nombre-compact">{{ empleado_info.empleado.nombre }}</h6>
-                                                <div class="empleado-status-compact">
+                                                <!-- Indicador de estado flotante -->
+                                                <div class="empleado-indicador-estado {% if empleado_info.estado == 'trabajando' %}estado-trabajando{% else %}estado-libre{% endif %}">
                                                 {% if empleado_info.estado == 'trabajando' %}
-                                                    <span class="badge bg-warning">
-                                                        <i class="fas fa-clock me-1"></i>Trabajando
-                                                    </span>
+                                                        <i class="fas fa-clock"></i>
                                                 {% else %}
-                                                    <span class="badge bg-success">
-                                                        <i class="fas fa-check-circle me-1"></i>Libre
-                                                    </span>
+                                                        <i class="fas fa-check"></i>
                                                 {% endif %}
                                             </div>
                                         </div>
                                         </div>
-                                        <div class="empleado-actions">
-                                            <button class="btn btn-sm btn-outline-primary" 
-                                                    onclick="openModal('empleadoModal{{ loop.index }}')">
-                                                <i class="fas fa-eye me-1"></i>Detalles
+                                        
+                                        <!-- Contenido principal -->
+                                        <div class="empleado-contenido">
+                                            <div class="empleado-info-principal">
+                                                <h6 class="empleado-nombre-principal">{{ empleado_info.empleado.nombre }}</h6>
+                                                <div class="empleado-documento">
+                                                    <i class="fas fa-id-card"></i>
+                                                    {{ empleado_info.empleado.documento }}
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Estado del empleado -->
+                                            <div class="empleado-estado-info">
+                                                {% if empleado_info.estado == 'trabajando' %}
+                                                    <div class="estado-badge-empleado estado-trabajando">
+                                                        <i class="fas fa-clock"></i>
+                                                        <span>Trabajando</span>
+                                                    </div>
+                                                {% else %}
+                                                    <div class="estado-badge-empleado estado-libre">
+                                                        <i class="fas fa-check-circle"></i>
+                                                        <span>Disponible</span>
+                                                    </div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Footer con acciones -->
+                                        <div class="empleado-footer">
+                                            <button class="btn-accion-empleado" 
+                                                    onclick="openModal('empleadoModal{{ loop.index }}')"
+                                                    title="Ver detalles del empleado">
+                                                <i class="fas fa-eye"></i>
                                             </button>
                                         </div>
                                     </div>
@@ -132,42 +158,84 @@
                         <div class="card-body">
                             <div class="row">
                                 {% for equipo_info in stats.equipos_estado_detalle %}
-                                <div class="col-md-6 col-lg-4 mb-3">
-                                    <div class="equipo-card-compact {% if equipo_info.estado == 'trabajando' %}equipo-trabajando{% else %}equipo-quieto{% endif %}">
-                                        <div class="equipo-header-compact">
-                                            <div class="equipo-avatar">
-                                                <span class="material-symbols-outlined">auto_towing</span>
-                                            </div>
-                                            <div class="equipo-info-compact">
-                                                <h6 class="equipo-placa-compact">{{ equipo_info.equipo.Placa }}</h6>
-                                                <p class="equipo-tipo-compact">{{ equipo_info.equipo.tipo_equipo.descripcion if equipo_info.equipo.tipo_equipo else 'N/A' }}</p>
-                                                <div class="equipo-status-compact">
+                                <div class="col-md-6 col-lg-4 mb-4">
+                                    <div class="equipo-card-mejorada {% if equipo_info.estado == 'trabajando' %}equipo-trabajando{% else %}equipo-quieto{% endif %}">
+                                        <!-- Imagen principal del equipo -->
+                                        <div class="equipo-imagen-container">
+                                            <img src="{{ equipo_info.equipo.obtener_imagen_url() }}" 
+                                                 alt="Imagen de {{ equipo_info.equipo.Placa }}" 
+                                                 class="equipo-imagen-principal"
+                                                 onerror="this.src='{{ url_for('static', filename='images/logogruas.png') }}'">
+                                            <!-- Indicador de estado -->
+                                            <div class="equipo-indicador-estado {% if equipo_info.estado == 'trabajando' %}estado-trabajando{% else %}estado-quieto{% endif %}">
                                                 {% if equipo_info.estado == 'trabajando' %}
-                                                    <span class="badge bg-warning">
-                                                        <i class="fas fa-play-circle me-1"></i>Trabajando
+                                                    <i class="fas fa-play"></i>
+                                                {% else %}
+                                                    <i class="fas fa-pause"></i>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Información del equipo -->
+                                        <div class="equipo-contenido">
+                                            <div class="equipo-header">
+                                                <h5 class="equipo-placa">{{ equipo_info.equipo.Placa }}</h5>
+                                                <span class="equipo-id">ID: {{ equipo_info.equipo.IdEquipo }}</span>
+                                            </div>
+                                            
+                                            <div class="equipo-detalles">
+                                                <p class="equipo-tipo">
+                                                    <i class="fas fa-cog me-2"></i>
+                                                    {{ equipo_info.equipo.tipo_equipo.descripcion if equipo_info.equipo.tipo_equipo else 'N/A' }}
+                                                </p>
+                                                
+                                                {% if equipo_info.equipo.marca %}
+                                                <p class="equipo-marca">
+                                                    <i class="fas fa-tag me-2"></i>
+                                                    {{ equipo_info.equipo.marca.DescripcionMarca }}
+                                                </p>
+                                                {% endif %}
+                                                
+                                                <div class="equipo-capacidad">
+                                                    <i class="fas fa-weight-hanging me-2"></i>
+                                                    <span class="capacidad-valor">{{ equipo_info.equipo.Capacidad }}</span>
+                                                    <span class="capacidad-unidad">T</span>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Estado y acciones -->
+                                            <div class="equipo-footer">
+                                                <div class="equipo-estado">
+                                                {% if equipo_info.estado == 'trabajando' %}
+                                                        <span class="badge estado-badge estado-trabajando">
+                                                            <i class="fas fa-play-circle me-1"></i>
+                                                            Trabajando
                                                             {% if equipo_info.cantidad_operadores > 0 %}
-                                                                <small>({{ equipo_info.cantidad_operadores }} empleados)</small>
+                                                                <span class="operadores-count">({{ equipo_info.cantidad_operadores }} empleados)</span>
                                                             {% endif %}
                                                     </span>
                                                 {% else %}
-                                                    <span class="badge bg-success">
-                                                        <i class="fas fa-pause-circle me-1"></i>Quieto
+                                                        <span class="badge estado-badge estado-quieto">
+                                                            <i class="fas fa-pause-circle me-1"></i>
+                                                            Disponible
                                                             {% if equipo_info.cantidad_operadores > 0 %}
-                                                                <small>({{ equipo_info.cantidad_operadores }} empleados)</small>
+                                                                <span class="operadores-count">({{ equipo_info.cantidad_operadores }} empleados)</span>
                                                             {% endif %}
                                                     </span>
                                                 {% endif %}
                                             </div>
-                                        </div>
-                                        </div>
+                                                
                                             {% if equipo_info.cantidad_operadores > 0 %}
-                                                <div class="equipo-actions">
-                                            <button class="btn btn-sm btn-outline-primary" 
-                                                    onclick="openEquipoModal('equipoModal{{ loop.index }}')">
-                                                <i class="fas fa-clock me-1"></i>Ver Registro
+                                                <div class="equipo-acciones">
+                                                    <button class="btn btn-sm btn-accion-equipo" 
+                                                            onclick="openEquipoModal('equipoModal{{ loop.index }}')"
+                                                            title="Ver registro de trabajo">
+                                                        <i class="fas fa-clock"></i>
                                             </button>
                                         </div>
                                         {% endif %}
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                                 {% endfor %}
@@ -433,6 +501,11 @@
                             <strong>Horómetro:</strong> {{ empleado_info.entrada.Horometro }}
                         </div>
                         {% endif %}
+                        {% if empleado_info.equipo.TieneDosMotores and empleado_info.entrada.Horometro2 %}
+                        <div class="detail-item">
+                            <strong>Horómetro 2:</strong> {{ empleado_info.entrada.Horometro2 }}
+                        </div>
+                        {% endif %}
                         {% if empleado_info.entrada.Observacion %}
                         <div class="detail-item">
                             <strong>Observaciones:</strong> {{ empleado_info.entrada.Observacion }}
@@ -571,6 +644,602 @@
 {% endfor %}
 {% endif %}
 
+{% endblock %}
+
+{% block extra_css %}
+<style>
+/* === ESTILOS MEJORADOS PARA TARJETAS DE EQUIPOS === */
+
+/* Tarjeta principal del equipo */
+.equipo-card-mejorada {
+    background: #fff;
+    border-radius: 20px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    border: 2px solid transparent;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.equipo-card-mejorada:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+    border-color: var(--primary-color, #27AE60);
+}
+
+/* Container de la imagen */
+.equipo-imagen-container {
+    position: relative;
+    height: 180px;
+    overflow: hidden;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+}
+
+.equipo-imagen-principal {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: all 0.4s ease;
+}
+
+.equipo-card-mejorada:hover .equipo-imagen-principal {
+    transform: scale(1.1);
+}
+
+/* Indicador de estado flotante */
+.equipo-indicador-estado {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: bold;
+    color: white;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(10px);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.estado-trabajando {
+    background: linear-gradient(135deg, #F1C40F 0%, #F39C12 100%);
+    animation: pulse-working 2s infinite;
+}
+
+.estado-quieto {
+    background: linear-gradient(135deg, #27AE60 0%, #2ECC71 100%);
+}
+
+@keyframes pulse-working {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+/* Contenido de la tarjeta */
+.equipo-contenido {
+    padding: 20px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Header con placa e ID */
+.equipo-header {
+    margin-bottom: 16px;
+    text-align: center;
+}
+
+.equipo-placa {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: var(--text-color, #2c3e50);
+    margin: 0 0 4px 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.equipo-id {
+    font-size: 0.8rem;
+    color: var(--text-light, #7f8c8d);
+    font-weight: 500;
+}
+
+/* Detalles del equipo */
+.equipo-detalles {
+    flex: 1;
+    margin-bottom: 16px;
+}
+
+.equipo-tipo,
+.equipo-marca {
+    font-size: 0.9rem;
+    color: var(--text-color, #2c3e50);
+    margin: 0 0 8px 0;
+    display: flex;
+    align-items: center;
+}
+
+.equipo-tipo i,
+.equipo-marca i {
+    color: var(--primary-color, #27AE60);
+    width: 16px;
+}
+
+.equipo-capacidad {
+    display: flex;
+    align-items: center;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-color, #2c3e50);
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    padding: 8px 12px;
+    border-radius: 12px;
+    border: 1px solid #e9ecef;
+}
+
+.equipo-capacidad i {
+    color: var(--primary-color, #27AE60);
+}
+
+.capacidad-valor {
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin: 0 4px;
+}
+
+.capacidad-unidad {
+    font-size: 0.8rem;
+    color: var(--text-light, #7f8c8d);
+    font-weight: 500;
+}
+
+/* Footer con estado y acciones */
+.equipo-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+}
+
+.equipo-estado {
+    flex: 1;
+}
+
+.estado-badge {
+    font-size: 0.8rem;
+    padding: 8px 12px;
+    border-radius: 20px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    border: none;
+}
+
+.estado-trabajando {
+    background: linear-gradient(135deg, #F1C40F 0%, #F39C12 100%);
+    color: #2c3e50;
+}
+
+.estado-quieto {
+    background: linear-gradient(135deg, #27AE60 0%, #2ECC71 100%);
+    color: white;
+}
+
+.operadores-count {
+    font-size: 0.7rem;
+    opacity: 0.9;
+}
+
+/* Botón de acción */
+.btn-accion-equipo {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+    border: none;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+}
+
+.btn-accion-equipo:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 16px rgba(52, 152, 219, 0.4);
+    color: white;
+}
+
+/* Responsive Design */
+@media (max-width: 992px) {
+    .equipo-imagen-container {
+        height: 160px;
+    }
+    
+    .equipo-placa {
+        font-size: 1.2rem;
+    }
+    
+    .equipo-contenido {
+        padding: 16px;
+    }
+}
+
+@media (max-width: 768px) {
+    .equipo-imagen-container {
+        height: 140px;
+    }
+    
+    .equipo-placa {
+        font-size: 1.1rem;
+    }
+    
+    .equipo-contenido {
+        padding: 14px;
+    }
+    
+    .equipo-capacidad {
+        font-size: 0.9rem;
+    }
+    
+    .capacidad-valor {
+        font-size: 1.1rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .equipo-imagen-container {
+        height: 120px;
+    }
+    
+    .equipo-indicador-estado {
+        width: 32px;
+        height: 32px;
+        font-size: 12px;
+        top: 8px;
+        right: 8px;
+    }
+    
+    .equipo-contenido {
+        padding: 12px;
+    }
+    
+    .equipo-placa {
+        font-size: 1rem;
+    }
+    
+    .equipo-tipo,
+    .equipo-marca {
+        font-size: 0.8rem;
+    }
+}
+
+/* Animación de carga para imágenes */
+.equipo-imagen-principal[src=""] {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* Efectos especiales para equipos trabajando */
+.equipo-trabajando {
+    border-left: 4px solid #F1C40F;
+}
+
+.equipo-quieto {
+    border-left: 4px solid #27AE60;
+}
+
+/* === ESTILOS MEJORADOS PARA TARJETAS DE EMPLEADOS === */
+
+/* Tarjeta principal del empleado */
+.empleado-card-mejorada {
+    background: #fff;
+    border-radius: 20px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    border: 2px solid transparent;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+.empleado-card-mejorada:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+    border-color: var(--primary-color, #27AE60);
+}
+
+/* Header con avatar */
+.empleado-header-mejorada {
+    padding: 12px 12px 0 12px;
+    text-align: center;
+    position: relative;
+}
+
+.empleado-avatar-container {
+    position: relative;
+    display: inline-block;
+    margin-bottom: 8px;
+}
+
+.empleado-avatar-principal {
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.3rem;
+    box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+    transition: all 0.4s ease;
+    border: 3px solid white;
+}
+
+.empleado-card-mejorada:hover .empleado-avatar-principal {
+    transform: scale(1.1);
+    box-shadow: 0 12px 25px rgba(52, 152, 219, 0.4);
+}
+
+/* Indicador de estado flotante */
+.empleado-indicador-estado {
+    position: absolute;
+    top: -3px;
+    right: -3px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: bold;
+    color: white;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(10px);
+    border: 2px solid white;
+}
+
+.estado-trabajando {
+    background: linear-gradient(135deg, #F1C40F 0%, #F39C12 100%);
+    animation: pulse-working 2s infinite;
+}
+
+.estado-libre {
+    background: linear-gradient(135deg, #27AE60 0%, #2ECC71 100%);
+}
+
+@keyframes pulse-working {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+/* Contenido principal */
+.empleado-contenido {
+    padding: 0 12px 12px 12px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.empleado-info-principal {
+    text-align: center;
+    margin-bottom: 8px;
+}
+
+.empleado-nombre-principal {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-color, #2c3e50);
+    margin: 0 0 4px 0;
+    line-height: 1.2;
+    word-wrap: break-word;
+}
+
+.empleado-documento {
+    font-size: 0.7rem;
+    color: var(--text-light, #7f8c8d);
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+}
+
+.empleado-documento i {
+    color: var(--primary-color, #27AE60);
+    font-size: 0.65rem;
+}
+
+/* Estado del empleado */
+.empleado-estado-info {
+    text-align: center;
+    margin-bottom: 8px;
+}
+
+.estado-badge-empleado {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    border: none;
+    transition: all 0.3s ease;
+}
+
+.estado-badge-empleado.estado-trabajando {
+    background: linear-gradient(135deg, #F1C40F 0%, #F39C12 100%);
+    color: #2c3e50;
+    box-shadow: 0 4px 12px rgba(241, 196, 15, 0.3);
+}
+
+.estado-badge-empleado.estado-libre {
+    background: linear-gradient(135deg, #27AE60 0%, #2ECC71 100%);
+    color: white;
+    box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
+}
+
+.estado-badge-empleado:hover {
+    transform: scale(1.05);
+}
+
+/* Footer con acciones */
+.empleado-footer {
+    padding: 0 12px 12px 12px;
+    text-align: center;
+}
+
+.btn-accion-empleado {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+    border: none;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    transition: all 0.3s ease;
+    box-shadow: 0 3px 8px rgba(52, 152, 219, 0.3);
+    cursor: pointer;
+}
+
+.btn-accion-empleado:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 16px rgba(52, 152, 219, 0.4);
+    color: white;
+}
+
+/* Efectos especiales para empleados trabajando */
+.empleado-card-mejorada.empleado-trabajando {
+    border-left: 4px solid #F1C40F;
+}
+
+.empleado-card-mejorada.empleado-libre {
+    border-left: 4px solid #27AE60;
+}
+
+/* Responsive Design para empleados */
+@media (max-width: 992px) {
+    .empleado-avatar-principal {
+        width: 45px;
+        height: 45px;
+        font-size: 1.2rem;
+    }
+    
+    .empleado-nombre-principal {
+        font-size: 0.8rem;
+    }
+    
+    .empleado-contenido {
+        padding: 0 10px 10px 10px;
+    }
+    
+    .empleado-header-mejorada {
+        padding: 10px 10px 0 10px;
+    }
+    
+    .empleado-footer {
+        padding: 0 10px 10px 10px;
+    }
+}
+
+@media (max-width: 768px) {
+    .empleado-avatar-principal {
+        width: 40px;
+        height: 40px;
+        font-size: 1.1rem;
+    }
+    
+    .empleado-nombre-principal {
+        font-size: 0.75rem;
+    }
+    
+    .empleado-indicador-estado {
+        width: 18px;
+        height: 18px;
+        font-size: 9px;
+    }
+    
+    .empleado-contenido {
+        padding: 0 8px 8px 8px;
+    }
+    
+    .empleado-header-mejorada {
+        padding: 8px 8px 0 8px;
+    }
+    
+    .empleado-footer {
+        padding: 0 8px 8px 8px;
+    }
+    
+    .btn-accion-empleado {
+        width: 28px;
+        height: 28px;
+        font-size: 10px;
+    }
+}
+
+@media (max-width: 576px) {
+    .empleado-avatar-principal {
+        width: 35px;
+        height: 35px;
+        font-size: 1rem;
+    }
+    
+    .empleado-nombre-principal {
+        font-size: 0.7rem;
+    }
+    
+    .empleado-documento {
+        font-size: 0.65rem;
+    }
+    
+    .estado-badge-empleado {
+        padding: 3px 6px;
+        font-size: 0.65rem;
+    }
+    
+    .btn-accion-empleado {
+        width: 26px;
+        height: 26px;
+        font-size: 9px;
+    }
+    
+    .empleado-contenido {
+        padding: 0 6px 6px 6px;
+    }
+    
+    .empleado-header-mejorada {
+        padding: 6px 6px 0 6px;
+    }
+    
+    .empleado-footer {
+        padding: 0 6px 6px 6px;
+    }
+}
+</style>
 {% endblock %}
 
 {% block extra_js %}

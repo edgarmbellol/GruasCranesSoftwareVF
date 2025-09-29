@@ -109,6 +109,7 @@
                                     <thead class="table-light">
                                         <tr>
                                             <th>Placa</th>
+                                            <th>Imagen</th>
                                             <th>Tipo</th>
                                             <th>Marca</th>
                                             <th>Modelo</th>
@@ -131,6 +132,14 @@
                                                         <div class="fw-bold">{{ equipo.Placa }}</div>
                                                         <small class="text-muted">ID: {{ equipo.IdEquipo }}</small>
                                                     </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="equipo-image-container">
+                                                    <img src="{{ equipo.obtener_imagen_url() }}" 
+                                                         alt="Imagen de {{ equipo.Placa }}" 
+                                                         class="equipo-thumbnail"
+                                                         onerror="this.src='{{ url_for('static', filename='images/logogruas.png') }}'">
                                                 </div>
                                             </td>
                                             <td>
@@ -342,6 +351,31 @@
 .badge {
     font-size: 0.75rem;
     padding: 0.5rem 0.75rem;
+}
+
+/* Estilos para imágenes de equipos */
+.equipo-image-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 60px;
+    height: 60px;
+}
+
+.equipo-thumbnail {
+    width: 50px;
+    height: 50px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 2px solid #e9ecef;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.equipo-thumbnail:hover {
+    border-color: var(--primary-color);
+    transform: scale(1.1);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
 }
 </style>
 {% endblock %}
