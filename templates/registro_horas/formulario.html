@@ -387,6 +387,25 @@
                 font-size: 0.8rem;
             }
         }
+        
+        /* Estilos para campo cliente auto-asignado */
+        .cliente-auto-asignado {
+            background-color: #f8f9fa !important;
+            border: 2px solid #28a745 !important;
+            color: #155724 !important;
+            font-weight: 500 !important;
+        }
+        
+        .cliente-auto-asignado:focus {
+            box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25) !important;
+        }
+        
+        .cliente-auto-asignado::after {
+            content: " (Auto-asignado)";
+            font-size: 0.875rem;
+            color: #28a745;
+            font-weight: 600;
+        }
     </style>
 </head>
 <body>
@@ -621,6 +640,13 @@
                                     <span class="ms-2">{{ valores_entrada.horometro }}</span>
                                 </div>
                                 {% endif %}
+                                {% if valores_entrada.horometro2 %}
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="fas fa-tachometer-alt me-2 text-success"></i>
+                                    <strong>Horómetro 2 Entrada:</strong>
+                                    <span class="ms-2">{{ valores_entrada.horometro2 }}</span>
+                                </div>
+                                {% endif %}
                             </div>
                         </div>
                         <div class="mt-2">
@@ -684,6 +710,29 @@
                                 </div>
                             {% endif %}
                         </div>
+                        
+                        <!-- Segundo horómetro - Solo para equipos con dos motores -->
+                        <div class="col-md-6 mb-3" id="horometro2Section" style="display: none;">
+                            {{ form.Horometro2.label(class="form-label") }} <span class="text-danger">*</span>
+                            {{ form.Horometro2(class="form-control" + (" is-invalid" if form.Horometro2.errors else ""), id="Horometro2", oninput="validarHorometro2()", style="display: block !important;") }}
+                            {% if valores_entrada %}
+                                <div class="entrada-reference">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    <small class="text-muted">
+                                        Valor de entrada: <strong>{{ valores_entrada.horometro2 or 'N/A' }}</strong>
+                                        ({{ valores_entrada.fecha_entrada }} {{ valores_entrada.hora_entrada }})
+                                    </small>
+                                </div>
+                            {% endif %}
+                            <div id="horometro2-validation" class="validation-message" style="display: none;"></div>
+                            {% if form.Horometro2.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.Horometro2.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
 
@@ -721,7 +770,8 @@
                     </div>
                 </div>
 
-                <!-- Fotos -->
+                <!-- Fotos - Solo para formularios de entrada -->
+                {% if form.TipoRegistro.data == 'entrada' %}
                 <div class="form-section">
                     <h5 class="section-title">
                         <i class="fas fa-camera"></i>
@@ -729,8 +779,9 @@
                     </h5>
                     
                     <div class="row">
-                        <div class="col-md-4 mb-3" id="fotoKilometraje">
-                            <label class="form-label">Foto del Kilometraje <span class="text-danger">*</span></label>
+                        <!-- Foto del Kilometraje - Solo si es pertinente -->
+                        <div class="col-md-6 mb-3" id="fotoKilometraje">
+                            <label class="form-label">Foto del Kilometraje</label>
                             <div class="file-upload">
                                 {{ form.FotoKilometraje(class="form-control", onchange="previewImage(this, 'previewKilometraje')") }}
                                 <label for="FotoKilometraje" class="file-upload-label">
@@ -744,10 +795,15 @@
                                     <i class="fas fa-trash me-1"></i>Eliminar
                                 </button>
                             </div>
+                            <small class="form-text text-muted">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Solo si el equipo tiene odómetro
+                            </small>
                         </div>
                         
-                        <div class="col-md-4 mb-3" id="fotoHorometro">
-                            <label class="form-label">Foto del Horómetro <span class="text-danger">*</span></label>
+                        <!-- Foto del Horómetro - Solo si es pertinente -->
+                        <div class="col-md-6 mb-3" id="fotoHorometro">
+                            <label class="form-label" id="labelFotoHorometro">Foto del Horómetro</label>
                             <div class="file-upload">
                                 {{ form.FotoHorometro(class="form-control", onchange="previewImage(this, 'previewHorometro')") }}
                                 <label for="FotoHorometro" class="file-upload-label">
@@ -761,26 +817,36 @@
                                     <i class="fas fa-trash me-1"></i>Eliminar
                                 </button>
                             </div>
+                            <small class="form-text text-muted">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Solo si el equipo tiene horómetro
+                            </small>
                         </div>
                         
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label">Foto de la Grúa <span class="text-danger">*</span></label>
+                        <!-- Foto del Segundo Horómetro - Solo para equipos con dos motores -->
+                        <div class="col-md-6 mb-3" id="fotoHorometro2" style="display: none;">
+                            <label class="form-label" id="labelFotoHorometro2">Foto del Segundo Horómetro</label>
                             <div class="file-upload">
-                                {{ form.FotoGrua(class="form-control", onchange="previewImage(this, 'previewGrua')") }}
-                                <label for="FotoGrua" class="file-upload-label">
+                                {{ form.FotoHorometro2(class="form-control", onchange="previewImage(this, 'previewHorometro2')") }}
+                                <label for="FotoHorometro2" class="file-upload-label">
                                     <i class="fas fa-camera me-2"></i>
-                                    <span id="textGrua">Seleccionar imagen</span>
+                                    <span id="textHorometro2">Seleccionar imagen</span>
                                 </label>
                             </div>
-                            <div id="previewGrua" class="image-preview mt-2" style="display: none;">
-                                <img id="imgGrua" src="" alt="Preview" class="preview-image">
-                                <button type="button" class="btn btn-sm btn-danger mt-2" onclick="removeImage('FotoGrua', 'previewGrua', 'textGrua')">
+                            <div id="previewHorometro2" class="image-preview mt-2" style="display: none;">
+                                <img id="imgHorometro2" src="" alt="Preview" class="preview-image">
+                                <button type="button" class="btn btn-sm btn-danger mt-2" onclick="removeImage('FotoHorometro2', 'previewHorometro2', 'textHorometro2')">
                                     <i class="fas fa-trash me-1"></i>Eliminar
                                 </button>
                             </div>
+                            <small class="form-text text-muted">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Solo para equipos con dos motores
+                            </small>
                         </div>
                     </div>
                 </div>
+                {% endif %}
 
                 <!-- Ubicación -->
                 <div class="form-section">
@@ -936,12 +1002,30 @@
 
         // Controlar visibilidad de campos según cargo
         function controlarCampos() {
+            console.log('=== EJECUTANDO controlarCampos() ===');
             const cargoSelect = document.getElementById('IdCargo');
             const estadoSelect = document.getElementById('IdEstadoEquipo');
+            console.log('Cargo select:', cargoSelect);
+            console.log('Estado select:', estadoSelect);
+            
+            // Verificar que los elementos críticos existan
+            if (!estadoSelect) {
+                console.log('❌ ERROR: IdEstadoEquipo no encontrado - saltando controlarCampos()');
+                return;
+            }
+            
             const datosEquipo = document.getElementById('datosEquipo');
             const clienteSection = document.getElementById('clienteSection');
             const fotoKilometraje = document.getElementById('fotoKilometraje');
             const fotoHorometro = document.getElementById('fotoHorometro');
+            const fotoHorometro2 = document.getElementById('fotoHorometro2');
+            const horometro2Section = document.getElementById('horometro2Section');
+            
+            // Verificar que los elementos básicos existan
+            if (!datosEquipo || !clienteSection) {
+                console.log('❌ ERROR: Elementos básicos no encontrados - saltando controlarCampos()');
+                return;
+            }
             
             // Obtener texto del cargo seleccionado o del cargo de solo lectura
             let cargoTexto = '';
@@ -957,59 +1041,254 @@
             
             const esOperador = cargoTexto.includes('operador');
             
+            // Verificar si el estado del equipo es "operativo" o "disponible"
+            let esOperativo = false;
+            if (estadoSelect && estadoSelect.options && estadoSelect.options[estadoSelect.selectedIndex]) {
+                const estadoTexto = estadoSelect.options[estadoSelect.selectedIndex].text.toLowerCase();
+                esOperativo = estadoTexto.includes('operativo') || estadoTexto.includes('disponible');
+            }
+            
+            console.log('Cargo es operador:', esOperador);
+            console.log('Estado es operativo:', esOperativo);
+            
+            // Actualizar nombres de las fotos según el estado
+            actualizarNombresFotos(estadoSelect);
+            
             // Mostrar/ocultar campos de datos del equipo
-            if (esOperador) {
-                datosEquipo.style.display = 'block';
-                fotoKilometraje.style.display = 'block';
-                fotoHorometro.style.display = 'block';
+            // SOLO cuando: cargo = "operador" Y estado = "operativo" o "disponible"
+            if (esOperador && esOperativo) {
+                if (datosEquipo) datosEquipo.style.display = 'block';
+                if (fotoKilometraje) fotoKilometraje.style.display = 'block';
+                if (fotoHorometro) fotoHorometro.style.display = 'block';
+                
+                // Verificar si el equipo tiene dos motores
+                const tieneDosMotores = {{ equipo.TieneDosMotores|tojson|safe }};
+                const esSalida = {{ (form.TipoRegistro.data == 'salida')|tojson|safe }};
+                console.log('¿Equipo tiene dos motores?', tieneDosMotores);
+                console.log('¿Es formulario de salida?', esSalida);
+                
+                if (tieneDosMotores) {
+                    horometro2Section.style.display = 'block';
+                    // Solo mostrar foto en formularios de entrada
+                    if (!esSalida && fotoHorometro2) {
+                        fotoHorometro2.style.display = 'block';
+                    }
+                } else {
+                    horometro2Section.style.display = 'none';
+                    if (fotoHorometro2) {
+                        fotoHorometro2.style.display = 'none';
+                    }
+                }
                 
                 // Hacer obligatorios los campos de operador
                 const kilometrajeField = document.getElementById('Kilometraje');
                 const horometroField = document.getElementById('Horometro');
+                const horometro2Field = document.getElementById('Horometro2');
                 const fotoKilometrajeField = document.getElementById('FotoKilometraje');
                 const fotoHorometroField = document.getElementById('FotoHorometro');
+                const fotoHorometro2Field = document.getElementById('FotoHorometro2');
                 
                 if (kilometrajeField) kilometrajeField.required = true;
                 if (horometroField) horometroField.required = true;
                 if (fotoKilometrajeField) fotoKilometrajeField.required = true;
                 if (fotoHorometroField) fotoHorometroField.required = true;
+                
+                // Hacer obligatorio el segundo horómetro solo si el equipo tiene dos motores
+                if (tieneDosMotores) {
+                    if (horometro2Field) horometro2Field.required = true;
+                    if (fotoHorometro2Field) fotoHorometro2Field.required = true;
+                } else {
+                    if (horometro2Field) horometro2Field.required = false;
+                    if (fotoHorometro2Field) fotoHorometro2Field.required = false;
+                }
             } else {
-                datosEquipo.style.display = 'none';
-                fotoKilometraje.style.display = 'none';
-                fotoHorometro.style.display = 'none';
+                if (datosEquipo) datosEquipo.style.display = 'none';
+                if (fotoKilometraje) fotoKilometraje.style.display = 'none';
+                if (fotoHorometro) fotoHorometro.style.display = 'none';
+                if (horometro2Section) horometro2Section.style.display = 'none';
+                if (fotoHorometro2) fotoHorometro2.style.display = 'none';
                 
                 // Hacer opcionales los campos de operador cuando no es operador
                 const kilometrajeField = document.getElementById('Kilometraje');
                 const horometroField = document.getElementById('Horometro');
+                const horometro2Field = document.getElementById('Horometro2');
                 const fotoKilometrajeField = document.getElementById('FotoKilometraje');
                 const fotoHorometroField = document.getElementById('FotoHorometro');
+                const fotoHorometro2Field = document.getElementById('FotoHorometro2');
                 
                 if (kilometrajeField) kilometrajeField.required = false;
                 if (horometroField) horometroField.required = false;
+                if (horometro2Field) horometro2Field.required = false;
                 if (fotoKilometrajeField) fotoKilometrajeField.required = false;
                 if (fotoHorometroField) fotoHorometroField.required = false;
+                if (fotoHorometro2Field) fotoHorometro2Field.required = false;
             }
             
             // Controlar campo cliente según estado
             let estadoTexto = '';
-            if (estadoSelect && estadoSelect.options && estadoSelect.options[estadoSelect.selectedIndex]) {
+            if (estadoSelect && estadoSelect.options && estadoSelect.selectedIndex >= 0) {
                 estadoTexto = estadoSelect.options[estadoSelect.selectedIndex].text.toLowerCase();
+                console.log('Estado detectado del select:', estadoTexto);
             } else {
                 // Si es estado de solo lectura, obtener el texto del div
                 const estadoReadonly = document.querySelector('.estado-readonly');
                 if (estadoReadonly) {
                     estadoTexto = estadoReadonly.textContent.toLowerCase();
+                    console.log('Estado detectado del readonly:', estadoTexto);
                 }
             }
-            const esOperativo = estadoTexto.includes('operativo');
+            esOperativo = estadoTexto.includes('operativo') || estadoTexto.includes('disponible');
+            console.log('¿Es operativo?', esOperativo, 'Estado:', estadoTexto);
             
-            if (esOperativo) {
-                clienteSection.style.display = 'block';
-                // El cliente ya está pre-seleccionado en formularios de salida
-                // No necesitamos hacerlo obligatorio porque ya tiene valor
-            } else {
-                clienteSection.style.display = 'none';
+        if (esOperativo) {
+            clienteSection.style.display = 'block';
+            // Habilitar el campo para que el usuario pueda seleccionar
+            habilitarClienteSelect();
+        } else {
+            clienteSection.style.display = 'block'; // Siempre mostrar
+            console.log('Mostrando sección cliente con GRUAS CRANES SAS pre-seleccionado');
+            // Asignar cliente por defecto y deshabilitar el campo
+            asignarClientePorDefecto();
+        }
+        
+        // LÓGICA ESPECÍFICA PARA HORÓMETRO 2 EN FORMULARIOS DE SALIDA
+        const esSalida = {{ (form.TipoRegistro.data == 'salida')|tojson|safe }};
+        const tieneDosMotores = {{ (equipo.TieneDosMotores or False)|tojson|safe }};
+        
+        console.log('=== VERIFICANDO HORÓMETRO 2 PARA SALIDA ===');
+        console.log('esSalida:', esSalida);
+        console.log('tieneDosMotores:', tieneDosMotores);
+        
+        // Buscar el elemento nuevamente para asegurar que existe
+        const horometro2SectionFresh = document.getElementById('horometro2Section');
+        const horometro2FieldFresh = document.getElementById('Horometro2');
+        
+        console.log('horometro2Section encontrado:', horometro2SectionFresh !== null);
+        console.log('horometro2Field encontrado:', horometro2FieldFresh !== null);
+        
+        if (horometro2SectionFresh) {
+            console.log('horometro2Section.innerHTML:', horometro2SectionFresh.innerHTML.substring(0, 200));
+            console.log('horometro2Section.className:', horometro2SectionFresh.className);
+            console.log('horometro2Section.offsetParent:', horometro2SectionFresh.offsetParent);
+        }
+        
+        // Verificar condiciones adicionales para mostrar Horómetro 2
+        let cargoTextoVerificacion = '';
+        const cargoSelectVerificacion = document.getElementById('IdCargo');
+        if (cargoSelectVerificacion && cargoSelectVerificacion.options && cargoSelectVerificacion.options[cargoSelectVerificacion.selectedIndex]) {
+            cargoTextoVerificacion = cargoSelectVerificacion.options[cargoSelectVerificacion.selectedIndex].text.toLowerCase();
+        } else {
+            const cargoReadonlyVerificacion = document.querySelector('.cargo-readonly');
+            if (cargoReadonlyVerificacion) {
+                cargoTextoVerificacion = cargoReadonlyVerificacion.textContent.toLowerCase();
             }
+        }
+        
+        let estadoTextoVerificacion = '';
+        const estadoSelectVerificacion = document.getElementById('IdEstadoEquipo');
+        if (estadoSelectVerificacion && estadoSelectVerificacion.options && estadoSelectVerificacion.options[estadoSelectVerificacion.selectedIndex]) {
+            estadoTextoVerificacion = estadoSelectVerificacion.options[estadoSelectVerificacion.selectedIndex].text.toLowerCase();
+        } else {
+            const estadoReadonlyVerificacion = document.querySelector('.estado-readonly');
+            if (estadoReadonlyVerificacion) {
+                estadoTextoVerificacion = estadoReadonlyVerificacion.textContent.toLowerCase();
+            }
+        }
+        
+        const esOperadorVerificacion = cargoTextoVerificacion.includes('operador');
+        const esOperativoVerificacion = estadoTextoVerificacion.includes('operativo') || estadoTextoVerificacion.includes('disponible');
+        
+        console.log('Cargo detectado en verificación:', cargoTextoVerificacion);
+        console.log('Estado detectado en verificación:', estadoTextoVerificacion);
+        console.log('esOperadorVerificacion:', esOperadorVerificacion);
+        console.log('esOperativoVerificacion:', esOperativoVerificacion);
+        
+        if (esSalida && tieneDosMotores && esOperadorVerificacion && esOperativoVerificacion) {
+            console.log('✅ MOSTRANDO Horómetro 2 en formulario de salida (condiciones cumplidas)');
+            
+            if (horometro2SectionFresh) {
+                console.log('ANTES - horometro2Section.style.display:', horometro2SectionFresh.style.display);
+                console.log('ANTES - horometro2Section.style.cssText:', horometro2SectionFresh.style.cssText);
+                
+                // Múltiples intentos para forzar visibilidad
+                horometro2SectionFresh.style.display = 'block';
+                horometro2SectionFresh.style.setProperty('display', 'block', 'important');
+                horometro2SectionFresh.style.visibility = 'visible';
+                horometro2SectionFresh.style.opacity = '1';
+                
+                console.log('DESPUÉS - horometro2Section.style.display:', horometro2SectionFresh.style.display);
+                console.log('DESPUÉS - horometro2Section.style.cssText:', horometro2SectionFresh.style.cssText);
+                
+                // Verificar si realmente es visible
+                const computedStyle = window.getComputedStyle(horometro2SectionFresh);
+                console.log('Computed display:', computedStyle.display);
+                console.log('Computed visibility:', computedStyle.visibility);
+                console.log('Computed opacity:', computedStyle.opacity);
+                console.log('Computed height:', computedStyle.height);
+                console.log('Computed width:', computedStyle.width);
+                
+                // Verificar si el elemento está en el DOM
+                console.log('Elemento en DOM:', document.body.contains(horometro2SectionFresh));
+                console.log('Elemento visible (offsetHeight > 0):', horometro2SectionFresh.offsetHeight > 0);
+            } else {
+                console.log('❌ ERROR: horometro2Section no encontrado');
+            }
+            
+            // Hacer obligatorio el campo Horómetro 2 en salida
+            if (horometro2FieldFresh) {
+                horometro2FieldFresh.required = true;
+                console.log('horometro2Field marcado como obligatorio');
+            } else {
+                console.log('❌ ERROR: horometro2Field no encontrado');
+            }
+        } else {
+            console.log('❌ NO se cumple condición para mostrar Horómetro 2 en salida');
+            console.log('Condiciones:', {
+                esSalida,
+                tieneDosMotores,
+                esOperadorVerificacion,
+                esOperativoVerificacion
+            });
+        }
+        }
+
+        // Función para asignar cliente por defecto (GRUAS CRANES SAS)
+        function asignarClientePorDefecto() {
+            const clienteSelect = document.getElementById('IdCliente');
+            if (clienteSelect) {
+                // Seleccionar GRUAS CRANES SAS (ID 6)
+                clienteSelect.value = '6';
+                // Deshabilitar el campo para que no se pueda modificar
+                clienteSelect.disabled = true;
+                // Agregar clase para styling
+                clienteSelect.classList.add('cliente-auto-asignado');
+                console.log('Cliente GRUAS CRANES SAS pre-seleccionado y deshabilitado');
+            }
+        }
+
+        // Función para habilitar el campo cliente cuando es operativo
+        function habilitarClienteSelect() {
+            const clienteSelect = document.getElementById('IdCliente');
+            if (clienteSelect) {
+                // Habilitar el campo
+                clienteSelect.disabled = false;
+                // Remover clase de styling
+                clienteSelect.classList.remove('cliente-auto-asignado');
+                // Limpiar selección para que el usuario pueda elegir
+                clienteSelect.value = '';
+                clienteSelect.selectedIndex = 0;
+                console.log('Campo cliente habilitado para selección manual');
+            }
+        }
+
+        // Función para verificar cliente antes de enviar
+        function verificarClienteAntesEnvio() {
+            console.log('=== VERIFICANDO CLIENTE ANTES DEL ENVÍO ===');
+            const clienteSelect = document.getElementById('IdCliente');
+            
+            console.log('Campo cliente habilitado:', !clienteSelect.disabled);
+            console.log('Valor seleccionado:', clienteSelect.value);
+            console.log('Texto seleccionado:', clienteSelect.options[clienteSelect.selectedIndex]?.text);
         }
 
         // Inicializar
@@ -1020,9 +1299,180 @@
             // Controlar campos inicialmente
             controlarCampos();
             
-            // Agregar event listeners
-            document.getElementById('IdCargo').addEventListener('change', controlarCampos);
-            document.getElementById('IdEstadoEquipo').addEventListener('change', controlarCampos);
+            // Actualizar nombres de las fotos al cargar la página
+            const estadoSelectInit = document.getElementById('IdEstadoEquipo');
+            if (estadoSelectInit) {
+                actualizarNombresFotos(estadoSelectInit);
+            }
+            
+            // LÓGICA ESPECÍFICA PARA MOSTRAR HORÓMETRO 2 EN SALIDA
+            const esSalida = {{ (form.TipoRegistro.data == 'salida')|tojson|safe }};
+            const tieneDosMotores = {{ (equipo.TieneDosMotores or False)|tojson|safe }};
+            
+            console.log('=== INICIALIZACIÓN HORÓMETRO 2 ===');
+            console.log('esSalida:', esSalida);
+            console.log('tieneDosMotores:', tieneDosMotores);
+            
+            // Verificar condiciones para mostrar Horómetro 2
+            let cargoTextoInit = '';
+            const cargoSelectInit = document.getElementById('IdCargo');
+            if (cargoSelectInit && cargoSelectInit.options && cargoSelectInit.options[cargoSelectInit.selectedIndex]) {
+                cargoTextoInit = cargoSelectInit.options[cargoSelectInit.selectedIndex].text.toLowerCase();
+            } else {
+                const cargoReadonlyInit = document.querySelector('.cargo-readonly');
+                if (cargoReadonlyInit) {
+                    cargoTextoInit = cargoReadonlyInit.textContent.toLowerCase();
+                }
+            }
+            
+            let estadoTextoInit = '';
+            if (estadoSelectInit && estadoSelectInit.options && estadoSelectInit.options[estadoSelectInit.selectedIndex]) {
+                estadoTextoInit = estadoSelectInit.options[estadoSelectInit.selectedIndex].text.toLowerCase();
+            } else {
+                const estadoReadonlyInit = document.querySelector('.estado-readonly');
+                if (estadoReadonlyInit) {
+                    estadoTextoInit = estadoReadonlyInit.textContent.toLowerCase();
+                }
+            }
+            
+            const esOperadorInit = cargoTextoInit.includes('operador');
+            const esOperativoInit = estadoTextoInit.includes('operativo') || estadoTextoInit.includes('disponible');
+            
+            console.log('Cargo detectado en inicialización:', cargoTextoInit);
+            console.log('Estado detectado en inicialización:', estadoTextoInit);
+            console.log('esOperadorInit:', esOperadorInit);
+            console.log('esOperativoInit:', esOperativoInit);
+            
+            if (esSalida && tieneDosMotores && esOperadorInit && esOperativoInit) {
+                console.log('🔧 FORZANDO VISIBILIDAD DEL HORÓMETRO 2');
+                
+                // Asegurar que el contenedor padre esté visible
+                const datosEquipo = document.getElementById('datosEquipo');
+                if (datosEquipo) {
+                    datosEquipo.style.display = 'block';
+                    datosEquipo.style.setProperty('display', 'block', 'important');
+                    console.log('✅ datosEquipo mostrado');
+                }
+                
+                const horometro2Section = document.getElementById('horometro2Section');
+                
+                if (horometro2Section) {
+                    console.log('📍 Elemento encontrado, aplicando estilos...');
+                    console.log('ANTES - display:', horometro2Section.style.display);
+                    console.log('ANTES - computed display:', window.getComputedStyle(horometro2Section).display);
+                    console.log('ANTES - parent display:', window.getComputedStyle(horometro2Section.parentElement).display);
+                    
+                    // Múltiples métodos para forzar visibilidad
+                    horometro2Section.style.display = 'block';
+                    horometro2Section.style.setProperty('display', 'block', 'important');
+                    horometro2Section.style.visibility = 'visible';
+                    horometro2Section.style.opacity = '1';
+                    horometro2Section.style.height = 'auto';
+                    horometro2Section.style.overflow = 'visible';
+                    horometro2Section.style.minHeight = '100px';
+                    
+                    console.log('DESPUÉS - display:', horometro2Section.style.display);
+                    console.log('DESPUÉS - computed display:', window.getComputedStyle(horometro2Section).display);
+                    console.log('DESPUÉS - computed visibility:', window.getComputedStyle(horometro2Section).visibility);
+                    console.log('DESPUÉS - offsetHeight:', horometro2Section.offsetHeight);
+                    console.log('DESPUÉS - scrollHeight:', horometro2Section.scrollHeight);
+                    console.log('DESPUÉS - clientHeight:', horometro2Section.clientHeight);
+                    
+                    // Verificar si está realmente visible
+                    if (horometro2Section.offsetHeight > 0) {
+                        console.log('✅ horometro2Section VISIBLE y con altura');
+                    } else {
+                        console.log('❌ horometro2Section SIN altura - forzando contenido');
+                        // Forzar que el contenido sea visible
+                        const horometro2Field = document.getElementById('Horometro2');
+                        if (horometro2Field) {
+                            horometro2Field.style.display = 'block';
+                            horometro2Field.style.setProperty('display', 'block', 'important');
+                            horometro2Field.style.visibility = 'visible';
+                            horometro2Field.style.opacity = '1';
+                            horometro2Field.style.height = 'auto';
+                            console.log('✅ Campo Horometro2 forzado a visible');
+                        }
+                    }
+                } else {
+                    console.log('❌ horometro2Section no encontrado en DOM');
+                    
+                    // Buscar todos los elementos que contengan "horometro2"
+                    const allElements = document.querySelectorAll('[id*="horometro2"], [class*="horometro2"]');
+                    console.log('Elementos relacionados con horometro2:', allElements.length);
+                    allElements.forEach((el, index) => {
+                        console.log(`Elemento ${index}:`, el.tagName, el.id, el.className);
+                    });
+                }
+            }
+            
+            // Asignar cliente por defecto si el campo está oculto inicialmente
+            const clienteSection = document.getElementById('clienteSection');
+            if (clienteSection && clienteSection.style.display === 'none') {
+                asignarClientePorDefecto();
+            }
+            
+            // VERIFICACIÓN ADICIONAL DESPUÉS DE 1 SEGUNDO
+            setTimeout(function() {
+                const esSalida = {{ (form.TipoRegistro.data == 'salida')|tojson|safe }};
+                const tieneDosMotores = {{ (equipo.TieneDosMotores or False)|tojson|safe }};
+                
+                // Re-verificar las condiciones
+                let cargoTextoTimeout = '';
+                const cargoSelectTimeout = document.getElementById('IdCargo');
+                if (cargoSelectTimeout && cargoSelectTimeout.options && cargoSelectTimeout.options[cargoSelectTimeout.selectedIndex]) {
+                    cargoTextoTimeout = cargoSelectTimeout.options[cargoSelectTimeout.selectedIndex].text.toLowerCase();
+                } else {
+                    const cargoReadonlyTimeout = document.querySelector('.cargo-readonly');
+                    if (cargoReadonlyTimeout) {
+                        cargoTextoTimeout = cargoReadonlyTimeout.textContent.toLowerCase();
+                    }
+                }
+                
+                let esOperativoTimeout = false;
+                const estadoSelectTimeout = document.getElementById('IdEstadoEquipo');
+                if (estadoSelectTimeout && estadoSelectTimeout.options && estadoSelectTimeout.options[estadoSelectTimeout.selectedIndex]) {
+                    const estadoTextoTimeout = estadoSelectTimeout.options[estadoSelectTimeout.selectedIndex].text.toLowerCase();
+                    esOperativoTimeout = estadoTextoTimeout.includes('operativo') || estadoTextoTimeout.includes('disponible');
+                }
+                
+                const esOperadorTimeout = cargoTextoTimeout.includes('operador');
+                
+                if (esSalida && tieneDosMotores && esOperadorTimeout && esOperativoTimeout) {
+                    console.log('🔍 VERIFICACIÓN TARDÍA DEL HORÓMETRO 2');
+                    const horometro2Section = document.getElementById('horometro2Section');
+                    if (horometro2Section) {
+                        console.log('Estado final - display:', horometro2Section.style.display);
+                        console.log('Estado final - computed display:', window.getComputedStyle(horometro2Section).display);
+                        console.log('Estado final - offsetHeight:', horometro2Section.offsetHeight);
+                        
+                        if (horometro2Section.offsetHeight === 0) {
+                            console.log('🚨 FORZANDO VISIBILIDAD FINAL');
+                            horometro2Section.style.cssText = 'display: block !important; visibility: visible !important; opacity: 1 !important; height: auto !important;';
+                        }
+                    }
+                }
+            }, 1000);
+            
+            // Agregar event listeners (solo si los elementos existen)
+            const cargoElement = document.getElementById('IdCargo');
+            if (cargoElement) {
+                cargoElement.addEventListener('change', function() {
+                    console.log('Cambio en cargo detectado');
+                    controlarCampos();
+                });
+            }
+            
+            const estadoElement = document.getElementById('IdEstadoEquipo');
+            if (estadoElement) {
+                estadoElement.addEventListener('change', function() {
+                    console.log('Cambio en estado detectado');
+                    controlarCampos();
+                });
+            }
+            
+            // Event listener para verificar cliente antes de enviar
+            document.getElementById('registroForm').addEventListener('submit', verificarClienteAntesEnvio);
             
             // Event listeners para validación en tiempo real de fecha y hora
             document.getElementById('FechaEmpleado').addEventListener('change', validarFechaHora);
@@ -1096,6 +1546,36 @@
                 mensaje.style.display = 'block';
                 campo.classList.remove('is-valid');
                 campo.classList.add('is-invalid');
+            }
+        }
+        
+        // Función para validar segundo horómetro en tiempo real
+        function validarHorometro2() {
+            const campo = document.getElementById('Horometro2');
+            const valor = parseFloat(campo.value);
+            const mensaje = document.getElementById('horometro2-validation');
+            
+            if (!valoresEntrada || !campo.value) {
+                mensaje.style.display = 'none';
+                campo.classList.remove('is-valid', 'is-invalid');
+                return;
+            }
+            
+            if (valoresEntrada.horometro2 && valor >= valoresEntrada.horometro2) {
+                mensaje.innerHTML = '<i class="fas fa-check-circle"></i>Valor válido: mayor o igual al de entrada';
+                mensaje.className = 'validation-message valid';
+                mensaje.style.display = 'block';
+                campo.classList.remove('is-invalid');
+                campo.classList.add('is-valid');
+            } else if (valoresEntrada.horometro2) {
+                mensaje.innerHTML = '<i class="fas fa-exclamation-triangle"></i>Debe ser mayor o igual a ' + valoresEntrada.horometro2;
+                mensaje.className = 'validation-message invalid';
+                mensaje.style.display = 'block';
+                campo.classList.remove('is-valid');
+                campo.classList.add('is-invalid');
+            } else {
+                mensaje.style.display = 'none';
+                campo.classList.remove('is-valid', 'is-invalid');
             }
         }
         
@@ -1195,17 +1675,47 @@
             if (esOperador) {
                 const kilometraje = document.getElementById('Kilometraje').value;
                 const horometro = document.getElementById('Horometro').value;
+                const horometro2 = document.getElementById('Horometro2').value;
                 
-                if (!kilometraje || !horometro) {
-                    e.preventDefault();
-                    alert('Los campos de kilometraje y horómetro son obligatorios para operadores');
-                    return false;
+                // Verificar si el equipo tiene dos motores
+                const tieneDosMotores = {{ equipo.TieneDosMotores|tojson|safe }};
+                
+                // Verificar si el cargo es operador y el estado es operativo
+                let cargoTexto = '';
+                const cargoSelect = document.getElementById('IdCargo');
+                if (cargoSelect && cargoSelect.options && cargoSelect.options[cargoSelect.selectedIndex]) {
+                    cargoTexto = cargoSelect.options[cargoSelect.selectedIndex].text.toLowerCase();
+                }
+                
+                let estadoTexto = '';
+                const estadoSelect = document.getElementById('IdEstadoEquipo');
+                if (estadoSelect && estadoSelect.options && estadoSelect.options[estadoSelect.selectedIndex]) {
+                    estadoTexto = estadoSelect.options[estadoSelect.selectedIndex].text.toLowerCase();
+                }
+                
+                const esOperador = cargoTexto.includes('operador');
+                const esOperativo = estadoTexto.includes('operativo') || estadoTexto.includes('disponible');
+                
+                // Solo validar si es operador Y operativo
+                if (esOperador && esOperativo) {
+                    if (!kilometraje || !horometro) {
+                        e.preventDefault();
+                        alert('Los campos de kilometraje y horómetro son obligatorios para operadores con equipo operativo');
+                        return false;
+                    }
+                    
+                    if (tieneDosMotores && !horometro2) {
+                        e.preventDefault();
+                        alert('El campo del segundo horómetro es obligatorio para equipos con dos motores');
+                        return false;
+                    }
                 }
                 
                 // Validación adicional con valores de entrada
                 if (valoresEntrada) {
                     const kmValor = parseFloat(kilometraje);
                     const hmValor = parseFloat(horometro);
+                    const hm2Valor = parseFloat(horometro2);
                     
                     if (kmValor < valoresEntrada.kilometraje) {
                         e.preventDefault();
@@ -1218,9 +1728,37 @@
                         alert(`El horómetro de salida (${hmValor}) debe ser mayor o igual al de entrada (${valoresEntrada.horometro})`);
                         return false;
                     }
+                    
+                    if (tieneDosMotores && valoresEntrada.horometro2 && hm2Valor < valoresEntrada.horometro2) {
+                        e.preventDefault();
+                        alert(`El segundo horómetro de salida (${hm2Valor}) debe ser mayor o igual al de entrada (${valoresEntrada.horometro2})`);
+                        return false;
+                    }
                 }
             }
         });
+        
+        // Función para actualizar nombres de las fotos según el estado
+        function actualizarNombresFotos(estadoSelect) {
+            if (!estadoSelect || !estadoSelect.options || !estadoSelect.options[estadoSelect.selectedIndex]) {
+                return;
+            }
+            
+            const estadoTexto = estadoSelect.options[estadoSelect.selectedIndex].text.toLowerCase();
+            const esDisponible = estadoTexto.includes('disponible');
+            
+            // Actualizar etiquetas de las fotos
+            const labelFotoHorometro = document.getElementById('labelFotoHorometro');
+            const labelFotoHorometro2 = document.getElementById('labelFotoHorometro2');
+            
+            if (labelFotoHorometro) {
+                labelFotoHorometro.textContent = esDisponible ? 'Foto Horómetro Grúa' : 'Foto del Horómetro';
+            }
+            
+            if (labelFotoHorometro2) {
+                labelFotoHorometro2.textContent = esDisponible ? 'Foto Horómetro Camión' : 'Foto del Segundo Horómetro';
+            }
+        }
     </script>
 </body>
 </html>

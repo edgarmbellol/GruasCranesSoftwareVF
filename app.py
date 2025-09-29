@@ -83,7 +83,7 @@ app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
 }
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
+app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB max file size
 
 # Inicializar base de datos
 db.init_app(app)
@@ -611,8 +611,9 @@ def editar_usuario(id):
     
     if form.validate_on_submit():
         try:
+            # Actualizar todos los campos excepto el documento (que es de solo lectura)
             user.tipo_documento = form.tipo_documento.data
-            user.documento = form.documento.data
+            # user.documento = form.documento.data  # No actualizar documento (solo lectura)
             user.nombre = form.nombre.data
             user.email = form.email.data
             user.celular = form.celular.data
@@ -752,6 +753,11 @@ def nuevo_equipo():
     
     if form.validate_on_submit():
         try:
+            # Manejar imagen del equipo
+            imagen_equipo = None
+            if form.ImagenEquipo.data and hasattr(form.ImagenEquipo.data, 'filename'):
+                imagen_equipo = guardar_archivo(form.ImagenEquipo.data, 'equipo')
+            
             equipo = Equipo(
                 IdTipoEquipo=form.IdTipoEquipo.data,
                 Placa=form.Placa.data,
@@ -762,7 +768,9 @@ def nuevo_equipo():
                 Referencia=form.Referencia.data,
                 Color=form.Color.data,
                 Modelo=form.Modelo.data,
-                CentroCostos=form.CentroCostos.data
+                CentroCostos=form.CentroCostos.data,
+                ImagenEquipo=imagen_equipo,
+                TieneDosMotores=form.TieneDosMotores.data
             )
             
             # Aplicar estado si se especificó
@@ -803,10 +811,23 @@ def nuevo_equipo():
 def editar_equipo(id):
     """Editar equipo existente"""
     equipo = Equipo.query.get_or_404(id)
+    
     form = EquipoForm(obj=equipo, id=id)
     
     if form.validate_on_submit():
         try:
+            # Manejar imagen del equipo (solo si se sube una nueva)
+            if form.ImagenEquipo.data and hasattr(form.ImagenEquipo.data, 'filename'):
+                # Eliminar imagen anterior si existe
+                if equipo.ImagenEquipo:
+                    import os
+                    ruta_imagen_anterior = os.path.join(app.config['UPLOAD_FOLDER'], equipo.ImagenEquipo)
+                    if os.path.exists(ruta_imagen_anterior):
+                        os.remove(ruta_imagen_anterior)
+                
+                # Guardar nueva imagen
+                equipo.ImagenEquipo = guardar_archivo(form.ImagenEquipo.data, 'equipo')
+            
             equipo.IdTipoEquipo = form.IdTipoEquipo.data
             equipo.Placa = form.Placa.data
             equipo.Capacidad = form.Capacidad.data
@@ -817,6 +838,7 @@ def editar_equipo(id):
             equipo.CentroCostos = form.CentroCostos.data
             equipo.IdEstadoEquipo = form.IdEstadoEquipo.data
             equipo.Estado = form.Estado.data
+            equipo.TieneDosMotores = form.TieneDosMotores.data
             
             # Manejar fecha de inactivación
             if form.Estado.data == 'inactivo' and equipo.Estado != 'inactivo':
@@ -1728,6 +1750,7 @@ def registro_horas(equipo_id):
         valores_entrada = {
             'kilometraje': entrada_pendiente.Kilometraje,
             'horometro': entrada_pendiente.Horometro,
+            'horometro2': entrada_pendiente.Horometro2,
             'fecha_entrada': entrada_pendiente.FechaEmpleado.strftime('%d/%m/%Y'),
             'hora_entrada': entrada_pendiente.HoraEmpleado.strftime('%H:%M')
         }
@@ -1749,10 +1772,9 @@ def procesar_registro_horas(equipo_id):
     empleado = User.query.get(session['user_id'])  # Obtener el empleado logueado
     form = RegistroHorasForm()
     
-    # Debug: verificar datos del formulario
-    print(f"DEBUG: Formulario válido: {form.validate_on_submit()}")
-    print(f"DEBUG: Errores del formulario: {form.errors}")
-    print(f"DEBUG: Datos del formulario: {request.form}")
+    # Debug: verificar datos del formulario (simplificado)
+    if not form.validate_on_submit():
+        print(f"DEBUG: Errores del formulario: {form.errors}")
     
     # Validaciones adicionales de fecha y hora
     if form.FechaEmpleado.data and form.HoraEmpleado.data:
@@ -1816,6 +1838,7 @@ def procesar_registro_horas(equipo_id):
                                          valores_entrada={
                                              'kilometraje': entrada.Kilometraje,
                                              'horometro': entrada.Horometro,
+                                             'horometro2': entrada.Horometro2,
                                              'fecha_entrada': entrada.FechaEmpleado.strftime('%d/%m/%Y'),
                                              'hora_entrada': entrada.HoraEmpleado.strftime('%H:%M')
                                          })
@@ -1835,6 +1858,7 @@ def procesar_registro_horas(equipo_id):
                                          valores_entrada={
                                              'kilometraje': entrada.Kilometraje,
                                              'horometro': entrada.Horometro,
+                                             'horometro2': entrada.Horometro2,
                                              'fecha_entrada': entrada.FechaEmpleado.strftime('%d/%m/%Y'),
                                              'hora_entrada': entrada.HoraEmpleado.strftime('%H:%M')
                                          })
@@ -1849,6 +1873,7 @@ def procesar_registro_horas(equipo_id):
             # Procesar archivos subidos
             foto_kilometraje = None
             foto_horometro = None
+            foto_horometro2 = None
             foto_grua = None
             
             if form.FotoKilometraje.data:
@@ -1856,6 +1881,9 @@ def procesar_registro_horas(equipo_id):
             
             if form.FotoHorometro.data:
                 foto_horometro = guardar_archivo(form.FotoHorometro.data, 'horometro')
+            
+            if form.FotoHorometro2.data:
+                foto_horometro2 = guardar_archivo(form.FotoHorometro2.data, 'horometro2')
             
             if form.FotoGrua.data:
                 foto_grua = guardar_archivo(form.FotoGrua.data, 'grua')
@@ -1883,6 +1911,7 @@ def procesar_registro_horas(equipo_id):
                                              valores_entrada={
                                                  'kilometraje': entrada.Kilometraje,
                                                  'horometro': entrada.Horometro,
+                                                 'horometro2': entrada.Horometro2,
                                                  'fecha_entrada': entrada.FechaEmpleado.strftime('%d/%m/%Y'),
                                                  'hora_entrada': entrada.HoraEmpleado.strftime('%H:%M')
                                              })
@@ -1900,23 +1929,49 @@ def procesar_registro_horas(equipo_id):
                                              valores_entrada={
                                                  'kilometraje': entrada.Kilometraje,
                                                  'horometro': entrada.Horometro,
+                                                 'horometro2': entrada.Horometro2,
                                                  'fecha_entrada': entrada.FechaEmpleado.strftime('%d/%m/%Y'),
                                                  'hora_entrada': entrada.HoraEmpleado.strftime('%H:%M')
                                              })
+                    
+                    # Validar segundo horómetro si el equipo tiene dos motores
+                    if equipo.TieneDosMotores and entrada.Horometro2 is not None:
+                        if form.Horometro2.data and form.Horometro2.data < entrada.Horometro2:
+                            flash(f'❌ Error: El horómetro 2 de salida ({form.Horometro2.data}) debe ser mayor o igual al de entrada ({entrada.Horometro2}). El horómetro no puede retroceder.', 'error')
+                            # Mantener datos del formulario y mostrar errores
+                            return render_template('registro_horas/formulario.html', 
+                                                 equipo=equipo, 
+                                                 empleado=empleado, 
+                                                 form=form, 
+                                                 entrada_pendiente=entrada,
+                                                 cargo_nombre=entrada.cargo.descripcionCargo if entrada.cargo else 'N/A',
+                                                 cliente_nombre=entrada.cliente.NombreCliente if entrada.cliente else 'N/A',
+                                                 valores_entrada={
+                                                     'kilometraje': entrada.Kilometraje,
+                                                     'horometro': entrada.Horometro,
+                                                     'horometro2': entrada.Horometro2,
+                                                     'fecha_entrada': entrada.FechaEmpleado.strftime('%d/%m/%Y'),
+                                                     'hora_entrada': entrada.HoraEmpleado.strftime('%H:%M')
+                                                 })
+            
+            # El cliente ahora siempre viene del formulario (ya sea seleccionado o auto-asignado)
+            cliente_id = form.IdCliente.data
             
             # Crear registro
             registro = RegistroHoras(
                 IdEquipo=equipo_id,
                 IdEmpleado=session['user_id'],  # Usar el ID del usuario logueado
                 IdCargo=form.IdCargo.data,
-                IdCliente=form.IdCliente.data if form.IdCliente.data else None,
+                IdCliente=cliente_id,
                 IdEstadoEquipo=form.IdEstadoEquipo.data,
                 FechaEmpleado=form.FechaEmpleado.data,
                 HoraEmpleado=form.HoraEmpleado.data,
                 Kilometraje=form.Kilometraje.data,
                 Horometro=form.Horometro.data,
+                Horometro2=form.Horometro2.data,
                 FotoKilometraje=foto_kilometraje,
                 FotoHorometro=foto_horometro,
+                FotoHorometro2=foto_horometro2,
                 FotoGrua=foto_grua,
                 Observacion=form.Observacion.data,
                 Ubicacion=ubicacion,
@@ -1958,21 +2013,65 @@ def procesar_registro_horas(equipo_id):
     return redirect(url_for('registro_horas', equipo_id=equipo_id))
 
 def guardar_archivo(archivo, prefijo):
-    """Guardar archivo subido y retornar el nombre"""
+    """Guardar archivo subido con compresión automática y retornar el nombre"""
     if archivo and archivo.filename:
         import uuid
         from werkzeug.utils import secure_filename
+        from image_processor import compress_image_server, validate_image_dimensions
         
-        # Generar nombre único
-        extension = archivo.filename.rsplit('.', 1)[1].lower()
+        # Generar nombre único (siempre como .jpg para imágenes comprimidas)
+        extension = 'jpg'  # Siempre guardar como JPEG comprimido
         nombre_archivo = f"{prefijo}_{uuid.uuid4().hex}.{extension}"
         
         # Crear directorio si no existe
         os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
         
-        # Guardar archivo
+        # Guardar archivo temporal
         ruta_archivo = os.path.join(app.config['UPLOAD_FOLDER'], nombre_archivo)
         archivo.save(ruta_archivo)
+        
+        # Verificar si es una imagen
+        try:
+            from PIL import Image
+            with Image.open(ruta_archivo) as img:
+                # Es una imagen válida, proceder con compresión
+                
+                # Validar dimensiones mínimas
+                is_valid, width, height, error_msg = validate_image_dimensions(ruta_archivo, 100, 100)
+                if not is_valid:
+                    os.remove(ruta_archivo)
+                    flash(f'Error en imagen: {error_msg}', 'error')
+                    return None
+                
+                # Comprimir imagen automáticamente
+                success, compressed_path, compression_info = compress_image_server(
+                    ruta_archivo,
+                    max_width=1920,
+                    max_height=1080,
+                    quality=80,
+                    max_size_mb=5
+                )
+                
+                if success and isinstance(compression_info, dict):
+                    # Log de compresión exitosa
+                    original_mb = compression_info['original_size_mb']
+                    compressed_mb = compression_info['compressed_size_mb']
+                    ratio = compression_info['compression_ratio']
+                    
+                    print(f"✅ Imagen comprimida: {original_mb:.2f}MB → {compressed_mb:.2f}MB (-{ratio:.1f}%)")
+                    
+                    # Mostrar mensaje de éxito al usuario
+                    flash(f'Imagen optimizada: {original_mb:.1f}MB → {compressed_mb:.1f}MB', 'success')
+                
+                elif not success:
+                    # Error en compresión, eliminar archivo
+                    os.remove(ruta_archivo)
+                    flash(f'Error al procesar imagen: {compression_info}', 'error')
+                    return None
+                    
+        except Exception as e:
+            # Si no es una imagen o hay error, mantener el archivo original
+            print(f"⚠️ No es una imagen o error al procesar: {str(e)}")
         
         return nombre_archivo
     return None
@@ -2072,7 +2171,15 @@ def revision_formularios():
 @login_required
 def detalle_formulario(registro_id):
     """Detalle de un formulario específico"""
-    registro = RegistroHoras.query.get_or_404(registro_id)
+    from sqlalchemy.orm import joinedload
+    
+    registro = RegistroHoras.query.options(
+        joinedload(RegistroHoras.empleado),
+        joinedload(RegistroHoras.cargo),
+        joinedload(RegistroHoras.cliente),
+        joinedload(RegistroHoras.estado_equipo),
+        joinedload(RegistroHoras.equipo)
+    ).get_or_404(registro_id)
     
     return render_template('reportes/detalle_formulario.html', registro=registro)
 
@@ -2142,11 +2249,26 @@ def reporte_horas_empleado():
                             horas_por_dia[dia] = 0
                         horas_por_dia[dia] += horas_trabajadas
             
+            # Obtener información de clientes por día
+            clientes_por_dia = {}
+            for registro in registros:
+                if registro.TipoRegistro == 'entrada':
+                    dia = registro.FechaEmpleado.day
+                    if dia not in clientes_por_dia:
+                        clientes_por_dia[dia] = set()
+                    
+                    # Obtener información del cliente
+                    if registro.IdCliente:
+                        cliente = Cliente.query.get(registro.IdCliente)
+                        if cliente:
+                            clientes_por_dia[dia].add(cliente.NombreCliente)
+            
             # Crear datos del calendario
             for dia in range(1, calendar.monthrange(año, mes)[1] + 1):
                 calendario_data[dia] = {
                     'trabajo': dia in dias_trabajados,
-                    'horas': round(horas_por_dia.get(dia, 0), 2)
+                    'horas': round(horas_por_dia.get(dia, 0), 2),
+                    'clientes': list(clientes_por_dia.get(dia, []))
                 }
             
             # Calcular resumen
@@ -2206,7 +2328,7 @@ def exportar_horas_empleado_excel():
     center_alignment = Alignment(horizontal='center', vertical='center')
     
     # Título principal
-    ws.merge_cells('A1:H1')
+    ws.merge_cells('A1:I1')
     ws['A1'] = f"REPORTE DE HORAS TRABAJADAS - {empleado.nombre.upper()}"
     ws['A1'].font = Font(bold=True, size=16, color="366092")
     ws['A1'].alignment = center_alignment
@@ -2221,7 +2343,7 @@ def exportar_horas_empleado_excel():
     
     # Encabezados de la tabla
     headers = [
-        'Fecha', 'Equipo', 'Tipo Equipo', 'Cargo', 'Hora Entrada', 
+        'Fecha', 'Equipo', 'Tipo Equipo', 'Cargo', 'Cliente', 'Hora Entrada', 
         'Hora Salida', 'Horas Trabajadas', 'Observaciones'
     ]
     
@@ -2267,9 +2389,10 @@ def exportar_horas_empleado_excel():
         if entrada:
             dias_trabajados.add(fecha.day)
             
-            # Obtener información del equipo y cargo
+            # Obtener información del equipo, cargo y cliente
             equipo = Equipo.query.get(equipo_id)
             cargo = Cargo.query.get(entrada.IdCargo) if entrada.IdCargo else None
+            cliente = Cliente.query.get(entrada.IdCliente) if entrada.IdCliente else None
             
             # Calcular horas trabajadas
             horas_trabajadas = 0
@@ -2287,20 +2410,21 @@ def exportar_horas_empleado_excel():
             ws.cell(row=row, column=2, value=equipo.Placa if equipo else "N/A").border = border
             ws.cell(row=row, column=3, value=equipo.tipo_equipo.descripcion if equipo and equipo.tipo_equipo else "N/A").border = border
             ws.cell(row=row, column=4, value=cargo.descripcionCargo if cargo else "N/A").border = border
-            ws.cell(row=row, column=5, value=entrada.HoraEmpleado.strftime('%H:%M')).border = border
-            ws.cell(row=row, column=6, value=hora_salida_str).border = border
-            ws.cell(row=row, column=7, value=round(horas_trabajadas, 2)).border = border
-            ws.cell(row=row, column=8, value=entrada.Observacion or "").border = border
+            ws.cell(row=row, column=5, value=cliente.NombreCliente if cliente else "N/A").border = border
+            ws.cell(row=row, column=6, value=entrada.HoraEmpleado.strftime('%H:%M')).border = border
+            ws.cell(row=row, column=7, value=hora_salida_str).border = border
+            ws.cell(row=row, column=8, value=round(horas_trabajadas, 2)).border = border
+            ws.cell(row=row, column=9, value=entrada.Observacion or "").border = border
             
             # Aplicar alineación
-            for col in range(1, 9):
+            for col in range(1, 10):
                 ws.cell(row=row, column=col).alignment = center_alignment
             
             row += 1
     
     # Resumen al final
     row += 2
-    ws.merge_cells(f'A{row}:H{row}')
+    ws.merge_cells(f'A{row}:I{row}')
     ws[f'A{row}'] = "RESUMEN"
     ws[f'A{row}'].font = Font(bold=True, size=14, color="366092")
     ws[f'A{row}'].alignment = center_alignment
@@ -2324,7 +2448,7 @@ def exportar_horas_empleado_excel():
     ws[f'B{row}'].font = Font(bold=True)
     
     # Ajustar ancho de columnas
-    column_widths = [12, 20, 15, 15, 12, 12, 15, 25]
+    column_widths = [12, 20, 15, 15, 25, 12, 12, 15, 25]
     for i, width in enumerate(column_widths, 1):
         ws.column_dimensions[get_column_letter(i)].width = width
     

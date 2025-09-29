@@ -87,5 +87,27 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     };
 
+    // Función para preview de imágenes
+    window.previewImage = function(input, previewId) {
+        const preview = document.getElementById(previewId);
+        
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                if (preview) {
+                    preview.src = e.target.result;
+                    preview.style.display = 'block';
+                    preview.style.maxWidth = '200px';
+                    preview.style.maxHeight = '200px';
+                    preview.style.borderRadius = '8px';
+                    preview.style.marginTop = '10px';
+                }
+            };
+            
+            reader.readAsDataURL(input.files[0]);
+        }
+    };
+
     console.log('Sistema de Grúas - Aplicación cargada correctamente');
 });

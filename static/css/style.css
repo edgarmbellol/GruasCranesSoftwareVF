@@ -3018,3 +3018,143 @@ body {
         max-height: 150px;
     }
 }
+
+/* Estilos para campos de solo lectura */
+.form-control-plaintext.bg-light {
+    background-color: #f8f9fa !important;
+    border: 1px solid #dee2e6 !important;
+    border-radius: 0.375rem;
+    padding: 0.75rem 1rem;
+    font-weight: 500;
+    color: #6c757d;
+    cursor: not-allowed;
+}
+
+.form-control-plaintext.bg-light:focus {
+    background-color: #f8f9fa !important;
+    border-color: #dee2e6 !important;
+    box-shadow: none !important;
+    outline: none !important;
+}
+
+/* Indicador visual de campo no editable */
+.form-control-plaintext.bg-light::after {
+    content: "🔒";
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.8rem;
+    opacity: 0.6;
+}
+
+/* Estilos para compresión de imágenes */
+.image-compression-progress {
+    background: linear-gradient(135deg, #e3f2fd, #f3e5f5);
+    border: 1px solid #2196f3;
+    border-radius: 8px;
+    padding: 0.75rem;
+    margin-top: 0.5rem;
+}
+
+.image-compression-result {
+    background: linear-gradient(135deg, #e8f5e8, #f0f8f0);
+    border: 1px solid #4caf50;
+    border-radius: 8px;
+    padding: 0.75rem;
+    margin-top: 0.5rem;
+}
+
+.image-compression-error {
+    background: linear-gradient(135deg, #ffebee, #fce4ec);
+    border: 1px solid #f44336;
+    border-radius: 8px;
+    padding: 0.75rem;
+    margin-top: 0.5rem;
+}
+
+.image-size-error {
+    background: linear-gradient(135deg, #fff3e0, #fce4ec);
+    border: 1px solid #ff9800;
+    border-radius: 6px;
+    padding: 0.5rem;
+    margin-top: 0.25rem;
+}
+
+.image-size-info {
+    background: linear-gradient(135deg, #e8f5e8, #f1f8e9);
+    border: 1px solid #8bc34a;
+    border-radius: 6px;
+    padding: 0.5rem;
+    margin-top: 0.25rem;
+}
+
+/* Animaciones para los mensajes de compresión */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.image-compression-progress,
+.image-compression-result,
+.image-compression-error,
+.image-size-error,
+.image-size-info {
+    animation: fadeInUp 0.3s ease-out;
+}
+
+/* Mejoras para campos de archivo */
+input[type="file"] {
+    transition: all 0.3s ease;
+}
+
+input[type="file"]:hover {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(39, 174, 96, 0.1);
+}
+
+input[type="file"].is-invalid {
+    border-color: #dc3545;
+    box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.1);
+}
+
+/* Spinner personalizado para compresión */
+.spinner-border-sm {
+    width: 1rem;
+    height: 1rem;
+    border-width: 0.15em;
+}
+
+/* Badges para estadísticas de compresión */
+.badge {
+    font-size: 0.75rem;
+    padding: 0.25em 0.5em;
+    border-radius: 0.375rem;
+}
+
+.badge.bg-success {
+    background-color: var(--primary-color) !important;
+}
+
+/* Responsive para mensajes de compresión */
+@media (max-width: 768px) {
+    .image-compression-progress,
+    .image-compression-result,
+    .image-compression-error,
+    .image-size-error,
+    .image-size-info {
+        padding: 0.5rem;
+        font-size: 0.85rem;
+    }
+    
+    .badge {
+        font-size: 0.7rem;
+        padding: 0.2em 0.4em;
+    }
+}

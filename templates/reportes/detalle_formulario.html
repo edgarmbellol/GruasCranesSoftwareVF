@@ -3,108 +3,278 @@
 {% block title %}Detalle del Formulario #{{ registro.IdRegistro }}{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
+<div class="container-fluid" style="margin-top: 80px; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); min-height: 100vh;">
     <div class="row">
         <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2><i class="fas fa-clipboard-list me-2"></i>Detalle del Formulario #{{ registro.IdRegistro }}</h2>
-                <a href="{{ url_for('revision_formularios') }}" class="btn btn-outline-secondary">
-                    <i class="fas fa-arrow-left me-1"></i>Volver a Lista
+            <!-- Header mejorado -->
+            <div class="d-flex justify-content-between align-items-center mb-5">
+                <div class="d-flex align-items-center">
+                    <div class="me-3">
+                        <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                            <i class="fas fa-clipboard-list text-white fs-3"></i>
+                        </div>
+                    </div>
+                    <div>
+                        <h2 class="mb-1 fw-bold text-dark">Detalle del Formulario</h2>
+                        <p class="text-muted mb-0">Registro #{{ registro.IdRegistro }} - {{ registro.TipoRegistro|title }}</p>
+                    </div>
+                </div>
+                <a href="{{ url_for('revision_formularios') }}" class="btn btn-outline-primary btn-lg px-4 py-2">
+                    <i class="fas fa-arrow-left me-2"></i>Volver a Lista
                 </a>
             </div>
 
-            <div class="row">
+            <div class="row g-4">
                 <!-- Información Principal -->
                 <div class="col-lg-8">
-                    <div class="card mb-4">
-                        <div class="card-header">
-                            <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Información del Registro</h5>
+                    <!-- Información del Empleado -->
+                    <div class="card shadow-lg border-0 mb-4" style="border-radius: 20px; overflow: hidden;">
+                        <div class="card-header bg-gradient-primary text-white py-4" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                            <div class="d-flex align-items-center">
+                                <div class="me-3">
+                                    <div class="bg-white bg-opacity-20 rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                                        <i class="fas fa-user text-white fs-4"></i>
+                                    </div>
+                                </div>
+                                <div>
+                                    <h4 class="mb-1 fw-bold">Información del Empleado</h4>
+                                    <p class="mb-0 opacity-75">Datos personales y laborales</p>
+                                </div>
+                            </div>
                         </div>
-                        <div class="card-body">
-                            <div class="row">
+                        <div class="card-body p-4">
+                            <div class="row g-4">
                                 <div class="col-md-6">
-                                    <h6 class="text-muted">Empleado</h6>
-                                    <p class="mb-3">
-                                        <strong>{{ registro.empleado.nombre }}</strong><br>
-                                        <small class="text-muted">{{ registro.empleado.documento }}</small><br>
-                                        <span class="badge bg-info">{{ registro.cargo.NombreCargo }}</span>
-                                    </p>
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
+                                            <i class="fas fa-user text-primary"></i>
+                                        </div>
+                                        <div>
+                                            <h5 class="mb-1 fw-bold text-dark">{{ registro.empleado.nombre }}</h5>
+                                            <p class="text-muted mb-0">{{ registro.empleado.documento }}</p>
+                                        </div>
+                                    </div>
                                     
-                                    <h6 class="text-muted">Equipo</h6>
-                                    <p class="mb-3">
-                                        <strong>{{ registro.equipo.Placa }}</strong><br>
-                                        <small class="text-muted">{{ registro.equipo.Referencia or registro.equipo.Modelo or 'Sin referencia' }}</small><br>
-                                        <span class="badge bg-{{ 'success' if registro.estado_equipo.NombreEstado == 'Operativo' else 'danger' }}">
-                                            {{ registro.estado_equipo.NombreEstado }}
-                                        </span>
-                                    </p>
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="bg-info bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
+                                            <i class="fas fa-briefcase text-info"></i>
+                                        </div>
+                                        <div>
+                                            <p class="text-muted mb-1">Cargo</p>
+                                            <span class="badge bg-primary text-white fs-6 px-3 py-2" style="border-radius: 15px;">
+                                                {{ registro.cargo.descripcionCargo }}
+                                            </span>
+                                        </div>
+                                    </div>
                                     
-                                    <h6 class="text-muted">Tipo de Registro</h6>
-                                    <p class="mb-3">
-                                        {% if registro.TipoRegistro == 'entrada' %}
-                                            <span class="badge bg-success fs-6">
-                                                <i class="fas fa-sign-in-alt me-1"></i>Entrada
+                                    {% if registro.cliente %}
+                                    <div class="d-flex align-items-center">
+                                        <div class="bg-success bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
+                                            <i class="fas fa-building text-success"></i>
+                                        </div>
+                                        <div>
+                                            <p class="text-muted mb-1">Cliente</p>
+                                            <span class="badge bg-success text-white fs-6 px-3 py-2" style="border-radius: 15px;">
+                                                {{ registro.cliente.NombreCliente }}
                                             </span>
-                                        {% else %}
-                                            <span class="badge bg-warning fs-6">
-                                                <i class="fas fa-sign-out-alt me-1"></i>Salida
-                                            </span>
-                                        {% endif %}
-                                    </p>
+                                        </div>
+                                    </div>
+                                    {% endif %}
                                 </div>
                                 
                                 <div class="col-md-6">
-                                    <h6 class="text-muted">Fechas y Horas</h6>
-                                    <div class="mb-3">
-                                        <strong>Fecha del Empleado:</strong><br>
-                                        {{ registro.FechaEmpleado.strftime('%d/%m/%Y') }} a las {{ registro.HoraEmpleado.strftime('%H:%M') }}
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="bg-warning bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
+                                            <i class="fas fa-truck text-warning"></i>
+                                        </div>
+                                        <div>
+                                            <h5 class="mb-1 fw-bold text-dark">{{ registro.equipo.Placa }}</h5>
+                                            <p class="text-muted mb-0">{{ registro.equipo.Referencia or registro.equipo.Modelo or 'Sin referencia' }}</p>
+                                        </div>
                                     </div>
                                     
-                                    <div class="mb-3">
-                                        <strong>Fecha del Sistema:</strong><br>
-                                        {{ format_colombia_datetime(registro.FechaCreacion).strftime('%d/%m/%Y %H:%M:%S') }}
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="bg-{{ 'success' if registro.estado_equipo.Descripcion == 'Operativo' else 'danger' }} bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
+                                            <i class="fas fa-{{ 'check-circle' if registro.estado_equipo.Descripcion == 'Operativo' else 'exclamation-triangle' }} text-{{ 'success' if registro.estado_equipo.Descripcion == 'Operativo' else 'danger' }}"></i>
+                                        </div>
+                                        <div>
+                                            <p class="text-muted mb-1">Estado del Equipo</p>
+                                            <span class="badge bg-{{ 'success' if registro.estado_equipo.Descripcion == 'Operativo' else 'danger' }} text-white fs-6 px-3 py-2" style="border-radius: 15px;">
+                                                {{ registro.estado_equipo.Descripcion }}
+                                            </span>
+                                        </div>
                                     </div>
                                     
-                                    {% if registro.Ubicacion %}
-                                    <h6 class="text-muted">Ubicación</h6>
-                                    <p class="mb-3">
-                                        <i class="fas fa-map-marker-alt me-1"></i>{{ registro.Ubicacion }}
-                                        {% if registro.Latitud and registro.Longitud %}
-                                            <br><small class="text-muted">
-                                                Coordenadas: {{ "%.6f"|format(registro.Latitud) }}, {{ "%.6f"|format(registro.Longitud) }}
-                                            </small>
-                                        {% endif %}
-                                    </p>
+                                    {% if registro.equipo.TieneDosMotores %}
+                                    <div class="d-flex align-items-center">
+                                        <div class="bg-info bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
+                                            <i class="fas fa-cogs text-info"></i>
+                                        </div>
+                                        <div>
+                                            <p class="text-muted mb-1">Configuración</p>
+                                            <span class="badge bg-info text-white fs-6 px-3 py-2" style="border-radius: 15px;">
+                                                Dos Motores
+                                            </span>
+                                        </div>
+                                    </div>
                                     {% endif %}
                                 </div>
                             </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Fechas y Ubicación -->
+                    <div class="card shadow-lg border-0 mb-4" style="border-radius: 20px; overflow: hidden;">
+                        <div class="card-header bg-gradient-info text-white py-4" style="background: linear-gradient(135deg, #36d1dc 0%, #5b86e5 100%);">
+                            <div class="d-flex align-items-center">
+                                <div class="me-3">
+                                    <div class="bg-white bg-opacity-20 rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                                        <i class="fas fa-clock text-white fs-4"></i>
+                                    </div>
+                                </div>
+                                <div>
+                                    <h4 class="mb-1 fw-bold">Fechas y Ubicación</h4>
+                                    <p class="mb-0 opacity-75">Información temporal y geográfica</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body p-4">
+                            <div class="row g-4">
+                                <div class="col-md-6">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
+                                            <i class="fas fa-calendar-alt text-primary"></i>
+                                        </div>
+                                        <div>
+                                            <p class="text-muted mb-1">Fecha del Empleado</p>
+                                            <h6 class="mb-0 fw-bold">{{ registro.FechaEmpleado.strftime('%d/%m/%Y') }} a las {{ registro.HoraEmpleado.strftime('%H:%M') }}</h6>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="d-flex align-items-center">
+                                        <div class="bg-info bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
+                                            <i class="fas fa-server text-info"></i>
+                                        </div>
+                                        <div>
+                                            <p class="text-muted mb-1">Fecha del Sistema</p>
+                                            <h6 class="mb-0 fw-bold">{{ format_colombia_datetime(registro.FechaCreacion).strftime('%d/%m/%Y %H:%M:%S') }}</h6>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                {% if registro.Ubicacion or (registro.Latitud and registro.Longitud) %}
+                                <div class="col-md-6">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="bg-warning bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
+                                            <i class="fas fa-map-marker-alt text-warning"></i>
+                                        </div>
+                                        <div>
+                                            <p class="text-muted mb-1">Ubicación</p>
+                                            {% if registro.Ubicacion %}
+                                            <h6 class="mb-1 fw-bold">{{ registro.Ubicacion }}</h6>
+                                            {% endif %}
+                                            {% if registro.Latitud and registro.Longitud %}
+                                            <code class="small text-muted">
+                                                {{ "%.6f"|format(registro.Latitud) }}, {{ "%.6f"|format(registro.Longitud) }}
+                                            </code>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    
+                                    {% if registro.Latitud and registro.Longitud %}
+                                    <div class="d-flex gap-2">
+                                        <a href="https://www.google.com/maps?q={{ registro.Latitud }},{{ registro.Longitud }}" 
+                                           target="_blank" 
+                                           class="btn btn-outline-primary btn-sm px-3 py-2" style="border-radius: 15px;">
+                                            <i class="fas fa-external-link-alt me-1"></i>Google Maps
+                                        </a>
+                                        <button class="btn btn-outline-secondary btn-sm px-3 py-2" 
+                                                onclick="copyToClipboard('{{ registro.Latitud }},{{ registro.Longitud }}')"
+                                                style="border-radius: 15px;">
+                                            <i class="fas fa-copy me-1"></i>Copiar
+                                        </button>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+                            </div>
                             
                             {% if registro.Observacion %}
-                            <h6 class="text-muted">Observaciones</h6>
-                            <p class="mb-0">{{ registro.Observacion }}</p>
+                            <div class="mt-4 pt-4 border-top">
+                                <div class="d-flex align-items-start">
+                                    <div class="bg-warning bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
+                                        <i class="fas fa-comment-alt text-warning"></i>
+                                    </div>
+                                    <div>
+                                        <p class="text-muted mb-1">Observaciones</p>
+                                        <p class="mb-0 fw-bold">{{ registro.Observacion }}</p>
+                                    </div>
+                                </div>
+                            </div>
                             {% endif %}
                         </div>
                     </div>
 
                     <!-- Datos del Equipo (solo para operadores) -->
-                    {% if registro.Kilometraje is not none or registro.Horometro is not none %}
-                    <div class="card mb-4">
-                        <div class="card-header">
-                            <h5 class="mb-0"><i class="fas fa-tachometer-alt me-2"></i>Datos del Equipo</h5>
+                    {% if registro.Kilometraje is not none or registro.Horometro is not none or registro.Horometro2 is not none %}
+                    <div class="card shadow-lg border-0 mb-4" style="border-radius: 20px; overflow: hidden;">
+                        <div class="card-header bg-gradient-warning text-white py-4" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                            <div class="d-flex align-items-center">
+                                <div class="me-3">
+                                    <div class="bg-white bg-opacity-20 rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                                        <i class="fas fa-tachometer-alt text-white fs-4"></i>
+                                    </div>
+                                </div>
+                                <div>
+                                    <h4 class="mb-1 fw-bold">Datos del Equipo</h4>
+                                    <p class="mb-0 opacity-75">
+                                        {% if registro.equipo.TieneDosMotores %}
+                                            Equipo con dos motores
+                                        {% else %}
+                                            Información técnica del equipo
+                                        {% endif %}
+                                    </p>
+                                </div>
+                            </div>
                         </div>
-                        <div class="card-body">
-                            <div class="row">
+                        <div class="card-body p-4">
+                            <div class="row g-4">
                                 {% if registro.Kilometraje is not none %}
-                                <div class="col-md-6">
-                                    <h6 class="text-muted">Kilometraje</h6>
-                                    <p class="fs-4 mb-0">{{ "%.1f"|format(registro.Kilometraje) }} km</p>
+                                <div class="col-md-6 col-lg-4">
+                                    <div class="text-center p-4 bg-light rounded-3" style="border-radius: 15px;">
+                                        <div class="bg-primary bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
+                                            <i class="fas fa-tachometer-alt text-primary fs-3"></i>
+                                        </div>
+                                        <h6 class="text-muted mb-2">Kilometraje</h6>
+                                        <h3 class="fw-bold text-primary mb-0">{{ "%.1f"|format(registro.Kilometraje) }} km</h3>
+                                    </div>
                                 </div>
                                 {% endif %}
                                 
                                 {% if registro.Horometro is not none %}
-                                <div class="col-md-6">
-                                    <h6 class="text-muted">Horómetro</h6>
-                                    <p class="fs-4 mb-0">{{ "%.1f"|format(registro.Horometro) }} hrs</p>
+                                <div class="col-md-6 col-lg-4">
+                                    <div class="text-center p-4 bg-light rounded-3" style="border-radius: 15px;">
+                                        <div class="bg-info bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
+                                            <i class="fas fa-clock text-info fs-3"></i>
+                                        </div>
+                                        <h6 class="text-muted mb-2">Horómetro 1</h6>
+                                        <h3 class="fw-bold text-info mb-0">{{ "%.1f"|format(registro.Horometro) }} hrs</h3>
+                                    </div>
+                                </div>
+                                {% endif %}
+                                
+                                {% if registro.Horometro2 is not none %}
+                                <div class="col-md-6 col-lg-4">
+                                    <div class="text-center p-4 bg-light rounded-3" style="border-radius: 15px;">
+                                        <div class="bg-success bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
+                                            <i class="fas fa-clock text-success fs-3"></i>
+                                        </div>
+                                        <h6 class="text-muted mb-2">
+                                            Horómetro 2
+                                            <span class="badge bg-secondary ms-1">Motor 2</span>
+                                        </h6>
+                                        <h3 class="fw-bold text-success mb-0">{{ "%.1f"|format(registro.Horometro2) }} hrs</h3>
+                                    </div>
                                 </div>
                                 {% endif %}
                             </div>
@@ -113,62 +283,116 @@
                     {% endif %}
                 </div>
 
-                <!-- Imágenes -->
+                <!-- Evidencia Fotográfica -->
                 <div class="col-lg-4">
-                    <div class="card">
-                        <div class="card-header">
-                            <h5 class="mb-0"><i class="fas fa-images me-2"></i>Evidencia Fotográfica</h5>
+                    <div class="card shadow-lg border-0" style="border-radius: 20px; overflow: hidden; position: sticky; top: 100px;">
+                        <div class="card-header bg-gradient-success text-white py-4" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                            <div class="d-flex align-items-center">
+                                <div class="me-3">
+                                    <div class="bg-white bg-opacity-20 rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                                        <i class="fas fa-images text-white fs-4"></i>
+                                    </div>
+                                </div>
+                                <div>
+                                    <h4 class="mb-1 fw-bold">Evidencia Fotográfica</h4>
+                                    <p class="mb-0 opacity-75">Imágenes del registro</p>
+                                </div>
+                            </div>
                         </div>
-                        <div class="card-body">
-                            {% if registro.FotoKilometraje or registro.FotoHorometro or registro.FotoGrua %}
-                                {% if registro.FotoKilometraje %}
-                                <div class="mb-4">
-                                    <h6 class="text-muted mb-2">
-                                        <i class="fas fa-tachometer-alt me-1"></i>Foto del Kilometraje
-                                    </h6>
-                                    <div class="image-container">
-                                        <img src="{{ url_for('static', filename='uploads/' + registro.FotoKilometraje) }}" 
-                                             class="img-fluid rounded shadow-sm" 
-                                             alt="Foto del Kilometraje"
-                                             onclick="openImageModal(this.src, 'Foto del Kilometraje')"
-                                             style="cursor: pointer;">
+                        <div class="card-body p-4">
+                            {% if registro.FotoKilometraje or registro.FotoHorometro or registro.FotoHorometro2 or registro.FotoGrua %}
+                                <div class="row g-3">
+                                    {% if registro.FotoKilometraje %}
+                                    <div class="col-12">
+                                        <div class="image-card">
+                                            <div class="image-header">
+                                                <i class="fas fa-tachometer-alt text-primary me-2"></i>
+                                                <span class="fw-bold">Kilometraje</span>
+                                            </div>
+                                            <div class="image-container">
+                                                <img src="{{ url_for('static', filename='uploads/' + registro.FotoKilometraje) }}" 
+                                                     class="img-fluid rounded" 
+                                                     alt="Foto del Kilometraje"
+                                                     onclick="openImageModal(this.src, 'Foto del Kilometraje')"
+                                                     style="cursor: pointer; transition: transform 0.3s ease;">
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
-                                {% endif %}
-                                
-                                {% if registro.FotoHorometro %}
-                                <div class="mb-4">
-                                    <h6 class="text-muted mb-2">
-                                        <i class="fas fa-clock me-1"></i>Foto del Horómetro
-                                    </h6>
-                                    <div class="image-container">
-                                        <img src="{{ url_for('static', filename='uploads/' + registro.FotoHorometro) }}" 
-                                             class="img-fluid rounded shadow-sm" 
-                                             alt="Foto del Horómetro"
-                                             onclick="openImageModal(this.src, 'Foto del Horómetro')"
-                                             style="cursor: pointer;">
+                                    {% endif %}
+                                    
+                                    {% if registro.FotoHorometro %}
+                                    <div class="col-12">
+                                        <div class="image-card">
+                                            <div class="image-header">
+                                                <i class="fas fa-clock text-info me-2"></i>
+                                                <span class="fw-bold">
+                                                    {% if registro.estado_equipo.Descripcion.lower() == 'disponible' %}
+                                                        Horómetro Grúa
+                                                    {% else %}
+                                                        Horómetro 1
+                                                    {% endif %}
+                                                </span>
+                                            </div>
+                                            <div class="image-container">
+                                                <img src="{{ url_for('static', filename='uploads/' + registro.FotoHorometro) }}" 
+                                                     class="img-fluid rounded" 
+                                                     alt="Foto del Horómetro 1"
+                                                     onclick="openImageModal(this.src, 'Foto del Horómetro 1')"
+                                                     style="cursor: pointer; transition: transform 0.3s ease;">
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
-                                {% endif %}
-                                
-                                {% if registro.FotoGrua %}
-                                <div class="mb-4">
-                                    <h6 class="text-muted mb-2">
-                                        <i class="fas fa-camera me-1"></i>Foto de la Grúa
-                                    </h6>
-                                    <div class="image-container">
-                                        <img src="{{ url_for('static', filename='uploads/' + registro.FotoGrua) }}" 
-                                             class="img-fluid rounded shadow-sm" 
-                                             alt="Foto de la Grúa"
-                                             onclick="openImageModal(this.src, 'Foto de la Grúa')"
-                                             style="cursor: pointer;">
+                                    {% endif %}
+                                    
+                                    {% if registro.FotoHorometro2 %}
+                                    <div class="col-12">
+                                        <div class="image-card">
+                                            <div class="image-header">
+                                                <i class="fas fa-clock text-success me-2"></i>
+                                                <span class="fw-bold">
+                                                    {% if registro.estado_equipo.Descripcion.lower() == 'disponible' %}
+                                                        Horómetro Camión
+                                                    {% else %}
+                                                        Horómetro 2
+                                                    {% endif %}
+                                                </span>
+                                                <span class="badge bg-secondary ms-2">Motor 2</span>
+                                            </div>
+                                            <div class="image-container">
+                                                <img src="{{ url_for('static', filename='uploads/' + registro.FotoHorometro2) }}" 
+                                                     class="img-fluid rounded" 
+                                                     alt="Foto del Horómetro 2"
+                                                     onclick="openImageModal(this.src, 'Foto del Horómetro 2')"
+                                                     style="cursor: pointer; transition: transform 0.3s ease;">
+                                            </div>
+                                        </div>
                                     </div>
+                                    {% endif %}
+                                    
+                                    {% if registro.FotoGrua %}
+                                    <div class="col-12">
+                                        <div class="image-card">
+                                            <div class="image-header">
+                                                <i class="fas fa-camera text-warning me-2"></i>
+                                                <span class="fw-bold">Grúa</span>
+                                            </div>
+                                            <div class="image-container">
+                                                <img src="{{ url_for('static', filename='uploads/' + registro.FotoGrua) }}" 
+                                                     class="img-fluid rounded" 
+                                                     alt="Foto de la Grúa"
+                                                     onclick="openImageModal(this.src, 'Foto de la Grúa')"
+                                                     style="cursor: pointer; transition: transform 0.3s ease;">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endif %}
                                 </div>
-                                {% endif %}
                             {% else %}
-                                <div class="text-center py-4">
-                                    <i class="fas fa-image fa-3x text-muted mb-3"></i>
-                                    <p class="text-muted">No hay imágenes disponibles</p>
+                                <div class="text-center py-5">
+                                    <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
+                                        <i class="fas fa-image text-muted fs-1"></i>
+                                    </div>
+                                    <h6 class="text-muted mb-0">No hay imágenes disponibles</h6>
                                 </div>
                             {% endif %}
                         </div>
@@ -201,30 +425,130 @@
 </div>
 
 <style>
+/* Estilos personalizados para la interfaz mejorada */
+.image-card {
+    background: #fff;
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    border: 1px solid #e9ecef;
+}
+
+.image-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.image-header {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    padding: 12px 16px;
+    border-bottom: 1px solid #dee2e6;
+    font-size: 0.9rem;
+    color: #495057;
+}
+
 .image-container {
     position: relative;
     overflow: hidden;
-    border-radius: 8px;
     background: #f8f9fa;
-    min-height: 150px;
+    min-height: 120px;
     display: flex;
     align-items: center;
     justify-content: center;
+    padding: 10px;
 }
 
 .image-container img {
-    max-height: 300px;
+    max-height: 200px;
     width: auto;
-    transition: transform 0.3s ease;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .image-container img:hover {
     transform: scale(1.05);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 }
 
 #modalImage {
     max-height: 70vh;
     width: auto;
+    border-radius: 10px;
+}
+
+/* Animaciones suaves */
+.card {
+    transition: all 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+}
+
+/* Gradientes personalizados */
+.bg-gradient-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.bg-gradient-info {
+    background: linear-gradient(135deg, #36d1dc 0%, #5b86e5 100%);
+}
+
+.bg-gradient-warning {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.bg-gradient-success {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+/* Efectos de hover para badges */
+.badge {
+    transition: all 0.3s ease;
+}
+
+.badge:hover {
+    transform: scale(1.05);
+}
+
+/* Mejoras en botones */
+.btn {
+    transition: all 0.3s ease;
+    font-weight: 500;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Efectos de scroll suave */
+html {
+    scroll-behavior: smooth;
+}
+
+/* Mejoras en la tipografía */
+h1, h2, h3, h4, h5, h6 {
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+/* Efectos de sombra mejorados */
+.shadow-lg {
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Responsive mejorado */
+@media (max-width: 768px) {
+    .image-container img {
+        max-height: 150px;
+    }
+    
+    .card-body {
+        padding: 1.5rem !important;
+    }
 }
 </style>
 
@@ -234,6 +558,26 @@ function openImageModal(src, title) {
     document.getElementById('modalImage').src = src;
     document.getElementById('downloadImage').href = src;
     new bootstrap.Modal(document.getElementById('imageModal')).show();
+}
+
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(function() {
+        // Mostrar notificación de éxito
+        const button = event.target.closest('button');
+        const originalText = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-check me-1"></i>Copiado!';
+        button.classList.remove('btn-outline-secondary');
+        button.classList.add('btn-success');
+        
+        setTimeout(function() {
+            button.innerHTML = originalText;
+            button.classList.remove('btn-success');
+            button.classList.add('btn-outline-secondary');
+        }, 2000);
+    }).catch(function(err) {
+        console.error('Error al copiar: ', err);
+        alert('Error al copiar las coordenadas');
+    });
 }
 </script>
 {% endblock %}

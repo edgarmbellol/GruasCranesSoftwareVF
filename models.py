@@ -235,10 +235,12 @@ class RegistroHoras(db.Model):
     # Datos del equipo (solo para operadores)
     Kilometraje = db.Column(db.Float, nullable=True)
     Horometro = db.Column(db.Float, nullable=True)
+    Horometro2 = db.Column(db.Float, nullable=True)  # Segundo horómetro para equipos con dos motores
     
     # Imágenes
     FotoKilometraje = db.Column(db.String(255), nullable=True)
     FotoHorometro = db.Column(db.String(255), nullable=True)
+    FotoHorometro2 = db.Column(db.String(255), nullable=True)  # Foto del segundo horómetro
     FotoGrua = db.Column(db.String(255), nullable=True)
     
     # Información adicional
@@ -271,8 +273,10 @@ class RegistroHoras(db.Model):
             'HoraEmpleado': self.HoraEmpleado.isoformat() if self.HoraEmpleado else None,
             'Kilometraje': self.Kilometraje,
             'Horometro': self.Horometro,
+            'Horometro2': self.Horometro2,
             'FotoKilometraje': self.FotoKilometraje,
             'FotoHorometro': self.FotoHorometro,
+            'FotoHorometro2': self.FotoHorometro2,
             'FotoGrua': self.FotoGrua,
             'Observacion': self.Observacion,
             'Ubicacion': self.Ubicacion,
@@ -307,6 +311,12 @@ class Equipo(db.Model):
     Estado = db.Column(db.String(20), default='activo')  # activo, inactivo
     IdEstadoEquipo = db.Column(db.Integer, db.ForeignKey('estado_equipos.IdEstadoEquipo'), nullable=False)
     
+    # Imagen del equipo
+    ImagenEquipo = db.Column(db.String(255), nullable=True)  # Ruta de la imagen del equipo
+    
+    # Configuración de motores
+    TieneDosMotores = db.Column(db.Boolean, default=False)  # Indica si el equipo tiene dos motores/horómetros
+    
     # Información de auditoría
     FechaCreacion = db.Column(db.DateTime, default=get_colombia_datetime)
     UsuarioCreacion = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
@@ -319,7 +329,7 @@ class Equipo(db.Model):
     
     def __init__(self, IdTipoEquipo, Placa, Capacidad, IdMarca, IdEstadoEquipo, 
                  UsuarioCreacion, Referencia=None, Color=None, Modelo=None, 
-                 CentroCostos=None):
+                 CentroCostos=None, ImagenEquipo=None, TieneDosMotores=False):
         self.IdTipoEquipo = IdTipoEquipo
         self.Placa = Placa
         self.Capacidad = Capacidad
@@ -330,6 +340,8 @@ class Equipo(db.Model):
         self.Color = Color
         self.Modelo = Modelo
         self.CentroCostos = CentroCostos
+        self.ImagenEquipo = ImagenEquipo
+        self.TieneDosMotores = TieneDosMotores
         self.Estado = 'activo'
     
     def inactivar_equipo(self, usuario_id):
@@ -360,6 +372,8 @@ class Equipo(db.Model):
             'CentroCostos': self.CentroCostos,
             'Estado': self.Estado,
             'IdEstadoEquipo': self.IdEstadoEquipo,
+            'ImagenEquipo': self.ImagenEquipo,
+            'TieneDosMotores': self.TieneDosMotores,
             'FechaCreacion': self.FechaCreacion.isoformat() if self.FechaCreacion else None,
             'UsuarioCreacion': self.UsuarioCreacion,
             'FechaInactivacion': self.FechaInactivacion.isoformat() if self.FechaInactivacion else None,
@@ -441,6 +455,14 @@ class Equipo(db.Model):
                 )
             )
         ).first()
+    
+    def obtener_imagen_url(self):
+        """Obtiene la URL de la imagen del equipo o la imagen por defecto"""
+        if self.ImagenEquipo:
+            return f"/static/uploads/{self.ImagenEquipo}"
+        else:
+            # Retornar logo por defecto
+            return "/static/images/logogruas.png"
     
     def __repr__(self):
         return f'<Equipo {self.Placa} - {self.tipo_equipo.descripcion if self.tipo_equipo else "Sin tipo"}>'

@@ -1,8 +1,9 @@
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileAllowed
 from wtforms import StringField, PasswordField, SelectField, SubmitField, BooleanField, FloatField, TextAreaField, DateField, TimeField
-from wtforms.validators import DataRequired, Email, Length, EqualTo, ValidationError, NumberRange, Optional
+from wtforms.validators import DataRequired, Email, Length, EqualTo, ValidationError, NumberRange, Optional, Regexp
 from models import User, Equipo, TipoEquipo, Marca, EstadoEquipo, Cargo, Cliente, RegistroHoras
+from validators import ImageFileValidator
 
 class UserForm(FlaskForm):
     """Formulario para crear/editar usuarios"""
@@ -25,9 +26,10 @@ class UserForm(FlaskForm):
         'Número de Documento',
         validators=[
             DataRequired(message='El documento es requerido'),
-            Length(min=5, max=20, message='El documento debe tener entre 5 y 20 caracteres')
+            Length(min=5, max=20, message='El documento debe tener entre 5 y 20 caracteres'),
+            Regexp(r'^\S+$', message='El documento no puede contener espacios')
         ],
-        render_kw={'placeholder': 'Ingrese el número de documento'}
+        render_kw={'placeholder': 'Ingrese el número de documento', 'oninput': 'this.value = this.value.replace(/\\s/g, \'\')'}
     )
     
     nombre = StringField(
@@ -53,9 +55,10 @@ class UserForm(FlaskForm):
         'Número de Celular',
         validators=[
             DataRequired(message='El celular es requerido'),
-            Length(min=10, max=15, message='El celular debe tener entre 10 y 15 dígitos')
+            Length(min=10, max=15, message='El celular debe tener entre 10 y 15 dígitos'),
+            Regexp(r'^\S+$', message='El celular no puede contener espacios')
         ],
-        render_kw={'placeholder': '3001234567'}
+        render_kw={'placeholder': '3001234567', 'oninput': 'this.value = this.value.replace(/\\s/g, \'\')'}
     )
     
     contrasena = PasswordField(
@@ -116,9 +119,21 @@ class UserForm(FlaskForm):
 class UserEditForm(UserForm):
     """Formulario para editar usuarios (sin contraseña obligatoria)"""
     
+    # Sobrescribir el campo documento para que sea de solo lectura
+    documento = StringField(
+        'Número de Documento',
+        validators=[
+            DataRequired(message='El documento es requerido'),
+            Length(min=5, max=20, message='El documento debe tener entre 5 y 20 caracteres'),
+            Regexp(r'^\S+$', message='El documento no puede contener espacios')
+        ],
+        render_kw={'placeholder': 'Ingrese el número de documento', 'readonly': True, 'class': 'form-control-plaintext bg-light'}
+    )
+    
     contrasena = PasswordField(
         'Nueva Contraseña (opcional)',
         validators=[
+            Optional(),
             Length(min=6, max=50, message='La contraseña debe tener entre 6 y 50 caracteres')
         ],
         render_kw={'placeholder': 'Deje vacío para mantener la actual'}
@@ -127,7 +142,7 @@ class UserEditForm(UserForm):
     confirmar_contrasena = PasswordField(
         'Confirmar Nueva Contraseña',
         validators=[
-            EqualTo('contrasena', message='Las contraseñas no coinciden')
+            Optional()
         ],
         render_kw={'placeholder': 'Repita la nueva contraseña'}
     )
@@ -140,6 +155,29 @@ class UserEditForm(UserForm):
         """Valida la contraseña solo si se proporciona"""
         if field.data and len(field.data) < 6:
             raise ValidationError('La contraseña debe tener al menos 6 caracteres')
+    
+    def validate_confirmar_contrasena(self, field):
+        """Valida la confirmación solo si se proporciona una contraseña"""
+        if self.contrasena.data and not field.data:
+            raise ValidationError('Debe confirmar la nueva contraseña')
+        elif self.contrasena.data and field.data != self.contrasena.data:
+            raise ValidationError('Las contraseñas no coinciden')
+    
+    def validate_email(self, field):
+        """Valida que el email no esté duplicado (excluyendo el usuario actual)"""
+        if field.data:
+            # Buscar si existe otro usuario con el mismo email (excluyendo el actual)
+            user = User.query.filter(
+                User.email == field.data,
+                User.id != self.id
+            ).first()
+            
+            if user:
+                raise ValidationError('Ya existe un usuario con este email')
+    
+    def validate_documento(self, field):
+        """No validar duplicados en edición ya que no se puede modificar"""
+        pass
 
 class UserSearchForm(FlaskForm):
     """Formulario para buscar usuarios"""
@@ -256,6 +294,33 @@ class EquipoForm(FlaskForm):
         default='activo'
     )
     
+    # Campo para imagen del equipo
+    ImagenEquipo = FileField(
+        'Imagen del Equipo',
+        validators=[
+            FileAllowed(['jpg', 'jpeg', 'png', 'gif'], 'Solo se permiten archivos de imagen (JPG, JPEG, PNG, GIF)')
+        ],
+        render_kw={
+            'class': 'form-control', 
+            'accept': 'image/*', 
+            'onchange': 'previewImage(this, "preview-equipo-imagen")'
+        }
+    )
+    
+    # Campo para indicar si el equipo tiene dos motores
+    TieneDosMotores = BooleanField(
+        'Equipo con Dos Motores',
+        render_kw={
+            'class': 'form-check-input',
+            'id': 'tieneDosMotores'
+        }
+    )
+    
+    def validate_TieneDosMotores(self, field):
+        """Validar que el campo TieneDosMotores sea un boolean válido"""
+        if field.data is not None and not isinstance(field.data, bool):
+            raise ValidationError('El valor debe ser verdadero o falso')
+    
     submit = SubmitField('Guardar Equipo')
     
     def __init__(self, *args, **kwargs):
@@ -279,6 +344,22 @@ class EquipoForm(FlaskForm):
         
         if equipo:
             raise ValidationError('Ya existe un equipo con esta placa')
+    
+    def validate_ImagenEquipo(self, field):
+        """Valida la imagen del equipo"""
+        if field.data and hasattr(field.data, 'filename'):
+            # Validación básica de tamaño de archivo
+            if hasattr(field.data, 'content_length') and field.data.content_length:
+                max_size = 5 * 1024 * 1024  # 5MB
+                if field.data.content_length > max_size:
+                    raise ValidationError('La imagen no puede ser mayor a 5MB')
+            
+            # Validación básica de tipo de archivo
+            if field.data.filename:
+                allowed_extensions = {'jpg', 'jpeg', 'png', 'gif'}
+                file_ext = field.data.filename.rsplit('.', 1)[1].lower() if '.' in field.data.filename else ''
+                if file_ext not in allowed_extensions:
+                    raise ValidationError('Solo se permiten archivos JPG, JPEG, PNG y GIF')
 
 class EquipoSearchForm(FlaskForm):
     """Formulario para buscar equipos"""
@@ -566,27 +647,43 @@ class RegistroHorasForm(FlaskForm):
         'Foto del Kilometraje',
         validators=[
             Optional(),
-            FileAllowed(['jpg', 'jpeg', 'png', 'gif'], 'Solo se permiten imágenes JPG, PNG o GIF')
+            ImageFileValidator(max_size_mb=5)
         ],
-        render_kw={'class': 'form-control', 'accept': 'image/*'}
+        render_kw={'class': 'form-control', 'accept': 'image/*', 'onchange': 'autoCompressOnSelect(this, 5)'}
     )
     
     FotoHorometro = FileField(
         'Foto del Horómetro',
         validators=[
             Optional(),
-            FileAllowed(['jpg', 'jpeg', 'png', 'gif'], 'Solo se permiten imágenes JPG, PNG o GIF')
+            ImageFileValidator(max_size_mb=5)
         ],
-        render_kw={'class': 'form-control', 'accept': 'image/*'}
+        render_kw={'class': 'form-control', 'accept': 'image/*', 'onchange': 'autoCompressOnSelect(this, 5)'}
+    )
+    
+    # Campos para el segundo horómetro (solo para equipos con dos motores)
+    Horometro2 = FloatField(
+        'Horómetro 2',
+        validators=[Optional(), NumberRange(min=0, message='El horómetro 2 debe ser mayor o igual a 0')],
+        render_kw={'class': 'form-control', 'step': '0.1', 'placeholder': 'Ej: 2500.5', 'style': 'display: none;'}
+    )
+    
+    FotoHorometro2 = FileField(
+        'Foto del Horómetro 2',
+        validators=[
+            Optional(),
+            ImageFileValidator(max_size_mb=5)
+        ],
+        render_kw={'class': 'form-control', 'accept': 'image/*', 'onchange': 'autoCompressOnSelect(this, 5)', 'style': 'display: none;'}
     )
     
     FotoGrua = FileField(
         'Foto de la Grúa',
         validators=[
-            DataRequired(message='La foto de la grúa es requerida'),
-            FileAllowed(['jpg', 'jpeg', 'png', 'gif'], 'Solo se permiten imágenes JPG, PNG o GIF')
+            Optional(),
+            ImageFileValidator(max_size_mb=5)
         ],
-        render_kw={'class': 'form-control', 'accept': 'image/*'}
+        render_kw={'class': 'form-control', 'accept': 'image/*', 'onchange': 'autoCompressOnSelect(this, 5)'}
     )
     
     IdEstadoEquipo = SelectField(
@@ -600,7 +697,8 @@ class RegistroHorasForm(FlaskForm):
         'Cliente',
         coerce=lambda x: int(x) if x and x != '' else None,
         validators=[Optional()],
-        render_kw={'class': 'form-select'}
+        render_kw={'class': 'form-select'},
+        default=None
     )
     
     Observacion = TextAreaField(
@@ -650,42 +748,80 @@ class RegistroHorasForm(FlaskForm):
         self.IdCliente.choices = opciones_clientes
     
     def validate_Kilometraje(self, field):
-        """Validar kilometraje para operadores"""
-        if self.IdCargo.data:
+        """Validar kilometraje para operadores con equipo operativo o disponible"""
+        if self.IdCargo.data and self.IdEstadoEquipo.data:
             cargo = Cargo.query.get(self.IdCargo.data)
-            if cargo and 'operador' in cargo.descripcionCargo.lower():
+            estado = EstadoEquipo.query.get(self.IdEstadoEquipo.data)
+            if (cargo and 'operador' in cargo.descripcionCargo.lower() and 
+                estado and ('operativo' in estado.Descripcion.lower() or 'disponible' in estado.Descripcion.lower())):
                 if field.data is None or field.data == '':
-                    raise ValidationError('El kilometraje es requerido para operadores')
+                    raise ValidationError('El kilometraje es requerido para operadores con equipo operativo o disponible')
         else:
-            # Si no hay cargo seleccionado, el campo es opcional
+            # Si no hay cargo o estado seleccionado, el campo es opcional
             pass
     
     def validate_Horometro(self, field):
-        """Validar horómetro para operadores"""
-        if self.IdCargo.data:
+        """Validar horómetro para operadores con equipo operativo o disponible"""
+        if self.IdCargo.data and self.IdEstadoEquipo.data:
             cargo = Cargo.query.get(self.IdCargo.data)
-            if cargo and 'operador' in cargo.descripcionCargo.lower():
+            estado = EstadoEquipo.query.get(self.IdEstadoEquipo.data)
+            if (cargo and 'operador' in cargo.descripcionCargo.lower() and 
+                estado and ('operativo' in estado.Descripcion.lower() or 'disponible' in estado.Descripcion.lower())):
                 if field.data is None or field.data == '':
-                    raise ValidationError('El horómetro es requerido para operadores')
+                    raise ValidationError('El horómetro es requerido para operadores con equipo operativo o disponible')
         else:
-            # Si no hay cargo seleccionado, el campo es opcional
+            # Si no hay cargo o estado seleccionado, el campo es opcional
             pass
     
     def validate_FotoKilometraje(self, field):
-        """Validar foto del kilometraje para operadores"""
-        if self.IdCargo.data:
+        """Validar foto del kilometraje para operadores con equipo operativo o disponible"""
+        if self.IdCargo.data and self.IdEstadoEquipo.data:
             cargo = Cargo.query.get(self.IdCargo.data)
-            if cargo and 'operador' in cargo.descripcionCargo.lower():
+            estado = EstadoEquipo.query.get(self.IdEstadoEquipo.data)
+            if (cargo and 'operador' in cargo.descripcionCargo.lower() and 
+                estado and ('operativo' in estado.Descripcion.lower() or 'disponible' in estado.Descripcion.lower())):
                 if not field.data:
-                    raise ValidationError('La foto del kilometraje es requerida para operadores')
+                    raise ValidationError('La foto del kilometraje es requerida para operadores con equipo operativo o disponible')
     
     def validate_FotoHorometro(self, field):
-        """Validar foto del horómetro para operadores"""
-        if self.IdCargo.data:
+        """Validar foto del horómetro para operadores con equipo operativo o disponible"""
+        if self.IdCargo.data and self.IdEstadoEquipo.data:
             cargo = Cargo.query.get(self.IdCargo.data)
-            if cargo and 'operador' in cargo.descripcionCargo.lower():
+            estado = EstadoEquipo.query.get(self.IdEstadoEquipo.data)
+            if (cargo and 'operador' in cargo.descripcionCargo.lower() and 
+                estado and ('operativo' in estado.Descripcion.lower() or 'disponible' in estado.Descripcion.lower())):
                 if not field.data:
-                    raise ValidationError('La foto del horómetro es requerida para operadores')
+                    raise ValidationError('La foto del horómetro es requerida para operadores con equipo operativo o disponible')
+    
+    def validate_Horometro2(self, field):
+        """Validar segundo horómetro para operadores con equipo operativo o disponible en equipos con dos motores"""
+        if self.IdCargo.data and self.IdEstadoEquipo.data:
+            cargo = Cargo.query.get(self.IdCargo.data)
+            estado = EstadoEquipo.query.get(self.IdEstadoEquipo.data)
+            if (cargo and 'operador' in cargo.descripcionCargo.lower() and 
+                estado and ('operativo' in estado.Descripcion.lower() or 'disponible' in estado.Descripcion.lower())):
+                # Solo validar si el equipo tiene dos motores
+                if self.IdEquipo.data:
+                    from models import Equipo
+                    equipo = Equipo.query.get(self.IdEquipo.data)
+                    if equipo and equipo.TieneDosMotores:
+                        if field.data is None or field.data == '':
+                            raise ValidationError('El segundo horómetro es requerido para equipos con dos motores')
+    
+    def validate_FotoHorometro2(self, field):
+        """Validar foto del segundo horómetro para operadores con equipo operativo o disponible en equipos con dos motores"""
+        if self.IdCargo.data and self.IdEstadoEquipo.data:
+            cargo = Cargo.query.get(self.IdCargo.data)
+            estado = EstadoEquipo.query.get(self.IdEstadoEquipo.data)
+            if (cargo and 'operador' in cargo.descripcionCargo.lower() and 
+                estado and ('operativo' in estado.Descripcion.lower() or 'disponible' in estado.Descripcion.lower())):
+                # Solo validar si el equipo tiene dos motores
+                if self.IdEquipo.data:
+                    from models import Equipo
+                    equipo = Equipo.query.get(self.IdEquipo.data)
+                    if equipo and equipo.TieneDosMotores:
+                        if not field.data:
+                            raise ValidationError('La foto del segundo horómetro es requerida para equipos con dos motores')
     
     def validate_IdCliente(self, field):
         """Validar cliente según estado del equipo"""

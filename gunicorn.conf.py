@@ -24,7 +24,7 @@ limit_request_field_size = 8190
 # Configuración de rendimiento
 max_requests = 1000
 max_requests_jitter = 50
-preload_app = True
+preload_app = False
 
 # Configuración de procesos
 user = None

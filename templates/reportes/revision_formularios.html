@@ -93,12 +93,14 @@
                                     <tr>
                                         <th>ID</th>
                                         <th>Empleado</th>
+                                        <th>Cargo</th>
                                         <th>Equipo</th>
                                         <th>Tipo</th>
                                         <th>Fecha Empleado</th>
                                         <th>Hora Empleado</th>
                                         <th>Fecha Sistema</th>
                                         <th>Estado</th>
+                                        <th>Motores</th>
                                         <th>Imágenes</th>
                                         <th>Acciones</th>
                                     </tr>
@@ -112,9 +114,13 @@
                                         <td>
                                             <div>
                                                 <strong>{{ registro.empleado.nombre }}</strong><br>
-                                                <small class="text-muted">{{ registro.empleado.documento }}</small><br>
-                                                <span class="badge bg-info">{{ registro.cargo.NombreCargo }}</span>
+                                                <small class="text-muted">{{ registro.empleado.documento }}</small>
                                             </div>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-primary">
+                                                <i class="fas fa-briefcase me-1"></i>{{ registro.cargo.descripcionCargo }}
+                                            </span>
                                         </td>
                                         <td>
                                             <div>
@@ -146,20 +152,36 @@
                                             </div>
                                         </td>
                                         <td>
-                                            <span class="badge bg-{{ 'success' if registro.estado_equipo.NombreEstado == 'Operativo' else 'danger' }}">
-                                                {{ registro.estado_equipo.NombreEstado }}
+                                            <span class="badge bg-{{ 'success' if registro.estado_equipo.Descripcion == 'Operativo' else 'danger' }}">
+                                                {{ registro.estado_equipo.Descripcion }}
                                             </span>
                                         </td>
                                         <td>
-                                            <div class="d-flex gap-1">
+                                            {% if registro.equipo.TieneDosMotores %}
+                                                <span class="badge bg-info" title="Equipo con dos motores">
+                                                    <i class="fas fa-cogs me-1"></i>2 Motores
+                                                </span>
+                                            {% else %}
+                                                <span class="badge bg-secondary" title="Equipo con un motor">
+                                                    <i class="fas fa-cog me-1"></i>1 Motor
+                                                </span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="d-flex gap-1 flex-wrap">
                                                 {% if registro.FotoKilometraje %}
                                                     <span class="badge bg-primary" title="Foto Kilometraje">
                                                         <i class="fas fa-tachometer-alt"></i>
                                                     </span>
                                                 {% endif %}
                                                 {% if registro.FotoHorometro %}
-                                                    <span class="badge bg-info" title="Foto Horómetro">
+                                                    <span class="badge bg-info" title="{% if registro.estado_equipo.Descripcion.lower() == 'disponible' %}Foto Horómetro Grúa{% else %}Foto Horómetro 1{% endif %}">
                                                         <i class="fas fa-clock"></i>
+                                                    </span>
+                                                {% endif %}
+                                                {% if registro.FotoHorometro2 %}
+                                                    <span class="badge bg-warning" title="{% if registro.estado_equipo.Descripcion.lower() == 'disponible' %}Foto Horómetro Camión{% else %}Foto Horómetro 2{% endif %}">
+                                                        <i class="fas fa-clock"></i>2
                                                     </span>
                                                 {% endif %}
                                                 {% if registro.FotoGrua %}
@@ -167,7 +189,7 @@
                                                         <i class="fas fa-camera"></i>
                                                     </span>
                                                 {% endif %}
-                                                {% if not registro.FotoKilometraje and not registro.FotoHorometro and not registro.FotoGrua %}
+                                                {% if not registro.FotoKilometraje and not registro.FotoHorometro and not registro.FotoHorometro2 and not registro.FotoGrua %}
                                                     <span class="text-muted">Sin imágenes</span>
                                                 {% endif %}
                                             </div>
@@ -239,3 +261,5 @@
     </div>
 </div>
 {% endblock %}
+
+
