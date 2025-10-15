@@ -93,6 +93,24 @@
                     </div>
                 </div>
 
+                <!-- Reporte de Combustible -->
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card report-card">
+                        <div class="card-body text-center">
+                            <div class="report-icon mb-3">
+                                <i class="fas fa-gas-pump fa-3x text-danger"></i>
+                            </div>
+                            <h5 class="card-title">Reporte de Combustible</h5>
+                            <p class="card-text text-muted">
+                                Visualiza todos los registros de combustible con fotos, filtros por equipo, usuario, tipo y fechas. Incluye estadísticas de galones y costos.
+                            </p>
+                            <a href="{{ url_for('reporte_combustible') }}" class="btn btn-danger">
+                                <i class="fas fa-gas-pump me-2"></i>Ver Reporte
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
             </div>
 
             <!-- Información adicional -->
@@ -113,6 +131,7 @@
                                         <li><strong>Horas por Equipo:</strong> Análisis de horómetro y horas trabajadas por equipo</li>
                                         <li><strong>Registros Dinámicos:</strong> Tabla interactiva con filtros avanzados y exportación</li>
                                         <li><strong>Revisión de Formularios:</strong> Revisión completa de formularios con imágenes y filtros</li>
+                                        <li><strong>Reporte de Combustible:</strong> Visualización de registros de combustible con fotos, galones y costos</li>
                                         <li><strong>Filtros:</strong> Por empleado/equipo, fecha, tipo de registro</li>
                                         <li><strong>Resumen:</strong> Estadísticas de días trabajados y no trabajados</li>
                                         <li><strong>Exportación:</strong> Descarga de reportes en formato CSV</li>

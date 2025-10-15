@@ -1,0 +1,633 @@
+{% extends "base.html" %}
+
+{% block title %}Reporte de Combustible - Sistema de Grúas{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="text-primary mb-1">
+                        <i class="fas fa-gas-pump me-2"></i>Reporte de Combustible
+                    </h2>
+                    <p class="text-muted mb-0">Visualización de registros de combustible con fotos y detalles</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('reportes') }}" class="btn btn-outline-secondary me-2">
+                        <i class="fas fa-arrow-left me-2"></i>Volver a Reportes
+                    </a>
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-home me-2"></i>Dashboard
+                    </a>
+                </div>
+            </div>
+
+            <!-- Filtros -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-filter me-2"></i>Filtros de Búsqueda
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="GET" class="row g-3">
+                        <div class="col-md-3">
+                            <label for="equipo_id" class="form-label">Equipo</label>
+                            <select class="form-select" id="equipo_id" name="equipo_id">
+                                <option value="">Todos los equipos</option>
+                                {% for equipo in equipos %}
+                                <option value="{{ equipo.IdEquipo }}" 
+                                        {% if equipo.IdEquipo == equipo_id %}selected{% endif %}>
+                                    {{ equipo.Placa }} - {{ equipo.tipo_equipo.descripcion if equipo.tipo_equipo else 'N/A' }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="usuario_id" class="form-label">Registrado por</label>
+                            <select class="form-select" id="usuario_id" name="usuario_id">
+                                <option value="">Todos los usuarios</option>
+                                {% for usuario in usuarios %}
+                                <option value="{{ usuario.id }}" 
+                                        {% if usuario.id == usuario_id %}selected{% endif %}>
+                                    {{ usuario.nombre }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label for="tipo_registro" class="form-label">Tipo</label>
+                            <select class="form-select" id="tipo_registro" name="tipo_registro">
+                                <option value="">Todos</option>
+                                <option value="grua" {% if tipo_registro == 'grua' %}selected{% endif %}>Grúa</option>
+                                <option value="camion" {% if tipo_registro == 'camion' %}selected{% endif %}>Camión</option>
+                                <option value="equipo" {% if tipo_registro == 'equipo' %}selected{% endif %}>Equipo</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label for="fecha_inicio" class="form-label">Fecha Inicio</label>
+                            <input type="date" class="form-control" id="fecha_inicio" name="fecha_inicio" 
+                                   value="{{ fecha_inicio if fecha_inicio else '' }}">
+                        </div>
+                        <div class="col-md-2">
+                            <label for="fecha_fin" class="form-label">Fecha Fin</label>
+                            <input type="date" class="form-control" id="fecha_fin" name="fecha_fin" 
+                                   value="{{ fecha_fin if fecha_fin else '' }}">
+                        </div>
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-search me-2"></i>Filtrar
+                            </button>
+                            <a href="{{ url_for('reporte_combustible') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-redo me-2"></i>Limpiar Filtros
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Estadísticas Resumen -->
+            <div class="row mb-4">
+                <div class="col-md-2">
+                    <div class="card text-center border-primary">
+                        <div class="card-body">
+                            <i class="fas fa-file-alt fa-2x text-primary mb-2"></i>
+                            <h6 class="card-title">Total Registros</h6>
+                            <p class="card-text h4 text-primary">{{ total_registros }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="card text-center border-warning">
+                        <div class="card-body">
+                            <i class="fas fa-gas-pump fa-2x text-warning mb-2"></i>
+                            <h6 class="card-title">Total Galones</h6>
+                            <p class="card-text h4 text-warning">{{ "%.2f"|format(total_galones) }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="card text-center border-success">
+                        <div class="card-body">
+                            <i class="fas fa-dollar-sign fa-2x text-success mb-2"></i>
+                            <h6 class="card-title">Costo Total</h6>
+                            <p class="card-text h5 text-success">${{ "{:,.0f}".format(total_costo) }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="card text-center border-info">
+                        <div class="card-body">
+                            <span class="material-symbols-outlined text-info mb-2" style="font-size: 2rem;">auto_towing</span>
+                            <h6 class="card-title">Grúa</h6>
+                            <p class="card-text h4 text-info">{{ registros_grua }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="card text-center border-success">
+                        <div class="card-body">
+                            <span class="material-symbols-outlined text-success mb-2" style="font-size: 2rem;">local_shipping</span>
+                            <h6 class="card-title">Camión</h6>
+                            <p class="card-text h4 text-success">{{ registros_camion }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="card text-center border-secondary">
+                        <div class="card-body">
+                            <i class="fas fa-cog fa-2x text-secondary mb-2"></i>
+                            <h6 class="card-title">Equipo</h6>
+                            <p class="card-text h4 text-secondary">{{ registros_equipo }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabla de Registros -->
+            <div class="card">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-list me-2"></i>Registros de Combustible
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if registros %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th width="3%">#</th>
+                                    <th width="10%">Fecha/Hora</th>
+                                    <th width="12%">Equipo</th>
+                                    <th width="8%">Tipo</th>
+                                    <th width="10%">Combustible</th>
+                                    <th width="8%">Galones</th>
+                                    <th width="10%">Costo</th>
+                                    <th width="12%">Registrado por</th>
+                                    <th width="27%">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for registro in registros %}
+                                <tr>
+                                    <td>{{ loop.index }}</td>
+                                    <td>
+                                        <small>
+                                            <i class="fas fa-calendar text-muted me-1"></i>{{ registro.FechaRegistro.strftime('%d/%m/%Y') }}<br>
+                                            <i class="fas fa-clock text-muted me-1"></i>{{ registro.HoraRegistro.strftime('%H:%M') }}
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <strong>{{ registro.equipo.Placa }}</strong><br>
+                                        <small class="text-muted">{{ registro.equipo.tipo_equipo.descripcion if registro.equipo.tipo_equipo else 'N/A' }}</small>
+                                    </td>
+                                    <td>
+                                        {% if registro.TipoRegistro == 'grua' %}
+                                            <span class="badge bg-primary">
+                                                <span class="material-symbols-outlined me-1">auto_towing</span>Grúa
+                                            </span>
+                                        {% elif registro.TipoRegistro == 'camion' %}
+                                            <span class="badge bg-success">
+                                                <span class="material-symbols-outlined me-1">local_shipping</span>Camión
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">
+                                                <i class="fas fa-cog me-1"></i>Equipo
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if registro.TipoCombustible == 'diesel' %}
+                                            <span class="badge bg-dark">Diesel</span>
+                                        {% elif registro.TipoCombustible == 'gasolina' %}
+                                            <span class="badge bg-danger">Gasolina</span>
+                                        {% elif registro.TipoCombustible == 'gas' %}
+                                            <span class="badge bg-info">Gas</span>
+                                        {% else %}
+                                            <span class="badge bg-warning">Otro</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <strong>{{ "%.2f"|format(registro.CantidadGalones) }}</strong> gal
+                                    </td>
+                                    <td>
+                                        <strong class="text-success">${{ "{:,.0f}".format(registro.CostoTotal) }}</strong>
+                                    </td>
+                                    <td>
+                                        <small>{{ registro.usuario.nombre }}</small>
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-info" onclick="mostrarFotos('{{ registro.IdRegistroCombustible }}')">
+                                            <i class="fas fa-images me-1"></i>Ver Fotos
+                                        </button>
+                                        {% if registro.Observaciones %}
+                                        <button class="btn btn-sm btn-secondary" onclick="mostrarObservaciones('{{ registro.IdRegistroCombustible }}', '{{ registro.Observaciones|e }}', '{{ registro.equipo.Placa }}', '{{ registro.FechaRegistro.strftime('%d/%m/%Y') }} {{ registro.HoraRegistro.strftime('%H:%M') }}')">
+                                            <i class="fas fa-comment me-1"></i>Observaciones
+                                        </button>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info text-center">
+                        <i class="fas fa-info-circle me-2"></i>
+                        No se encontraron registros de combustible con los filtros seleccionados.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Datos de fotos ocultos para JavaScript -->
+<div id="fotosData" style="display: none;">
+    {% for registro in registros %}
+    <div id="fotos{{ registro.IdRegistroCombustible }}" 
+         data-equipo="{{ registro.equipo.Placa }}"
+         data-tipo="{{ registro.TipoRegistro|title }}"
+         data-fecha="{{ registro.FechaRegistro.strftime('%d/%m/%Y') }} {{ registro.HoraRegistro.strftime('%H:%M') }}"
+         data-galones="{{ "%.2f"|format(registro.CantidadGalones) }}"
+         data-costo="${{ "{:,.0f}".format(registro.CostoTotal) }}"
+         data-foto-horometro="{% if registro.FotoHorometro %}{{ url_for('static', filename='uploads/' + registro.FotoHorometro) }}{% endif %}"
+         data-foto-kilometraje="{% if registro.FotoKilometraje %}{{ url_for('static', filename='uploads/' + registro.FotoKilometraje) }}{% endif %}"
+         data-foto-galones="{% if registro.FotoGalones %}{{ url_for('static', filename='uploads/' + registro.FotoGalones) }}{% endif %}"
+         data-foto-recibo="{% if registro.FotoRecibo %}{{ url_for('static', filename='uploads/' + registro.FotoRecibo) }}{% endif %}">
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Overlay para mostrar fotos -->
+<div id="fotosOverlay" class="fotos-overlay" style="display: none;">
+    <div class="fotos-container">
+        <div class="fotos-header">
+            <h5><i class="fas fa-images me-2"></i><span id="fotosTitulo">Fotos del Registro</span></h5>
+            <button class="btn-close-fotos" onclick="cerrarFotos()">&times;</button>
+        </div>
+        <div class="fotos-info">
+            <div class="alert alert-info">
+                <strong>Equipo:</strong> <span id="fotosEquipo"></span> | 
+                <strong>Tipo:</strong> <span id="fotosTipo"></span> | 
+                <strong>Fecha:</strong> <span id="fotosFecha"></span> | 
+                <strong>Galones:</strong> <span id="fotosGalones"></span> | 
+                <strong>Costo:</strong> <span id="fotosCosto"></span>
+            </div>
+        </div>
+        <div class="fotos-grid" id="fotosGrid">
+            <!-- Las fotos se cargarán aquí dinámicamente -->
+        </div>
+    </div>
+</div>
+
+<!-- Overlay para mostrar observaciones -->
+<div id="obsOverlay" class="obs-overlay" style="display: none;">
+    <div class="obs-container">
+        <div class="obs-header">
+            <h5><i class="fas fa-comment me-2"></i>Observaciones</h5>
+            <button class="btn-close-obs" onclick="cerrarObservaciones()">&times;</button>
+        </div>
+        <div class="obs-body">
+            <p><strong>Equipo:</strong> <span id="obsEquipo"></span></p>
+            <p><strong>Fecha:</strong> <span id="obsFecha"></span></p>
+            <hr>
+            <p id="obsTexto" class="mb-0"></p>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.card {
+    transition: transform 0.2s ease;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.table-hover tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+/* Estilos para overlays personalizados */
+.fotos-overlay, .obs-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.fotos-container, .obs-container {
+    background: white;
+    border-radius: 12px;
+    max-width: 95%;
+    max-height: 95%;
+    width: 1000px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    animation: fadeInScale 0.3s ease-out;
+}
+
+.obs-container {
+    width: 500px;
+}
+
+@keyframes fadeInScale {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.fotos-header, .obs-header {
+    background: #ffc107;
+    color: #000;
+    padding: 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.obs-header {
+    background: #6c757d;
+    color: white;
+}
+
+.fotos-header h5, .obs-header h5 {
+    margin: 0;
+    font-weight: 600;
+}
+
+.btn-close-fotos, .btn-close-obs {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background-color 0.2s ease;
+}
+
+.btn-close-fotos:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
+.btn-close-obs:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.fotos-info {
+    padding: 15px 20px;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.fotos-grid {
+    padding: 20px;
+    max-height: 70vh;
+    overflow-y: auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.foto-card {
+    background: #f8f9fa;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s ease;
+}
+
+.foto-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.foto-header {
+    padding: 12px 15px;
+    font-weight: 600;
+    color: white;
+}
+
+.foto-header.bg-primary { background: #0d6efd; }
+.foto-header.bg-success { background: #198754; }
+.foto-header.bg-warning { background: #ffc107; color: #000; }
+.foto-header.bg-info { background: #0dcaf0; }
+
+.foto-body {
+    padding: 15px;
+    text-align: center;
+}
+
+.foto-img {
+    max-width: 100%;
+    max-height: 300px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.foto-img:hover {
+    transform: scale(1.02);
+}
+
+.foto-text {
+    margin-top: 10px;
+    font-size: 12px;
+    color: #6c757d;
+}
+
+.obs-body {
+    padding: 20px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .fotos-container {
+        width: 95%;
+        max-height: 90%;
+    }
+    
+    .obs-container {
+        width: 95%;
+    }
+    
+    .fotos-grid {
+        grid-template-columns: 1fr;
+        padding: 15px;
+    }
+    
+    .fotos-header, .obs-header {
+        padding: 12px 15px;
+    }
+    
+    .fotos-info {
+        padding: 12px 15px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Función para mostrar fotos
+function mostrarFotos(registroId) {
+    const dataElement = document.getElementById('fotos' + registroId);
+    if (!dataElement) return;
+    
+    // Obtener datos del elemento
+    const equipo = dataElement.dataset.equipo;
+    const tipo = dataElement.dataset.tipo;
+    const fecha = dataElement.dataset.fecha;
+    const galones = dataElement.dataset.galones;
+    const costo = dataElement.dataset.costo;
+    
+    // Llenar información del header
+    document.getElementById('fotosTitulo').textContent = 'Fotos del Registro - ' + equipo;
+    document.getElementById('fotosEquipo').textContent = equipo;
+    document.getElementById('fotosTipo').textContent = tipo;
+    document.getElementById('fotosFecha').textContent = fecha;
+    document.getElementById('fotosGalones').textContent = galones;
+    document.getElementById('fotosCosto').textContent = costo;
+    
+    // Limpiar grid de fotos
+    const fotosGrid = document.getElementById('fotosGrid');
+    fotosGrid.innerHTML = '';
+    
+    // Crear tarjetas de fotos
+    const fotos = [
+        {
+            src: dataElement.dataset.fotoHorometro,
+            titulo: 'Horómetro',
+            icono: 'fas fa-tachometer-alt',
+            color: 'bg-primary'
+        },
+        {
+            src: dataElement.dataset.fotoKilometraje,
+            titulo: 'Kilometraje (Camión)',
+            icono: 'fas fa-road',
+            color: 'bg-success'
+        },
+        {
+            src: dataElement.dataset.fotoGalones,
+            titulo: 'Galones Aplicados',
+            icono: 'fas fa-gas-pump',
+            color: 'bg-warning'
+        },
+        {
+            src: dataElement.dataset.fotoRecibo,
+            titulo: 'Recibo o Factura',
+            icono: 'fas fa-receipt',
+            color: 'bg-info'
+        }
+    ];
+    
+    fotos.forEach(foto => {
+        if (foto.src && foto.src.trim() !== '') {
+            const fotoCard = document.createElement('div');
+            fotoCard.className = 'foto-card';
+            
+            fotoCard.innerHTML = `
+                <div class="foto-header ${foto.color}">
+                    <i class="${foto.icono} me-2"></i>${foto.titulo}
+                </div>
+                <div class="foto-body">
+                    <img src="${foto.src}" 
+                         class="foto-img" 
+                         alt="${foto.titulo}"
+                         onclick="window.open(this.src, '_blank')">
+                    <div class="foto-text">
+                        Click para ver en tamaño completo
+                    </div>
+                </div>
+            `;
+            
+            fotosGrid.appendChild(fotoCard);
+        }
+    });
+    
+    // Mostrar overlay
+    document.getElementById('fotosOverlay').style.display = 'flex';
+    document.body.style.overflow = 'hidden'; // Prevenir scroll del body
+}
+
+// Función para cerrar fotos
+function cerrarFotos() {
+    document.getElementById('fotosOverlay').style.display = 'none';
+    document.body.style.overflow = ''; // Restaurar scroll del body
+}
+
+// Función para mostrar observaciones
+function mostrarObservaciones(registroId, observacion, equipo, fecha) {
+    document.getElementById('obsEquipo').textContent = equipo;
+    document.getElementById('obsFecha').textContent = fecha;
+    document.getElementById('obsTexto').textContent = observacion;
+    
+    // Mostrar overlay
+    document.getElementById('obsOverlay').style.display = 'flex';
+    document.body.style.overflow = 'hidden'; // Prevenir scroll del body
+}
+
+// Función para cerrar observaciones
+function cerrarObservaciones() {
+    document.getElementById('obsOverlay').style.display = 'none';
+    document.body.style.overflow = ''; // Restaurar scroll del body
+}
+
+// Cerrar con tecla ESC
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        cerrarFotos();
+        cerrarObservaciones();
+    }
+});
+
+// Cerrar haciendo click en el overlay (fuera del contenido)
+document.getElementById('fotosOverlay').addEventListener('click', function(event) {
+    if (event.target === this) {
+        cerrarFotos();
+    }
+});
+
+document.getElementById('obsOverlay').addEventListener('click', function(event) {
+    if (event.target === this) {
+        cerrarObservaciones();
+    }
+});
+
+// Prevenir que el click en el contenido cierre el overlay
+document.querySelectorAll('.fotos-container, .obs-container').forEach(container => {
+    container.addEventListener('click', function(event) {
+        event.stopPropagation();
+    });
+});
+</script>
+{% endblock %}
+

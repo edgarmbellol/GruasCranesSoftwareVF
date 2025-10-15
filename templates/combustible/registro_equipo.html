@@ -1,0 +1,431 @@
+{% extends "base.html" %}
+
+{% block title %}Registro Combustible - {{ equipo.Placa }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4 mt-4">
+                <div>
+                    <h2 class="text-primary mb-1">
+                        <i class="fas fa-cog me-2"></i>Registro de Combustible
+                    </h2>
+                    <p class="text-muted mb-0">{{ equipo.Placa }} - {{ tipo_equipo }} | {{ marca }}</p>
+                </div>
+                <a href="{{ url_for('combustible_opciones', equipo_id=equipo.IdEquipo) }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Volver a Opciones
+                </a>
+            </div>
+
+            <!-- Información del Usuario -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="user-avatar me-3">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                                <div>
+                                    <h5 class="mb-1">{{ usuario.nombre }}</h5>
+                                    <p class="text-muted mb-0">{{ usuario.documento }} - {{ usuario.perfil_usuario|title }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Formulario de Registro -->
+            <div class="row">
+                <div class="col-lg-8 mx-auto">
+                    <div class="card">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-gas-pump me-2"></i>Datos del Combustible del Equipo
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <form method="POST" enctype="multipart/form-data">
+                                <div class="row">
+                                    <!-- Información Básica -->
+                                    <div class="col-12">
+                                        <h6 class="text-primary mb-3">
+                                            <i class="fas fa-calendar-alt me-2"></i>Información Básica
+                                        </h6>
+                                    </div>
+                                    
+                                    <div class="col-md-6 mb-3">
+                                        <label for="fecha_registro" class="form-label">Fecha del Registro</label>
+                                        <input type="date" class="form-control" id="fecha_registro" name="fecha_registro" required>
+                                    </div>
+                                    
+                                    <div class="col-md-6 mb-3">
+                                        <label for="hora_registro" class="form-label">Hora del Registro</label>
+                                        <input type="time" class="form-control" id="hora_registro" name="hora_registro" required>
+                                    </div>
+                                    
+                                    <!-- Información del Combustible -->
+                                    <div class="col-12 mt-4">
+                                        <h6 class="text-primary mb-3">
+                                            <i class="fas fa-gas-pump me-2"></i>Datos del Combustible
+                                        </h6>
+                                    </div>
+                                    
+                                    <div class="col-md-6 mb-3">
+                                        <label for="tipo_combustible" class="form-label">Tipo de Combustible</label>
+                                        <select class="form-select" id="tipo_combustible" name="tipo_combustible" required>
+                                            <option value="">Seleccionar...</option>
+                                            <option value="diesel">Diesel</option>
+                                            <option value="gasolina">Gasolina</option>
+                                            <option value="gas">Gas</option>
+                                            <option value="otro">Otro</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="col-md-6 mb-3">
+                                        <label for="cantidad_galones" class="form-label">Cantidad en Galones</label>
+                                        <input type="number" class="form-control" id="cantidad_galones" name="cantidad_galones" 
+                                               step="0.1" min="0.1" max="1000" placeholder="Ej: 25.5" required>
+                                    </div>
+                                    
+                                    <div class="col-md-6 mb-3">
+                                        <label for="costo_total" class="form-label">Costo Total</label>
+                                        <input type="number" class="form-control" id="costo_total" name="costo_total" 
+                                               step="0.01" min="0" placeholder="Ej: 125000.00" required>
+                                    </div>
+                                    
+                                    
+                                    <!-- Fotos Requeridas -->
+                                    <div class="col-12 mt-4">
+                                        <h6 class="text-primary mb-3">
+                                            <i class="fas fa-camera me-2"></i>Evidencia Fotográfica (Requerida)
+                                        </h6>
+                                        <div class="alert alert-info">
+                                            <i class="fas fa-info-circle me-2"></i>
+                                            <strong>Importante:</strong> Todas las fotos son obligatorias y se comprimirán automáticamente para optimizar el espacio.
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-md-6 mb-3">
+                                        <label for="foto_horometro" class="form-label">
+                                            <i class="fas fa-cog me-1"></i>Foto del Horómetro del Equipo
+                                        </label>
+                                        <input type="file" class="form-control" id="foto_horometro" name="foto_horometro" 
+                                               accept="image/*" required>
+                                        <div class="form-text">Foto clara del horómetro del equipo</div>
+                                    </div>
+                                    
+                                    <div class="col-md-6 mb-3">
+                                        <label for="foto_galones" class="form-label">
+                                            <i class="fas fa-tachometer-alt me-1"></i>Foto de Número de Galones Aplicados
+                                        </label>
+                                        <input type="file" class="form-control" id="foto_galones" name="foto_galones" 
+                                               accept="image/*" required>
+                                        <div class="form-text">Foto de la bomba mostrando galones aplicados</div>
+                                    </div>
+                                    
+                                    <div class="col-12 mb-3">
+                                        <label for="foto_recibo" class="form-label">
+                                            <i class="fas fa-receipt me-1"></i>Recibo o Factura
+                                        </label>
+                                        <input type="file" class="form-control" id="foto_recibo" name="foto_recibo" 
+                                               accept="image/*" required>
+                                        <div class="form-text">Foto clara del recibo o factura del combustible</div>
+                                    </div>
+                                    
+                                    <!-- Observaciones -->
+                                    <div class="col-12 mt-4">
+                                        <h6 class="text-primary mb-3">
+                                            <i class="fas fa-comment-alt me-2"></i>Observaciones
+                                        </h6>
+                                    </div>
+                                    
+                                    <div class="col-12 mb-4">
+                                        <label for="observaciones" class="form-label">Observaciones Adicionales</label>
+                                        <textarea class="form-control" id="observaciones" name="observaciones" 
+                                                  rows="3" placeholder="Observaciones adicionales..."></textarea>
+                                        <div class="form-text">Campo opcional para notas adicionales</div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Botones de Acción -->
+                                <div class="row mt-4">
+                                    <div class="col-md-6">
+                                        <a href="{{ url_for('combustible_opciones', equipo_id=equipo.IdEquipo) }}" 
+                                           class="btn btn-secondary btn-lg w-100">
+                                            <i class="fas fa-times me-2"></i>Cancelar
+                                        </a>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <button type="submit" class="btn btn-primary btn-lg w-100">
+                                            <i class="fas fa-save me-2"></i>Registrar Combustible
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Información del Equipo -->
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="card-title mb-0">
+                                <i class="fas fa-info-circle me-2"></i>Información del Equipo
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="info-item">
+                                        <strong>Placa:</strong> {{ equipo.Placa }}
+                                    </div>
+                                    <div class="info-item">
+                                        <strong>Tipo:</strong> {{ tipo_equipo }}
+                                    </div>
+                                    <div class="info-item">
+                                        <strong>Marca:</strong> {{ marca }}
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="info-item">
+                                        <strong>Capacidad:</strong> {{ equipo.Capacidad or 'N/A' }} T
+                                    </div>
+                                    <div class="info-item">
+                                        <strong>Modelo:</strong> {{ equipo.Modelo or 'N/A' }}
+                                    </div>
+                                    <div class="info-item">
+                                        <strong>Estado:</strong> 
+                                        <span class="badge bg-success">{{ equipo.Estado|title }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.user-avatar {
+    width: 50px;
+    height: 50px;
+    background: #2e7d32;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    color: white;
+}
+
+.info-item {
+    margin-bottom: 0.75rem;
+    font-size: 0.95rem;
+}
+
+.info-item strong {
+    min-width: 120px;
+    color: #2e7d32;
+}
+
+.form-control, .form-select {
+    border-radius: 8px;
+}
+
+.btn {
+    border-radius: 8px;
+    font-weight: 500;
+}
+
+.card {
+    border: none;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+}
+
+.card-header {
+    border-radius: 8px 8px 0 0 !important;
+}
+
+/* Vista previa de imágenes */
+.preview-container {
+    border: 2px dashed #dee2e6;
+    border-radius: 8px;
+    padding: 1rem;
+    background: #f8f9fa;
+    transition: all 0.3s ease;
+}
+
+.preview-container:hover {
+    border-color: #27ae60;
+    background: #f0f8f0;
+}
+
+.preview-image-wrapper {
+    position: relative;
+    display: inline-block;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.preview-image {
+    max-width: 250px;
+    max-height: 200px;
+    width: auto;
+    height: auto;
+    display: block;
+    transition: transform 0.3s ease;
+}
+
+.preview-image:hover {
+    transform: scale(1.05);
+}
+
+.preview-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.preview-image-wrapper:hover .preview-overlay {
+    opacity: 1;
+}
+
+.file-info {
+    background: white;
+    padding: 0.5rem;
+    border-radius: 4px;
+    border: 1px solid #dee2e6;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .info-item {
+        flex-direction: column;
+        align-items: flex-start;
+        text-align: left;
+    }
+    
+    .info-item strong {
+        min-width: auto;
+        margin-bottom: 0.25rem;
+    }
+    
+    .preview-image {
+        max-width: 200px;
+        max-height: 150px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Auto-compresión y vista previa de imágenes
+function autoCompressOnSelect(input, maxSizeMB) {
+    if (input.files && input.files[0]) {
+        const file = input.files[0];
+        const fileSizeMB = file.size / (1024 * 1024);
+        
+        // Validar tipo de archivo
+        if (!file.type.startsWith('image/')) {
+            alert('Por favor selecciona un archivo de imagen válido.');
+            input.value = '';
+            return;
+        }
+        
+        if (fileSizeMB > maxSizeMB) {
+            console.log(`Imagen grande detectada: ${file.name} (${fileSizeMB.toFixed(2)}MB) - Se comprimirá automáticamente`);
+        }
+        
+        // Mostrar preview de la imagen
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            // Crear o actualizar preview
+            let preview = input.parentNode.querySelector('.image-preview');
+            if (!preview) {
+                preview = document.createElement('div');
+                preview.className = 'image-preview mt-3';
+                input.parentNode.appendChild(preview);
+            }
+            
+            // Información del archivo
+            const fileInfo = `
+                <div class="file-info mb-2">
+                    <small class="text-muted">
+                        <i class="fas fa-file-image me-1"></i>
+                        ${file.name} (${fileSizeMB.toFixed(2)} MB)
+                        ${fileSizeMB > maxSizeMB ? '<span class="text-warning"><i class="fas fa-compress me-1"></i>Se comprimirá</span>' : ''}
+                    </small>
+                </div>
+            `;
+            
+            preview.innerHTML = `
+                <div class="preview-container">
+                    ${fileInfo}
+                    <div class="preview-image-wrapper">
+                        <img src="${e.target.result}" class="preview-image" alt="Vista previa">
+                        <div class="preview-overlay">
+                            <button type="button" class="btn btn-sm btn-danger" onclick="removeImage(this)">
+                                <i class="fas fa-times"></i> Eliminar
+                            </button>
+                        </div>
+                    </div>
+                    <div class="form-text mt-2">
+                        <i class="fas fa-check-circle text-success me-1"></i>
+                        Imagen seleccionada correctamente
+                    </div>
+                </div>
+            `;
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
+// Función para eliminar imagen
+function removeImage(button) {
+    const preview = button.closest('.image-preview');
+    const input = preview.parentNode.querySelector('input[type="file"]');
+    
+    // Limpiar input y preview
+    input.value = '';
+    preview.remove();
+}
+
+// Configurar fecha y hora actual por defecto
+document.addEventListener('DOMContentLoaded', function() {
+    const now = new Date();
+    const fecha = now.toISOString().split('T')[0];
+    const hora = now.toTimeString().slice(0, 5);
+    
+    document.getElementById('fecha_registro').value = fecha;
+    document.getElementById('hora_registro').value = hora;
+    
+    // Configurar eventos para todos los inputs de archivo
+    const fileInputs = document.querySelectorAll('input[type="file"]');
+    fileInputs.forEach(input => {
+        input.addEventListener('change', function() {
+            autoCompressOnSelect(this, 5);
+        });
+    });
+});
+</script>
+{% endblock %}

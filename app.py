@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
+from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 from models import db, User, Equipo, TipoEquipo, Marca, EstadoEquipo, Cargo, Cliente, RegistroHoras
 from forms import UserForm, UserEditForm, UserSearchForm, EquipoForm, EquipoSearchForm, TipoEquipoForm, MarcaForm, EstadoEquipoForm, CargoForm, ClienteForm, ClienteSearchForm, RegistroHorasForm, CambiarContrasenaForm
@@ -17,6 +18,8 @@ from PIL import Image
 from dateutil.relativedelta import relativedelta
 import calendar
 from dotenv import load_dotenv
+import logging
+import traceback
 
 # Cargar variables de entorno desde .env
 load_dotenv()
@@ -40,6 +43,20 @@ def get_file_version(file_path):
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'tu-clave-secreta-muy-segura-aqui')
 app.permanent_session_lifetime = timedelta(hours=24)
+
+# Crear directorio de logs si no existe
+os.makedirs('logs', exist_ok=True)
+
+# Configuración de logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('logs/flask_app.log'),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
 
 # Hacer las funciones disponibles en todos los templates
 @app.context_processor
@@ -1469,6 +1486,29 @@ def ver_qr_equipos():
 @login_required
 def equipos_disponibles():
     """Lista de equipos disponibles para empleados (solo lectura)"""
+    # Obtener empleado actual
+    empleado_id = session.get('user_id')
+    
+    # Verificar si el empleado ya está trabajando en algún equipo
+    entrada_activa = RegistroHoras.query.filter_by(
+        IdEmpleado=empleado_id,
+        TipoRegistro='entrada'
+    ).order_by(RegistroHoras.FechaCreacion.desc()).first()
+    
+    equipo_trabajando = None
+    if entrada_activa:
+        # Verificar si tiene salida correspondiente
+        salida_correspondiente = RegistroHoras.query.filter(
+            RegistroHoras.IdEmpleado == empleado_id,
+            RegistroHoras.IdEquipo == entrada_activa.IdEquipo,
+            RegistroHoras.TipoRegistro == 'salida',
+            RegistroHoras.FechaCreacion > entrada_activa.FechaCreacion
+        ).first()
+        
+        if not salida_correspondiente:
+            # El empleado está trabajando actualmente
+            equipo_trabajando = Equipo.query.get(entrada_activa.IdEquipo)
+    
     # Obtener equipos activos
     equipos = Equipo.query.filter_by(Estado='activo').all()
     
@@ -1484,7 +1524,9 @@ def equipos_disponibles():
             'operador_actual': operador_actual
         })
     
-    return render_template('equipos/disponibles.html', equipos_info=equipos_info)
+    return render_template('equipos/disponibles.html', 
+                         equipos_info=equipos_info,
+                         equipo_trabajando=equipo_trabajando)
 
 # ===== CLIENTES =====
 
@@ -1662,6 +1704,355 @@ def panel_equipo(equipo_id):
                          registros_mes=registros_mes,
                          entrada_pendiente=entrada_pendiente)
 
+@app.route('/combustible/<int:equipo_id>')
+@login_required
+def combustible_opciones(equipo_id):
+    """Página de opciones de combustible según número de motores del equipo"""
+    equipo = Equipo.query.get_or_404(equipo_id)
+    
+    # Obtener el usuario logueado
+    usuario = User.query.get(session['user_id'])
+    
+    # Obtener información adicional del equipo
+    tipo_equipo = equipo.tipo_equipo.descripcion if equipo.tipo_equipo else 'N/A'
+    marca = equipo.marca.DescripcionMarca if equipo.marca else 'N/A'
+    estado_equipo = equipo.estado_equipo.Descripcion if equipo.estado_equipo else 'N/A'
+    
+    return render_template('combustible/opciones.html', 
+                         equipo=equipo,
+                         usuario=usuario,
+                         tipo_equipo=tipo_equipo,
+                         marca=marca,
+                         estado_equipo=estado_equipo)
+
+@app.route('/combustible/registro/grua/<int:equipo_id>', methods=['GET', 'POST'])
+@login_required
+def registro_combustible_grua(equipo_id):
+    """Registro de combustible para la grúa"""
+    equipo = Equipo.query.get_or_404(equipo_id)
+    
+    # Obtener el usuario logueado
+    usuario = User.query.get(session['user_id'])
+    
+    # Obtener información adicional del equipo
+    tipo_equipo = equipo.tipo_equipo.descripcion if equipo.tipo_equipo else 'N/A'
+    marca = equipo.marca.DescripcionMarca if equipo.marca else 'N/A'
+    estado_equipo = equipo.estado_equipo.Descripcion if equipo.estado_equipo else 'N/A'
+    
+    if request.method == 'POST':
+        try:
+            # Procesar formulario de combustible de grúa
+            fecha_registro = request.form.get('fecha_registro')
+            hora_registro = request.form.get('hora_registro')
+            tipo_combustible = request.form.get('tipo_combustible')
+            cantidad_galones = float(request.form.get('cantidad_galones'))
+            costo_total = float(request.form.get('costo_total'))
+            observaciones = request.form.get('observaciones', '')
+            
+            # Procesar imágenes con compresión
+            from image_processor import compress_image_server
+            
+            # Crear directorio de uploads si no existe
+            upload_dir = os.path.join(app.static_folder, 'uploads', 'combustible')
+            os.makedirs(upload_dir, exist_ok=True)
+            
+            # Procesar cada imagen
+            fotos_guardadas = {}
+            campos_foto = ['foto_horometro', 'foto_galones', 'foto_recibo']
+            
+            for campo in campos_foto:
+                if campo in request.files and request.files[campo].filename:
+                    archivo = request.files[campo]
+                    # Generar nombre único para el archivo
+                    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+                    nombre_original = secure_filename(archivo.filename)
+                    nombre_base, extension = os.path.splitext(nombre_original)
+                    nombre_archivo = f"{equipo.Placa}_{campo}_{timestamp}{extension}"
+                    ruta_archivo = os.path.join(upload_dir, nombre_archivo)
+                    
+                    # Guardar archivo temporalmente
+                    archivo.save(ruta_archivo)
+                    
+                    # Comprimir imagen
+                    success, compressed_path, info = compress_image_server(
+                        ruta_archivo, 
+                        max_width=1920, 
+                        max_height=1080, 
+                        quality=80, 
+                        max_size_mb=5
+                    )
+                    
+                    if success:
+                        # Mover archivo comprimido a la ubicación final
+                        nombre_final = f"{equipo.Placa}_{campo}_{timestamp}_compressed.jpg"
+                        ruta_final = os.path.join(upload_dir, nombre_final)
+                        if os.path.exists(compressed_path):
+                            os.replace(compressed_path, ruta_final)
+                        
+                        fotos_guardadas[campo] = f"combustible/{nombre_final}"
+                        logger.info(f"Imagen comprimida: {campo} - {info}")
+                    else:
+                        logger.error(f"Error comprimiendo imagen {campo}: {info}")
+                        # Usar imagen original si falla la compresión
+                        fotos_guardadas[campo] = f"combustible/{nombre_archivo}"
+            
+            # Guardar en la base de datos
+            from datetime import datetime as dt
+            from models import RegistroCombustible
+            
+            nuevo_registro = RegistroCombustible(
+                IdEquipo=equipo_id,
+                IdUsuario=session['user_id'],
+                TipoRegistro='grua',
+                FechaRegistro=dt.strptime(fecha_registro, '%Y-%m-%d').date(),
+                HoraRegistro=dt.strptime(hora_registro, '%H:%M').time(),
+                TipoCombustible=tipo_combustible,
+                CantidadGalones=cantidad_galones,
+                CostoTotal=costo_total,
+                FotoHorometro=fotos_guardadas.get('foto_horometro'),
+                FotoGalones=fotos_guardadas.get('foto_galones'),
+                FotoRecibo=fotos_guardadas.get('foto_recibo'),
+                Observaciones=observaciones
+            )
+            
+            db.session.add(nuevo_registro)
+            db.session.commit()
+            
+            flash(f'Registro de combustible de grúa guardado exitosamente. Imágenes comprimidas: {len(fotos_guardadas)}', 'success')
+            logger.info(f"Registro combustible grúa guardado - ID: {nuevo_registro.IdRegistroCombustible}, Equipo: {equipo.Placa}, Galones: {cantidad_galones}, Costo: {costo_total}")
+            
+        except Exception as e:
+            logger.error(f"Error procesando combustible grúa: {str(e)}")
+            flash('Error al procesar el registro de combustible', 'error')
+        
+        return redirect(url_for('panel_equipo', equipo_id=equipo_id))
+    
+    return render_template('combustible/registro_grua.html', 
+                         equipo=equipo,
+                         usuario=usuario,
+                         tipo_equipo=tipo_equipo,
+                         marca=marca,
+                         estado_equipo=estado_equipo)
+
+@app.route('/combustible/registro/camion/<int:equipo_id>', methods=['GET', 'POST'])
+@login_required
+def registro_combustible_camion(equipo_id):
+    """Registro de combustible para el camión"""
+    equipo = Equipo.query.get_or_404(equipo_id)
+    
+    # Obtener el usuario logueado
+    usuario = User.query.get(session['user_id'])
+    
+    # Obtener información adicional del equipo
+    tipo_equipo = equipo.tipo_equipo.descripcion if equipo.tipo_equipo else 'N/A'
+    marca = equipo.marca.DescripcionMarca if equipo.marca else 'N/A'
+    estado_equipo = equipo.estado_equipo.Descripcion if equipo.estado_equipo else 'N/A'
+    
+    if request.method == 'POST':
+        try:
+            # Procesar formulario de combustible de camión
+            fecha_registro = request.form.get('fecha_registro')
+            hora_registro = request.form.get('hora_registro')
+            tipo_combustible = request.form.get('tipo_combustible')
+            cantidad_galones = float(request.form.get('cantidad_galones'))
+            costo_total = float(request.form.get('costo_total'))
+            observaciones = request.form.get('observaciones', '')
+            
+            # Procesar imágenes con compresión
+            from image_processor import compress_image_server
+            
+            # Crear directorio de uploads si no existe
+            upload_dir = os.path.join(app.static_folder, 'uploads', 'combustible')
+            os.makedirs(upload_dir, exist_ok=True)
+            
+            # Procesar cada imagen
+            fotos_guardadas = {}
+            campos_foto = ['foto_horometro', 'foto_kilometraje', 'foto_galones', 'foto_recibo']
+            
+            for campo in campos_foto:
+                if campo in request.files and request.files[campo].filename:
+                    archivo = request.files[campo]
+                    # Generar nombre único para el archivo
+                    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+                    nombre_original = secure_filename(archivo.filename)
+                    nombre_base, extension = os.path.splitext(nombre_original)
+                    nombre_archivo = f"{equipo.Placa}_{campo}_{timestamp}{extension}"
+                    ruta_archivo = os.path.join(upload_dir, nombre_archivo)
+                    
+                    # Guardar archivo temporalmente
+                    archivo.save(ruta_archivo)
+                    
+                    # Comprimir imagen
+                    success, compressed_path, info = compress_image_server(
+                        ruta_archivo, 
+                        max_width=1920, 
+                        max_height=1080, 
+                        quality=80, 
+                        max_size_mb=5
+                    )
+                    
+                    if success:
+                        # Mover archivo comprimido a la ubicación final
+                        nombre_final = f"{equipo.Placa}_{campo}_{timestamp}_compressed.jpg"
+                        ruta_final = os.path.join(upload_dir, nombre_final)
+                        if os.path.exists(compressed_path):
+                            os.replace(compressed_path, ruta_final)
+                        
+                        fotos_guardadas[campo] = f"combustible/{nombre_final}"
+                        logger.info(f"Imagen comprimida: {campo} - {info}")
+                    else:
+                        logger.error(f"Error comprimiendo imagen {campo}: {info}")
+                        # Usar imagen original si falla la compresión
+                        fotos_guardadas[campo] = f"combustible/{nombre_archivo}"
+            
+            # Guardar en la base de datos
+            from datetime import datetime as dt
+            from models import RegistroCombustible
+            
+            nuevo_registro = RegistroCombustible(
+                IdEquipo=equipo_id,
+                IdUsuario=session['user_id'],
+                TipoRegistro='camion',
+                FechaRegistro=dt.strptime(fecha_registro, '%Y-%m-%d').date(),
+                HoraRegistro=dt.strptime(hora_registro, '%H:%M').time(),
+                TipoCombustible=tipo_combustible,
+                CantidadGalones=cantidad_galones,
+                CostoTotal=costo_total,
+                FotoHorometro=fotos_guardadas.get('foto_horometro'),
+                FotoKilometraje=fotos_guardadas.get('foto_kilometraje'),
+                FotoGalones=fotos_guardadas.get('foto_galones'),
+                FotoRecibo=fotos_guardadas.get('foto_recibo'),
+                Observaciones=observaciones
+            )
+            
+            db.session.add(nuevo_registro)
+            db.session.commit()
+            
+            flash(f'Registro de combustible de camión guardado exitosamente. Imágenes comprimidas: {len(fotos_guardadas)}', 'success')
+            logger.info(f"Registro combustible camión guardado - ID: {nuevo_registro.IdRegistroCombustible}, Equipo: {equipo.Placa}, Galones: {cantidad_galones}, Costo: {costo_total}")
+            
+        except Exception as e:
+            logger.error(f"Error procesando combustible camión: {str(e)}")
+            flash('Error al procesar el registro de combustible', 'error')
+        
+        return redirect(url_for('panel_equipo', equipo_id=equipo_id))
+    
+    return render_template('combustible/registro_camion.html', 
+                         equipo=equipo,
+                         usuario=usuario,
+                         tipo_equipo=tipo_equipo,
+                         marca=marca,
+                         estado_equipo=estado_equipo)
+
+@app.route('/combustible/registro/equipo/<int:equipo_id>', methods=['GET', 'POST'])
+@login_required
+def registro_combustible_equipo(equipo_id):
+    """Registro de combustible para equipo con un solo motor"""
+    equipo = Equipo.query.get_or_404(equipo_id)
+    
+    # Obtener el usuario logueado
+    usuario = User.query.get(session['user_id'])
+    
+    # Obtener información adicional del equipo
+    tipo_equipo = equipo.tipo_equipo.descripcion if equipo.tipo_equipo else 'N/A'
+    marca = equipo.marca.DescripcionMarca if equipo.marca else 'N/A'
+    estado_equipo = equipo.estado_equipo.Descripcion if equipo.estado_equipo else 'N/A'
+    
+    if request.method == 'POST':
+        try:
+            # Procesar formulario de combustible de equipo
+            fecha_registro = request.form.get('fecha_registro')
+            hora_registro = request.form.get('hora_registro')
+            tipo_combustible = request.form.get('tipo_combustible')
+            cantidad_galones = float(request.form.get('cantidad_galones'))
+            costo_total = float(request.form.get('costo_total'))
+            observaciones = request.form.get('observaciones', '')
+            
+            # Procesar imágenes con compresión
+            from image_processor import compress_image_server
+            
+            # Crear directorio de uploads si no existe
+            upload_dir = os.path.join(app.static_folder, 'uploads', 'combustible')
+            os.makedirs(upload_dir, exist_ok=True)
+            
+            # Procesar cada imagen
+            fotos_guardadas = {}
+            campos_foto = ['foto_horometro', 'foto_galones', 'foto_recibo']
+            
+            for campo in campos_foto:
+                if campo in request.files and request.files[campo].filename:
+                    archivo = request.files[campo]
+                    # Generar nombre único para el archivo
+                    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+                    nombre_original = secure_filename(archivo.filename)
+                    nombre_base, extension = os.path.splitext(nombre_original)
+                    nombre_archivo = f"{equipo.Placa}_{campo}_{timestamp}{extension}"
+                    ruta_archivo = os.path.join(upload_dir, nombre_archivo)
+                    
+                    # Guardar archivo temporalmente
+                    archivo.save(ruta_archivo)
+                    
+                    # Comprimir imagen
+                    success, compressed_path, info = compress_image_server(
+                        ruta_archivo, 
+                        max_width=1920, 
+                        max_height=1080, 
+                        quality=80, 
+                        max_size_mb=5
+                    )
+                    
+                    if success:
+                        # Mover archivo comprimido a la ubicación final
+                        nombre_final = f"{equipo.Placa}_{campo}_{timestamp}_compressed.jpg"
+                        ruta_final = os.path.join(upload_dir, nombre_final)
+                        if os.path.exists(compressed_path):
+                            os.replace(compressed_path, ruta_final)
+                        
+                        fotos_guardadas[campo] = f"combustible/{nombre_final}"
+                        logger.info(f"Imagen comprimida: {campo} - {info}")
+                    else:
+                        logger.error(f"Error comprimiendo imagen {campo}: {info}")
+                        # Usar imagen original si falla la compresión
+                        fotos_guardadas[campo] = f"combustible/{nombre_archivo}"
+            
+            # Guardar en la base de datos
+            from datetime import datetime as dt
+            from models import RegistroCombustible
+            
+            nuevo_registro = RegistroCombustible(
+                IdEquipo=equipo_id,
+                IdUsuario=session['user_id'],
+                TipoRegistro='equipo',
+                FechaRegistro=dt.strptime(fecha_registro, '%Y-%m-%d').date(),
+                HoraRegistro=dt.strptime(hora_registro, '%H:%M').time(),
+                TipoCombustible=tipo_combustible,
+                CantidadGalones=cantidad_galones,
+                CostoTotal=costo_total,
+                FotoHorometro=fotos_guardadas.get('foto_horometro'),
+                FotoGalones=fotos_guardadas.get('foto_galones'),
+                FotoRecibo=fotos_guardadas.get('foto_recibo'),
+                Observaciones=observaciones
+            )
+            
+            db.session.add(nuevo_registro)
+            db.session.commit()
+            
+            flash(f'Registro de combustible del equipo guardado exitosamente. Imágenes comprimidas: {len(fotos_guardadas)}', 'success')
+            logger.info(f"Registro combustible equipo guardado - ID: {nuevo_registro.IdRegistroCombustible}, Equipo: {equipo.Placa}, Galones: {cantidad_galones}, Costo: {costo_total}")
+            
+        except Exception as e:
+            logger.error(f"Error procesando combustible equipo: {str(e)}")
+            flash('Error al procesar el registro de combustible', 'error')
+        
+        return redirect(url_for('panel_equipo', equipo_id=equipo_id))
+    
+    return render_template('combustible/registro_equipo.html', 
+                         equipo=equipo,
+                         usuario=usuario,
+                         tipo_equipo=tipo_equipo,
+                         marca=marca,
+                         estado_equipo=estado_equipo)
+
 @app.route('/registro/<int:equipo_id>')
 def registro_horas(equipo_id):
     """Página de registro de horas para una grúa específica"""
@@ -1676,37 +2067,57 @@ def registro_horas(equipo_id):
     empleado_id = session['user_id']
     empleado = User.query.get(empleado_id)
     
-    # Verificar si el empleado ya tiene una entrada pendiente
-    # Buscar la entrada más reciente para este equipo y empleado
-    ultima_entrada = RegistroHoras.query.filter_by(
+    # ===== VALIDACIÓN PREVIA: Verificar si el empleado ya está trabajando en OTRO equipo =====
+    # Primero verificar si hay entrada pendiente en ESTE equipo (para salida)
+    ultima_entrada_este_equipo = RegistroHoras.query.filter_by(
         IdEquipo=equipo_id,
         IdEmpleado=empleado_id,
         TipoRegistro='entrada'
     ).order_by(RegistroHoras.FechaCreacion.desc()).first()
     
-    entrada_pendiente = None
-    if ultima_entrada:
-        # Verificar si esta entrada tiene una salida correspondiente
+    entrada_pendiente_este_equipo = None
+    if ultima_entrada_este_equipo:
+        # Verificar si hay salida correspondiente
         salida_correspondiente = RegistroHoras.query.filter_by(
             IdEquipo=equipo_id,
             IdEmpleado=empleado_id,
             TipoRegistro='salida'
-        ).filter(RegistroHoras.FechaCreacion > ultima_entrada.FechaCreacion).first()
+        ).filter(RegistroHoras.FechaCreacion > ultima_entrada_este_equipo.FechaCreacion).first()
         
-        # Si no hay salida después de la última entrada, hay entrada pendiente
         if not salida_correspondiente:
-            entrada_pendiente = ultima_entrada
+            entrada_pendiente_este_equipo = ultima_entrada_este_equipo
+    
+    # Si NO hay entrada pendiente en este equipo, verificar si está trabajando en OTRO equipo
+    if not entrada_pendiente_este_equipo:
+        # Buscar entrada pendiente en CUALQUIER otro equipo
+        entrada_activa_otro_equipo = RegistroHoras.query.filter_by(
+            IdEmpleado=empleado_id,
+            TipoRegistro='entrada'
+        ).order_by(RegistroHoras.FechaCreacion.desc()).first()
+        
+        if entrada_activa_otro_equipo and entrada_activa_otro_equipo.IdEquipo != equipo_id:
+            # Verificar si tiene salida correspondiente
+            salida_correspondiente = RegistroHoras.query.filter(
+                RegistroHoras.IdEmpleado == empleado_id,
+                RegistroHoras.IdEquipo == entrada_activa_otro_equipo.IdEquipo,
+                RegistroHoras.TipoRegistro == 'salida',
+                RegistroHoras.FechaCreacion > entrada_activa_otro_equipo.FechaCreacion
+            ).first()
+            
+            if not salida_correspondiente:
+                # Está trabajando en otro equipo, redirigir a página de pendiente
+                equipo_actual = Equipo.query.get(entrada_activa_otro_equipo.IdEquipo)
+                return render_template('registro_horas/pendiente.html',
+                                     equipo_actual=equipo_actual,
+                                     empleado=empleado,
+                                     entrada_pendiente=entrada_activa_otro_equipo)
+    # ===== FIN VALIDACIÓN PREVIA =====
+    
+    # Si llegamos aquí, puede proceder (ya sea entrada o salida en este equipo)
+    entrada_pendiente = entrada_pendiente_este_equipo
     
     # Debug: verificar estado de entrada pendiente
     print(f"DEBUG: Equipo {equipo_id}, Empleado {empleado_id}")
-    print(f"DEBUG: Última entrada: {ultima_entrada.IdRegistro if ultima_entrada else 'None'}")
-    if ultima_entrada:
-        salida_correspondiente = RegistroHoras.query.filter_by(
-            IdEquipo=equipo_id,
-            IdEmpleado=empleado_id,
-            TipoRegistro='salida'
-        ).filter(RegistroHoras.FechaCreacion > ultima_entrada.FechaCreacion).first()
-        print(f"DEBUG: Salida correspondiente: {salida_correspondiente.IdRegistro if salida_correspondiente else 'None'}")
     print(f"DEBUG: Entrada pendiente encontrada: {entrada_pendiente is not None}")
     if entrada_pendiente:
         print(f"DEBUG: Entrada pendiente ID: {entrada_pendiente.IdRegistro}, Fecha: {entrada_pendiente.FechaEmpleado}")
@@ -1772,11 +2183,68 @@ def procesar_registro_horas(equipo_id):
     empleado = User.query.get(session['user_id'])  # Obtener el empleado logueado
     form = RegistroHorasForm()
     
-    # Debug: verificar datos del formulario (simplificado)
-    if not form.validate_on_submit():
-        print(f"DEBUG: Errores del formulario: {form.errors}")
+    # ===== VALIDACIÓN: Verificar si el empleado ya está trabajando en otro equipo =====
+    try:
+        # Obtener el tipo de registro desde el formulario sin validar primero
+        tipo_registro = request.form.get('TipoRegistro')
+        if tipo_registro == 'entrada':
+            # Buscar si el empleado tiene alguna entrada sin salida (en cualquier equipo)
+            entrada_activa = RegistroHoras.query.filter_by(
+                IdEmpleado=empleado.id,
+                TipoRegistro='entrada'
+            ).order_by(RegistroHoras.FechaCreacion.desc()).first()
+            
+            if entrada_activa:
+                # Verificar si tiene salida correspondiente
+                salida_correspondiente = RegistroHoras.query.filter(
+                    RegistroHoras.IdEmpleado == empleado.id,
+                    RegistroHoras.IdEquipo == entrada_activa.IdEquipo,
+                    RegistroHoras.TipoRegistro == 'salida',
+                    RegistroHoras.FechaCreacion > entrada_activa.FechaCreacion
+                ).first()
+                
+                if not salida_correspondiente:
+                    # El empleado ya está trabajando en otro equipo
+                    equipo_actual = Equipo.query.get(entrada_activa.IdEquipo)
+                    if equipo_actual:
+                        flash(f'🚫 Ya tienes un formulario de entrada abierto en el equipo {equipo_actual.Placa}. Debes completar la salida en ese equipo antes de poder trabajar en otro.', 'warning')
+                    else:
+                        flash('🚫 Ya tienes un formulario de entrada abierto. Debes completar la salida antes de poder trabajar en otro equipo.', 'warning')
+                    return redirect(url_for('equipos_disponibles'))
+    except Exception as e:
+        print(f"ERROR en validación de registro múltiple: {e}")
+        # Si hay error en la validación, continuar con el flujo normal
+        pass
+    # ===== FIN VALIDACIÓN =====
     
-    # Validaciones adicionales de fecha y hora
+    # Debug: verificar datos del formulario con logs detallados
+    logger.info(f"=== DEBUG FORMULARIO ===")
+    logger.info(f"Tipo de registro: {request.form.get('TipoRegistro')}")
+    logger.info(f"Datos del formulario recibidos: {dict(request.form)}")
+    
+    if not form.validate_on_submit():
+        logger.error(f"=== ERRORES DEL FORMULARIO ===")
+        for field_name, errors in form.errors.items():
+            logger.error(f"Campo '{field_name}': {errors}")
+        logger.error(f"=== FIN ERRORES ===")
+        
+        # Si el formulario no es válido, mostrar errores específicos
+        error_messages = []
+        for field_name, errors in form.errors.items():
+            for error in errors:
+                error_messages.append(f"• {field_name}: {error}")
+        
+        if error_messages:
+            flash(f'❌ Errores en el formulario:\n' + '\n'.join(error_messages), 'error')
+        else:
+            flash('❌ Error en el formulario. Por favor, revisa los datos ingresados.', 'error')
+        
+        return redirect(url_for('registro_horas', equipo_id=equipo_id))
+    
+    # Validaciones adicionales de fecha y hora - Solo si el formulario es válido
+    logger.info(f"=== INICIANDO PROCESAMIENTO DEL REGISTRO ===")
+    logger.info(f"Formulario válido, continuando con el procesamiento...")
+    
     if form.FechaEmpleado.data and form.HoraEmpleado.data:
         try:
             fecha_hora_ingresada = datetime.combine(form.FechaEmpleado.data, form.HoraEmpleado.data)
@@ -1898,23 +2366,8 @@ def procesar_registro_horas(equipo_id):
                 ).first()
                 
                 if entrada and entrada.es_operador():
-                    if form.Kilometraje.data and form.Kilometraje.data < entrada.Kilometraje:
-                        flash(f'❌ Error: El kilometraje de salida ({form.Kilometraje.data}) debe ser mayor o igual al de entrada ({entrada.Kilometraje}). El vehículo no puede retroceder en kilometraje.', 'error')
-                        # Mantener datos del formulario y mostrar errores
-                        return render_template('registro_horas/formulario.html', 
-                                             equipo=equipo, 
-                                             empleado=empleado, 
-                                             form=form, 
-                                             entrada_pendiente=entrada,
-                                             cargo_nombre=entrada.cargo.descripcionCargo if entrada.cargo else 'N/A',
-                                             cliente_nombre=entrada.cliente.NombreCliente if entrada.cliente else 'N/A',
-                                             valores_entrada={
-                                                 'kilometraje': entrada.Kilometraje,
-                                                 'horometro': entrada.Horometro,
-                                                 'horometro2': entrada.Horometro2,
-                                                 'fecha_entrada': entrada.FechaEmpleado.strftime('%d/%m/%Y'),
-                                                 'hora_entrada': entrada.HoraEmpleado.strftime('%H:%M')
-                                             })
+                    # En salidas, el kilometraje se toma automáticamente de la entrada, no se valida
+                    pass  # No validar kilometraje en salidas ya que se usa el de entrada
                     
                     if form.Horometro.data and form.Horometro.data < entrada.Horometro:
                         flash(f'❌ Error: El horómetro de salida ({form.Horometro.data}) debe ser mayor o igual al de entrada ({entrada.Horometro}). El horómetro no puede retroceder.', 'error')
@@ -1956,6 +2409,44 @@ def procesar_registro_horas(equipo_id):
             
             # El cliente ahora siempre viene del formulario (ya sea seleccionado o auto-asignado)
             cliente_id = form.IdCliente.data
+            # Convertir cadena vacía a None para consistencia en la base de datos
+            if cliente_id == '' or cliente_id == '0':
+                cliente_id = None
+            
+            # Para formularios de salida, usar los valores de la entrada
+            kilometraje_final = form.Kilometraje.data
+            horometro_final = form.Horometro.data
+            horometro2_final = form.Horometro2.data
+            
+            # Buscar la entrada correspondiente para formularios de salida
+            entrada_pendiente = None
+            if form.TipoRegistro.data == 'salida':
+                entrada_pendiente = RegistroHoras.query.filter_by(
+                    IdEquipo=equipo_id,
+                    IdEmpleado=session['user_id'],
+                    TipoRegistro='entrada'
+                ).order_by(RegistroHoras.FechaCreacion.desc()).first()
+                
+                if entrada_pendiente:
+                    # Verificar si ya tiene salida
+                    salida_correspondiente = RegistroHoras.query.filter(
+                        RegistroHoras.IdEquipo == equipo_id,
+                        RegistroHoras.IdEmpleado == session['user_id'],
+                        RegistroHoras.TipoRegistro == 'salida',
+                        RegistroHoras.FechaCreacion > entrada_pendiente.FechaCreacion
+                    ).first()
+                    
+                    if salida_correspondiente:
+                        entrada_pendiente = None  # Ya tiene salida
+                
+                if entrada_pendiente:
+                    # Usar valores de entrada, pero convertir None a 0 para evitar errores de validación
+                    kilometraje_final = entrada_pendiente.Kilometraje or 0
+                    horometro_final = entrada_pendiente.Horometro or 0
+                    horometro2_final = entrada_pendiente.Horometro2 or 0
+                    logger.info(f"Usando valores de entrada para salida - KM: {kilometraje_final}, HM: {horometro_final}, HM2: {horometro2_final}")
+                else:
+                    logger.warning(f"No se encontró entrada pendiente para salida - Equipo: {equipo_id}, Empleado: {session['user_id']}")
             
             # Crear registro
             registro = RegistroHoras(
@@ -1966,9 +2457,9 @@ def procesar_registro_horas(equipo_id):
                 IdEstadoEquipo=form.IdEstadoEquipo.data,
                 FechaEmpleado=form.FechaEmpleado.data,
                 HoraEmpleado=form.HoraEmpleado.data,
-                Kilometraje=form.Kilometraje.data,
-                Horometro=form.Horometro.data,
-                Horometro2=form.Horometro2.data,
+                Kilometraje=kilometraje_final,
+                Horometro=horometro_final,
+                Horometro2=horometro2_final,
                 FotoKilometraje=foto_kilometraje,
                 FotoHorometro=foto_horometro,
                 FotoHorometro2=foto_horometro2,
@@ -2003,7 +2494,13 @@ def procesar_registro_horas(equipo_id):
             
         except Exception as e:
             db.session.rollback()
-            flash(f'Error al procesar el registro: {str(e)}', 'error')
+            logger.error(f"=== ERROR DURANTE PROCESAMIENTO ===")
+            logger.error(f"Tipo de error: {type(e).__name__}")
+            logger.error(f"Mensaje de error: {str(e)}")
+            logger.error(f"Traceback completo:")
+            logger.error(traceback.format_exc())
+            logger.error(f"=== FIN ERROR ===")
+            flash(f'❌ Error al procesar el registro: {str(e)}', 'error')
     else:
         # Si el formulario no es válido, mostrar errores
         for field, errors in form.errors.items():
@@ -2011,6 +2508,26 @@ def procesar_registro_horas(equipo_id):
                 flash(f'Error en {field}: {error}', 'error')
     
     return redirect(url_for('registro_horas', equipo_id=equipo_id))
+
+@app.route('/debug/logs')
+@admin_required
+def debug_logs():
+    """Endpoint para ver los logs de debug"""
+    try:
+        # Leer las últimas 100 líneas del archivo de log
+        log_file = 'logs/flask_app.log'
+        if os.path.exists(log_file):
+            with open(log_file, 'r', encoding='utf-8') as f:
+                lines = f.readlines()
+                # Tomar las últimas 100 líneas
+                recent_lines = lines[-100:] if len(lines) > 100 else lines
+                logs = ''.join(recent_lines)
+        else:
+            logs = "No se encontró el archivo de logs."
+        
+        return render_template('debug_logs.html', logs=logs)
+    except Exception as e:
+        return f"Error al leer logs: {str(e)}", 500
 
 def guardar_archivo(archivo, prefijo):
     """Guardar archivo subido con compresión automática y retornar el nombre"""
@@ -2844,6 +3361,78 @@ def reporte_registros_dinamicos():
                          total_registros=total_registros,
                          entradas=entradas,
                          salidas=salidas)
+
+@app.route('/reportes/combustible')
+@require_admin
+def reporte_combustible():
+    """Reporte de registros de combustible"""
+    from models import RegistroCombustible
+    
+    # Parámetros de filtro
+    equipo_id = request.args.get('equipo_id', type=int)
+    usuario_id = request.args.get('usuario_id', type=int)
+    tipo_registro = request.args.get('tipo_registro')
+    fecha_inicio = request.args.get('fecha_inicio')
+    fecha_fin = request.args.get('fecha_fin')
+    
+    # Construir query base
+    query = RegistroCombustible.query
+    
+    # Aplicar filtros
+    if equipo_id:
+        query = query.filter(RegistroCombustible.IdEquipo == equipo_id)
+    
+    if usuario_id:
+        query = query.filter(RegistroCombustible.IdUsuario == usuario_id)
+    
+    if tipo_registro:
+        query = query.filter(RegistroCombustible.TipoRegistro == tipo_registro)
+    
+    if fecha_inicio:
+        from datetime import datetime as dt
+        fecha_inicio_dt = dt.strptime(fecha_inicio, '%Y-%m-%d').date()
+        query = query.filter(RegistroCombustible.FechaRegistro >= fecha_inicio_dt)
+    
+    if fecha_fin:
+        from datetime import datetime as dt
+        fecha_fin_dt = dt.strptime(fecha_fin, '%Y-%m-%d').date()
+        query = query.filter(RegistroCombustible.FechaRegistro <= fecha_fin_dt)
+    
+    # Ordenar por fecha y hora descendente (más recientes primero)
+    registros = query.order_by(
+        RegistroCombustible.FechaRegistro.desc(),
+        RegistroCombustible.HoraRegistro.desc()
+    ).all()
+    
+    # Obtener listas para filtros
+    equipos = Equipo.query.filter_by(Estado='activo').order_by(Equipo.Placa).all()
+    usuarios = User.query.filter_by(estado='activo').order_by(User.nombre).all()
+    
+    # Calcular estadísticas
+    total_registros = len(registros)
+    total_galones = sum(r.CantidadGalones for r in registros)
+    total_costo = sum(r.CostoTotal for r in registros)
+    
+    # Estadísticas por tipo
+    registros_grua = [r for r in registros if r.TipoRegistro == 'grua']
+    registros_camion = [r for r in registros if r.TipoRegistro == 'camion']
+    registros_equipo = [r for r in registros if r.TipoRegistro == 'equipo']
+    
+    return render_template('reportes/combustible.html',
+                         registros=registros,
+                         equipos=equipos,
+                         usuarios=usuarios,
+                         equipo_id=equipo_id,
+                         usuario_id=usuario_id,
+                         tipo_registro=tipo_registro,
+                         fecha_inicio=fecha_inicio,
+                         fecha_fin=fecha_fin,
+                         total_registros=total_registros,
+                         total_galones=total_galones,
+                         total_costo=total_costo,
+                         registros_grua=len(registros_grua),
+                         registros_camion=len(registros_camion),
+                         registros_equipo=len(registros_equipo))
 
 @app.route('/backups/<filename>')
 def download_backup(filename):

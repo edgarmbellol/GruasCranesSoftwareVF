@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block title %}Logs de Debug - GRÚAS CRANES S.A.S{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3 mb-0">
+                    <i class="fas fa-bug me-2"></i>
+                    Logs de Debug
+                </h1>
+                <div>
+                    <a href="{{ url_for('debug_logs') }}" class="btn btn-primary">
+                        <i class="fas fa-sync-alt me-2"></i>
+                        Actualizar
+                    </a>
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>
+                        Volver al Dashboard
+                    </a>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-file-alt me-2"></i>
+                        Últimos 100 logs del sistema
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="bg-dark text-light p-3" style="height: 600px; overflow-y: auto; font-family: 'Courier New', monospace; font-size: 12px;">
+                        {% if logs %}
+                            <pre class="mb-0">{{ logs }}</pre>
+                        {% else %}
+                            <p class="text-muted">No hay logs disponibles.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="alert alert-info mt-3">
+                <h6><i class="fas fa-info-circle me-2"></i>Información:</h6>
+                <ul class="mb-0">
+                    <li>Los logs se actualizan automáticamente cada vez que ocurre un evento en el sistema.</li>
+                    <li>Para ver logs en tiempo real, actualiza la página periódicamente.</li>
+                    <li>Los errores aparecen en <span class="text-danger">rojo</span> y los eventos normales en <span class="text-success">verde</span>.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+pre {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+/* Colorear diferentes tipos de logs */
+pre:contains("ERROR") {
+    color: #dc3545 !important;
+}
+
+pre:contains("INFO") {
+    color: #28a745 !important;
+}
+
+pre:contains("WARNING") {
+    color: #ffc107 !important;
+}
+
+pre:contains("DEBUG") {
+    color: #17a2b8 !important;
+}
+</style>
+{% endblock %}
+
+

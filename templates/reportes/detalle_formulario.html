@@ -257,7 +257,7 @@
                                         <div class="bg-info bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
                                             <i class="fas fa-clock text-info fs-3"></i>
                                         </div>
-                                        <h6 class="text-muted mb-2">Horómetro 1</h6>
+                                        <h6 class="text-muted mb-2">Horómetro Grúa</h6>
                                         <h3 class="fw-bold text-info mb-0">{{ "%.1f"|format(registro.Horometro) }} hrs</h3>
                                     </div>
                                 </div>
@@ -270,7 +270,7 @@
                                             <i class="fas fa-clock text-success fs-3"></i>
                                         </div>
                                         <h6 class="text-muted mb-2">
-                                            Horómetro 2
+                                            Horómetro Camión
                                             <span class="badge bg-secondary ms-1">Motor 2</span>
                                         </h6>
                                         <h3 class="fw-bold text-success mb-0">{{ "%.1f"|format(registro.Horometro2) }} hrs</h3>
@@ -329,15 +329,15 @@
                                                     {% if registro.estado_equipo.Descripcion.lower() == 'disponible' %}
                                                         Horómetro Grúa
                                                     {% else %}
-                                                        Horómetro 1
+                                                        Horómetro Grúa
                                                     {% endif %}
                                                 </span>
                                             </div>
                                             <div class="image-container">
                                                 <img src="{{ url_for('static', filename='uploads/' + registro.FotoHorometro) }}" 
                                                      class="img-fluid rounded" 
-                                                     alt="Foto del Horómetro 1"
-                                                     onclick="openImageModal(this.src, 'Foto del Horómetro 1')"
+                                                     alt="Foto del Horómetro Grúa"
+                                                     onclick="openImageModal(this.src, 'Foto del Horómetro Grúa')"
                                                      style="cursor: pointer; transition: transform 0.3s ease;">
                                             </div>
                                         </div>
@@ -353,7 +353,7 @@
                                                     {% if registro.estado_equipo.Descripcion.lower() == 'disponible' %}
                                                         Horómetro Camión
                                                     {% else %}
-                                                        Horómetro 2
+                                                        Horómetro Camión
                                                     {% endif %}
                                                 </span>
                                                 <span class="badge bg-secondary ms-2">Motor 2</span>
@@ -361,8 +361,8 @@
                                             <div class="image-container">
                                                 <img src="{{ url_for('static', filename='uploads/' + registro.FotoHorometro2) }}" 
                                                      class="img-fluid rounded" 
-                                                     alt="Foto del Horómetro 2"
-                                                     onclick="openImageModal(this.src, 'Foto del Horómetro 2')"
+                                                     alt="Foto del Horómetro Camión"
+                                                     onclick="openImageModal(this.src, 'Foto del Horómetro Camión')"
                                                      style="cursor: pointer; transition: transform 0.3s ease;">
                                             </div>
                                         </div>

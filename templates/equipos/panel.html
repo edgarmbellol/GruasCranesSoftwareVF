@@ -9,7 +9,7 @@
             <div class="d-flex justify-content-between align-items-center mb-4 mt-4">
                 <div>
                     <h2 class="text-primary mb-1">
-                        <i class="fas fa-crane me-2"></i>{{ equipo.Placa }}
+                        <span class="material-symbols-outlined me-2">auto_towing</span>{{ equipo.Placa }}
                     </h2>
                     <p class="text-muted mb-0">{{ tipo_equipo }} - {{ marca }} | {{ estado_equipo }}</p>
                 </div>
@@ -64,6 +64,30 @@
                                 {% else %}
                                     Iniciar Registro
                                 {% endif %}
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Combustible -->
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card report-card">
+                        <div class="card-body text-center">
+                            <div class="report-icon mb-3">
+                                <i class="fas fa-gas-pump fa-3x text-warning"></i>
+                            </div>
+                            <h5 class="card-title">Combustible</h5>
+                            <p class="card-text text-muted">
+                                Registro de combustible para este equipo. 
+                                {% if equipo.TieneDosMotores %}
+                                    Incluye registro para grúa y camión.
+                                {% else %}
+                                    Registro para el motor del equipo.
+                                {% endif %}
+                            </p>
+                            <a href="{{ url_for('combustible_opciones', equipo_id=equipo.IdEquipo) }}" class="btn btn-warning">
+                                <i class="fas fa-fuel-pump me-2"></i>
+                                Registro Combustible
                             </a>
                         </div>
                     </div>

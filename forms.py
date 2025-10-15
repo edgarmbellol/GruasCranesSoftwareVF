@@ -638,7 +638,7 @@ class RegistroHorasForm(FlaskForm):
     )
     
     Horometro = FloatField(
-        'Horómetro',
+        'Horómetro Grúa',
         validators=[Optional(), NumberRange(min=0, message='El horómetro debe ser mayor o igual a 0')],
         render_kw={'class': 'form-control', 'step': '0.1', 'placeholder': 'Ej: 2500.5'}
     )
@@ -653,7 +653,7 @@ class RegistroHorasForm(FlaskForm):
     )
     
     FotoHorometro = FileField(
-        'Foto del Horómetro',
+        'Foto del Horómetro Grúa',
         validators=[
             Optional(),
             ImageFileValidator(max_size_mb=5)
@@ -663,13 +663,13 @@ class RegistroHorasForm(FlaskForm):
     
     # Campos para el segundo horómetro (solo para equipos con dos motores)
     Horometro2 = FloatField(
-        'Horómetro 2',
+        'Horómetro Camión',
         validators=[Optional(), NumberRange(min=0, message='El horómetro 2 debe ser mayor o igual a 0')],
         render_kw={'class': 'form-control', 'step': '0.1', 'placeholder': 'Ej: 2500.5', 'style': 'display: none;'}
     )
     
     FotoHorometro2 = FileField(
-        'Foto del Horómetro 2',
+        'Foto del Horómetro Camión',
         validators=[
             Optional(),
             ImageFileValidator(max_size_mb=5)
@@ -749,6 +749,10 @@ class RegistroHorasForm(FlaskForm):
     
     def validate_Kilometraje(self, field):
         """Validar kilometraje para operadores con equipo operativo o disponible"""
+        # Para formularios de salida, no validar (los valores vienen de la entrada)
+        if self.TipoRegistro.data == 'salida':
+            return
+        
         if self.IdCargo.data and self.IdEstadoEquipo.data:
             cargo = Cargo.query.get(self.IdCargo.data)
             estado = EstadoEquipo.query.get(self.IdEstadoEquipo.data)
@@ -762,6 +766,10 @@ class RegistroHorasForm(FlaskForm):
     
     def validate_Horometro(self, field):
         """Validar horómetro para operadores con equipo operativo o disponible"""
+        # Para formularios de salida, no validar (los valores vienen de la entrada)
+        if self.TipoRegistro.data == 'salida':
+            return
+        
         if self.IdCargo.data and self.IdEstadoEquipo.data:
             cargo = Cargo.query.get(self.IdCargo.data)
             estado = EstadoEquipo.query.get(self.IdEstadoEquipo.data)
@@ -795,6 +803,10 @@ class RegistroHorasForm(FlaskForm):
     
     def validate_Horometro2(self, field):
         """Validar segundo horómetro para operadores con equipo operativo o disponible en equipos con dos motores"""
+        # Para formularios de salida, no validar (los valores vienen de la entrada)
+        if self.TipoRegistro.data == 'salida':
+            return
+        
         if self.IdCargo.data and self.IdEstadoEquipo.data:
             cargo = Cargo.query.get(self.IdCargo.data)
             estado = EstadoEquipo.query.get(self.IdEstadoEquipo.data)
@@ -833,8 +845,8 @@ class RegistroHorasForm(FlaskForm):
         if self.TipoRegistro.data == 'entrada' and self.IdEstadoEquipo.data:
             estado = EstadoEquipo.query.get(self.IdEstadoEquipo.data)
             if estado and 'operativo' in estado.Descripcion.lower():
-                if not field.data or field.data is None:
-                    raise ValidationError('El cliente es requerido cuando el equipo está operativo')
+                if not field.data or field.data is None or field.data == 0:
+                    raise ValidationError('Debe seleccionar un cliente cuando el equipo está en estado operativo')
 
 class CambiarContrasenaForm(FlaskForm):
     """Formulario para cambiar contraseña"""
@@ -886,5 +898,271 @@ class CambiarContrasenaForm(FlaskForm):
         
         if field.data and self.contrasena_actual.data:
             user = User.query.get(session.get('user_id'))
-            if user and check_password_hash(user.contrasena_hash, field.data):
-                raise ValidationError('La nueva contraseña debe ser diferente a la actual')
+        if user and check_password_hash(user.contrasena_hash, field.data):
+            raise ValidationError('La nueva contraseña debe ser diferente a la actual')
+
+# ===== FORMULARIOS PARA COMBUSTIBLE =====
+
+class CombustibleGruaForm(FlaskForm):
+    """Formulario para registro de combustible de grúa"""
+    
+    # Información básica
+    fecha_registro = DateField(
+        'Fecha del Registro',
+        validators=[DataRequired(message='La fecha es requerida')],
+        render_kw={'class': 'form-control', 'type': 'date'}
+    )
+    
+    hora_registro = TimeField(
+        'Hora del Registro',
+        validators=[DataRequired(message='La hora es requerida')],
+        render_kw={'class': 'form-control', 'type': 'time'}
+    )
+    
+    # Información del combustible
+    tipo_combustible = SelectField(
+        'Tipo de Combustible',
+        choices=[
+            ('diesel', 'Diesel'),
+            ('gasolina', 'Gasolina'),
+            ('gas', 'Gas'),
+            ('otro', 'Otro')
+        ],
+        validators=[DataRequired(message='Seleccione el tipo de combustible')],
+        render_kw={'class': 'form-select'}
+    )
+    
+    cantidad_galones = FloatField(
+        'Cantidad en Galones',
+        validators=[
+            DataRequired(message='La cantidad es requerida'),
+            NumberRange(min=0.1, max=1000, message='La cantidad debe estar entre 0.1 y 1000 galones')
+        ],
+        render_kw={'class': 'form-control', 'step': '0.1', 'placeholder': 'Ej: 25.5'}
+    )
+    
+    costo_total = FloatField(
+        'Costo Total',
+        validators=[
+            DataRequired(message='El costo es requerido'),
+            NumberRange(min=0, message='El costo debe ser mayor a 0')
+        ],
+        render_kw={'class': 'form-control', 'step': '0.01', 'placeholder': 'Ej: 125000.00'}
+    )
+    
+    
+    # Fotos requeridas
+    foto_horometro = FileField(
+        'Foto del Horómetro de la Grúa',
+        validators=[
+            DataRequired(message='La foto del horómetro es requerida'),
+            ImageFileValidator(max_size_mb=5)
+        ],
+        render_kw={'class': 'form-control', 'accept': 'image/*', 'onchange': 'autoCompressOnSelect(this, 5)'}
+    )
+    
+    foto_galones = FileField(
+        'Foto de Número de Galones Aplicados',
+        validators=[
+            DataRequired(message='La foto de galones es requerida'),
+            ImageFileValidator(max_size_mb=5)
+        ],
+        render_kw={'class': 'form-control', 'accept': 'image/*', 'onchange': 'autoCompressOnSelect(this, 5)'}
+    )
+    
+    foto_recibo = FileField(
+        'Recibo o Factura',
+        validators=[
+            DataRequired(message='El recibo es requerido'),
+            ImageFileValidator(max_size_mb=5)
+        ],
+        render_kw={'class': 'form-control', 'accept': 'image/*', 'onchange': 'autoCompressOnSelect(this, 5)'}
+    )
+    
+    # Observaciones
+    observaciones = TextAreaField(
+        'Observaciones',
+        validators=[Optional(), Length(max=500, message='Las observaciones no pueden exceder 500 caracteres')],
+        render_kw={'class': 'form-control', 'rows': 3, 'placeholder': 'Observaciones adicionales...'}
+    )
+    
+    submit = SubmitField('Registrar Combustible Grúa', render_kw={'class': 'btn btn-primary btn-lg w-100'})
+
+class CombustibleCamionForm(FlaskForm):
+    """Formulario para registro de combustible de camión"""
+    
+    # Información básica
+    fecha_registro = DateField(
+        'Fecha del Registro',
+        validators=[DataRequired(message='La fecha es requerida')],
+        render_kw={'class': 'form-control', 'type': 'date'}
+    )
+    
+    hora_registro = TimeField(
+        'Hora del Registro',
+        validators=[DataRequired(message='La hora es requerida')],
+        render_kw={'class': 'form-control', 'type': 'time'}
+    )
+    
+    # Información del combustible
+    tipo_combustible = SelectField(
+        'Tipo de Combustible',
+        choices=[
+            ('diesel', 'Diesel'),
+            ('gasolina', 'Gasolina'),
+            ('gas', 'Gas'),
+            ('otro', 'Otro')
+        ],
+        validators=[DataRequired(message='Seleccione el tipo de combustible')],
+        render_kw={'class': 'form-select'}
+    )
+    
+    cantidad_galones = FloatField(
+        'Cantidad en Galones',
+        validators=[
+            DataRequired(message='La cantidad es requerida'),
+            NumberRange(min=0.1, max=1000, message='La cantidad debe estar entre 0.1 y 1000 galones')
+        ],
+        render_kw={'class': 'form-control', 'step': '0.1', 'placeholder': 'Ej: 25.5'}
+    )
+    
+    costo_total = FloatField(
+        'Costo Total',
+        validators=[
+            DataRequired(message='El costo es requerido'),
+            NumberRange(min=0, message='El costo debe ser mayor a 0')
+        ],
+        render_kw={'class': 'form-control', 'step': '0.01', 'placeholder': 'Ej: 125000.00'}
+    )
+    
+    
+    # Fotos requeridas
+    foto_horometro = FileField(
+        'Foto del Horómetro del Camión',
+        validators=[
+            DataRequired(message='La foto del horómetro es requerida'),
+            ImageFileValidator(max_size_mb=5)
+        ],
+        render_kw={'class': 'form-control', 'accept': 'image/*', 'onchange': 'autoCompressOnSelect(this, 5)'}
+    )
+    
+    foto_kilometraje = FileField(
+        'Foto del Kilometraje del Camión',
+        validators=[
+            DataRequired(message='La foto del kilometraje es requerida'),
+            ImageFileValidator(max_size_mb=5)
+        ],
+        render_kw={'class': 'form-control', 'accept': 'image/*', 'onchange': 'autoCompressOnSelect(this, 5)'}
+    )
+    
+    foto_galones = FileField(
+        'Foto de Número de Galones Aplicados',
+        validators=[
+            DataRequired(message='La foto de galones es requerida'),
+            ImageFileValidator(max_size_mb=5)
+        ],
+        render_kw={'class': 'form-control', 'accept': 'image/*', 'onchange': 'autoCompressOnSelect(this, 5)'}
+    )
+    
+    foto_recibo = FileField(
+        'Recibo o Factura',
+        validators=[
+            DataRequired(message='El recibo es requerido'),
+            ImageFileValidator(max_size_mb=5)
+        ],
+        render_kw={'class': 'form-control', 'accept': 'image/*', 'onchange': 'autoCompressOnSelect(this, 5)'}
+    )
+    
+    # Observaciones
+    observaciones = TextAreaField(
+        'Observaciones',
+        validators=[Optional(), Length(max=500, message='Las observaciones no pueden exceder 500 caracteres')],
+        render_kw={'class': 'form-control', 'rows': 3, 'placeholder': 'Observaciones adicionales...'}
+    )
+    
+    submit = SubmitField('Registrar Combustible Camión', render_kw={'class': 'btn btn-success btn-lg w-100'})
+
+class CombustibleEquipoForm(FlaskForm):
+    """Formulario para registro de combustible de equipo con un solo motor"""
+    
+    # Información básica
+    fecha_registro = DateField(
+        'Fecha del Registro',
+        validators=[DataRequired(message='La fecha es requerida')],
+        render_kw={'class': 'form-control', 'type': 'date'}
+    )
+    
+    hora_registro = TimeField(
+        'Hora del Registro',
+        validators=[DataRequired(message='La hora es requerida')],
+        render_kw={'class': 'form-control', 'type': 'time'}
+    )
+    
+    # Información del combustible
+    tipo_combustible = SelectField(
+        'Tipo de Combustible',
+        choices=[
+            ('diesel', 'Diesel'),
+            ('gasolina', 'Gasolina'),
+            ('gas', 'Gas'),
+            ('otro', 'Otro')
+        ],
+        validators=[DataRequired(message='Seleccione el tipo de combustible')],
+        render_kw={'class': 'form-select'}
+    )
+    
+    cantidad_galones = FloatField(
+        'Cantidad en Galones',
+        validators=[
+            DataRequired(message='La cantidad es requerida'),
+            NumberRange(min=0.1, max=1000, message='La cantidad debe estar entre 0.1 y 1000 galones')
+        ],
+        render_kw={'class': 'form-control', 'step': '0.1', 'placeholder': 'Ej: 25.5'}
+    )
+    
+    costo_total = FloatField(
+        'Costo Total',
+        validators=[
+            DataRequired(message='El costo es requerido'),
+            NumberRange(min=0, message='El costo debe ser mayor a 0')
+        ],
+        render_kw={'class': 'form-control', 'step': '0.01', 'placeholder': 'Ej: 125000.00'}
+    )
+    
+    
+    # Fotos requeridas
+    foto_horometro = FileField(
+        'Foto del Horómetro del Equipo',
+        validators=[
+            DataRequired(message='La foto del horómetro es requerida'),
+            ImageFileValidator(max_size_mb=5)
+        ],
+        render_kw={'class': 'form-control', 'accept': 'image/*', 'onchange': 'autoCompressOnSelect(this, 5)'}
+    )
+    
+    foto_galones = FileField(
+        'Foto de Número de Galones Aplicados',
+        validators=[
+            DataRequired(message='La foto de galones es requerida'),
+            ImageFileValidator(max_size_mb=5)
+        ],
+        render_kw={'class': 'form-control', 'accept': 'image/*', 'onchange': 'autoCompressOnSelect(this, 5)'}
+    )
+    
+    foto_recibo = FileField(
+        'Recibo o Factura',
+        validators=[
+            DataRequired(message='El recibo es requerido'),
+            ImageFileValidator(max_size_mb=5)
+        ],
+        render_kw={'class': 'form-control', 'accept': 'image/*', 'onchange': 'autoCompressOnSelect(this, 5)'}
+    )
+    
+    # Observaciones
+    observaciones = TextAreaField(
+        'Observaciones',
+        validators=[Optional(), Length(max=500, message='Las observaciones no pueden exceder 500 caracteres')],
+        render_kw={'class': 'form-control', 'rows': 3, 'placeholder': 'Observaciones adicionales...'}
+    )
+    
+    submit = SubmitField('Registrar Combustible', render_kw={'class': 'btn btn-primary btn-lg w-100'})

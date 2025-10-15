@@ -406,6 +406,20 @@
             color: #28a745;
             font-weight: 600;
         }
+        
+        /* Estilos para campos de solo lectura */
+        .kilometraje-readonly,
+        .horometro-readonly {
+            background: linear-gradient(135deg, #E8F5E8 0%, #F0F8F0 100%) !important;
+            border: 2px solid var(--primary-color) !important;
+            color: var(--primary-color) !important;
+            font-weight: 600 !important;
+        }
+        
+        .kilometraje-readonly i,
+        .horometro-readonly i {
+            color: var(--primary-color) !important;
+        }
     </style>
 </head>
 <body>
@@ -430,7 +444,7 @@
                 </div>
                 <div class="col-md-4 text-end">
                     <div class="equipo-badge">
-                        <i class="fas fa-crane me-2"></i>
+                        <span class="material-symbols-outlined me-2">auto_towing</span>
                         {{ equipo.Placa }}
                     </div>
                 </div>
@@ -445,7 +459,7 @@
                 <div class="col-md-6">
                     <div class="equipo-details">
                         <h4 class="mb-2">
-                            <i class="fas fa-crane me-2"></i>
+                            <span class="material-symbols-outlined me-2">auto_towing</span>
                             {{ equipo.Placa }} - {{ equipo.tipo_equipo.descripcion if equipo.tipo_equipo else 'N/A' }}
                         </h4>
                         <div class="equipo-specs">
@@ -668,69 +682,117 @@
                     
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            {{ form.Kilometraje.label(class="form-label") }} <span class="text-danger">*</span>
-                            {{ form.Kilometraje(class="form-control" + (" is-invalid" if form.Kilometraje.errors else ""), id="Kilometraje", oninput="validarKilometraje()") }}
-                            {% if valores_entrada %}
-                                <div class="entrada-reference">
-                                    <i class="fas fa-info-circle me-1"></i>
-                                    <small class="text-muted">
-                                        Valor de entrada: <strong>{{ valores_entrada.kilometraje }}</strong>
-                                        ({{ valores_entrada.fecha_entrada }} {{ valores_entrada.hora_entrada }})
+                            {% if form.TipoRegistro.data == 'salida' and valores_entrada %}
+                                <!-- En salida, mostrar kilometraje como solo lectura -->
+                                <label class="form-label">Kilometraje</label>
+                                <div class="form-control-plaintext bg-light p-3 rounded kilometraje-readonly">
+                                    <i class="fas fa-road me-2 text-primary"></i>
+                                    <strong>{{ valores_entrada.kilometraje }}</strong>
+                                    <small class="text-muted d-block mt-1">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        Valor tomado de la entrada ({{ valores_entrada.fecha_entrada }} {{ valores_entrada.hora_entrada }})
                                     </small>
                                 </div>
-                            {% endif %}
-                            <div id="kilometraje-validation" class="validation-message" style="display: none;"></div>
-                            {% if form.Kilometraje.errors %}
-                                <div class="invalid-feedback">
-                                    {% for error in form.Kilometraje.errors %}
-                                        {{ error }}
-                                    {% endfor %}
-                                </div>
+                                <!-- Campo oculto para enviar el valor -->
+                                <input type="hidden" name="Kilometraje" value="{{ valores_entrada.kilometraje or 0 }}">
+                            {% else %}
+                                <!-- En entrada, mostrar campo editable -->
+                                {{ form.Kilometraje.label(class="form-label") }} <span class="text-danger">*</span>
+                                {{ form.Kilometraje(class="form-control" + (" is-invalid" if form.Kilometraje.errors else ""), id="Kilometraje", oninput="if(typeof validarKilometraje === 'function') validarKilometraje()") }}
+                                {% if valores_entrada %}
+                                    <div class="entrada-reference">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        <small class="text-muted">
+                                            Valor de entrada: <strong>{{ valores_entrada.kilometraje }}</strong>
+                                            ({{ valores_entrada.fecha_entrada }} {{ valores_entrada.hora_entrada }})
+                                        </small>
+                                    </div>
+                                {% endif %}
+                                <div id="kilometraje-validation" class="validation-message" style="display: none;"></div>
+                                {% if form.Kilometraje.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.Kilometraje.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
                             {% endif %}
                         </div>
                         
                         <div class="col-md-6 mb-3">
-                            {{ form.Horometro.label(class="form-label") }} <span class="text-danger">*</span>
-                            {{ form.Horometro(class="form-control" + (" is-invalid" if form.Horometro.errors else ""), id="Horometro", oninput="validarHorometro()") }}
-                            {% if valores_entrada %}
-                                <div class="entrada-reference">
-                                    <i class="fas fa-info-circle me-1"></i>
-                                    <small class="text-muted">
-                                        Valor de entrada: <strong>{{ valores_entrada.horometro }}</strong>
-                                        ({{ valores_entrada.fecha_entrada }} {{ valores_entrada.hora_entrada }})
+                            {% if form.TipoRegistro.data == 'salida' and valores_entrada %}
+                                <!-- En salida, mostrar horómetro grúa como solo lectura -->
+                                <label class="form-label">Horómetro Grúa</label>
+                                <div class="form-control-plaintext bg-light p-3 rounded horometro-readonly">
+                                    <i class="fas fa-tachometer-alt me-2 text-primary"></i>
+                                    <strong>{{ valores_entrada.horometro }}</strong>
+                                    <small class="text-muted d-block mt-1">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        Valor tomado de la entrada ({{ valores_entrada.fecha_entrada }} {{ valores_entrada.hora_entrada }})
                                     </small>
                                 </div>
-                            {% endif %}
-                            <div id="horometro-validation" class="validation-message" style="display: none;"></div>
-                            {% if form.Horometro.errors %}
-                                <div class="invalid-feedback">
-                                    {% for error in form.Horometro.errors %}
-                                        {{ error }}
-                                    {% endfor %}
-                                </div>
+                                <!-- Campo oculto para enviar el valor -->
+                                <input type="hidden" name="Horometro" value="{{ valores_entrada.horometro or 0 }}">
+                            {% else %}
+                                <!-- En entrada, mostrar campo editable -->
+                                {{ form.Horometro.label(class="form-label") }} <span class="text-danger">*</span>
+                                {{ form.Horometro(class="form-control" + (" is-invalid" if form.Horometro.errors else ""), id="Horometro", oninput="if(typeof validarHorometro === 'function') validarHorometro()") }}
+                                {% if valores_entrada %}
+                                    <div class="entrada-reference">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        <small class="text-muted">
+                                            Valor de entrada: <strong>{{ valores_entrada.horometro }}</strong>
+                                            ({{ valores_entrada.fecha_entrada }} {{ valores_entrada.hora_entrada }})
+                                        </small>
+                                    </div>
+                                {% endif %}
+                                <div id="horometro-validation" class="validation-message" style="display: none;"></div>
+                                {% if form.Horometro.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.Horometro.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
                             {% endif %}
                         </div>
                         
                         <!-- Segundo horómetro - Solo para equipos con dos motores -->
                         <div class="col-md-6 mb-3" id="horometro2Section" style="display: none;">
-                            {{ form.Horometro2.label(class="form-label") }} <span class="text-danger">*</span>
-                            {{ form.Horometro2(class="form-control" + (" is-invalid" if form.Horometro2.errors else ""), id="Horometro2", oninput="validarHorometro2()", style="display: block !important;") }}
-                            {% if valores_entrada %}
-                                <div class="entrada-reference">
-                                    <i class="fas fa-info-circle me-1"></i>
-                                    <small class="text-muted">
-                                        Valor de entrada: <strong>{{ valores_entrada.horometro2 or 'N/A' }}</strong>
-                                        ({{ valores_entrada.fecha_entrada }} {{ valores_entrada.hora_entrada }})
+                            {% if form.TipoRegistro.data == 'salida' and valores_entrada %}
+                                <!-- En salida, mostrar horómetro camión como solo lectura -->
+                                <label class="form-label">Horómetro Camión</label>
+                                <div class="form-control-plaintext bg-light p-3 rounded horometro-readonly">
+                                    <i class="fas fa-tachometer-alt me-2 text-primary"></i>
+                                    <strong>{{ valores_entrada.horometro2 or 'N/A' }}</strong>
+                                    <small class="text-muted d-block mt-1">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        Valor tomado de la entrada ({{ valores_entrada.fecha_entrada }} {{ valores_entrada.hora_entrada }})
                                     </small>
                                 </div>
-                            {% endif %}
-                            <div id="horometro2-validation" class="validation-message" style="display: none;"></div>
-                            {% if form.Horometro2.errors %}
-                                <div class="invalid-feedback">
-                                    {% for error in form.Horometro2.errors %}
-                                        {{ error }}
-                                    {% endfor %}
-                                </div>
+                                <!-- Campo oculto para enviar el valor -->
+                                <input type="hidden" name="Horometro2" value="{{ valores_entrada.horometro2 or '' }}" id="Horometro2">
+                            {% else %}
+                                <!-- En entrada, mostrar campo editable -->
+                                {{ form.Horometro2.label(class="form-label") }} <span class="text-danger">*</span>
+                                {{ form.Horometro2(class="form-control" + (" is-invalid" if form.Horometro2.errors else ""), id="Horometro2", oninput="if(typeof validarHorometro2 === 'function') validarHorometro2()", style="display: block !important;") }}
+                                {% if valores_entrada %}
+                                    <div class="entrada-reference">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        <small class="text-muted">
+                                            Valor de entrada: <strong>{{ valores_entrada.horometro2 or 'N/A' }}</strong>
+                                            ({{ valores_entrada.fecha_entrada }} {{ valores_entrada.hora_entrada }})
+                                        </small>
+                                    </div>
+                                {% endif %}
+                                <div id="horometro2-validation" class="validation-message" style="display: none;"></div>
+                                {% if form.Horometro2.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.Horometro2.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
                             {% endif %}
                         </div>
                     </div>
@@ -753,9 +815,7 @@
                                     <strong>{{ cliente_nombre or 'N/A' }}</strong>
                                 </div>
                                 <!-- Campo oculto para enviar el valor -->
-                                {% if form.IdCliente.data %}
-                                <input type="hidden" name="IdCliente" value="{{ form.IdCliente.data }}">
-                                {% endif %}
+                                <input type="hidden" name="IdCliente" value="{{ form.IdCliente.data if form.IdCliente.data else '' }}" id="IdCliente">
                             {% else %}
                                 {{ form.IdCliente(class="form-select" + (" is-invalid" if form.IdCliente.errors else "")) }}
                                 {% if form.IdCliente.errors %}
@@ -783,7 +843,7 @@
                         <div class="col-md-6 mb-3" id="fotoKilometraje">
                             <label class="form-label">Foto del Kilometraje</label>
                             <div class="file-upload">
-                                {{ form.FotoKilometraje(class="form-control", onchange="previewImage(this, 'previewKilometraje')") }}
+                                {{ form.FotoKilometraje(class="form-control", onchange="if(typeof previewImage === 'function') previewImage(this, 'previewKilometraje')") }}
                                 <label for="FotoKilometraje" class="file-upload-label">
                                     <i class="fas fa-camera me-2"></i>
                                     <span id="textKilometraje">Seleccionar imagen</span>
@@ -803,9 +863,9 @@
                         
                         <!-- Foto del Horómetro - Solo si es pertinente -->
                         <div class="col-md-6 mb-3" id="fotoHorometro">
-                            <label class="form-label" id="labelFotoHorometro">Foto del Horómetro</label>
+                            <label class="form-label" id="labelFotoHorometro">Foto del Horómetro Grúa</label>
                             <div class="file-upload">
-                                {{ form.FotoHorometro(class="form-control", onchange="previewImage(this, 'previewHorometro')") }}
+                                {{ form.FotoHorometro(class="form-control", onchange="if(typeof previewImage === 'function') previewImage(this, 'previewHorometro')") }}
                                 <label for="FotoHorometro" class="file-upload-label">
                                     <i class="fas fa-camera me-2"></i>
                                     <span id="textHorometro">Seleccionar imagen</span>
@@ -825,9 +885,9 @@
                         
                         <!-- Foto del Segundo Horómetro - Solo para equipos con dos motores -->
                         <div class="col-md-6 mb-3" id="fotoHorometro2" style="display: none;">
-                            <label class="form-label" id="labelFotoHorometro2">Foto del Segundo Horómetro</label>
+                            <label class="form-label" id="labelFotoHorometro2">Foto del Horómetro Camión</label>
                             <div class="file-upload">
-                                {{ form.FotoHorometro2(class="form-control", onchange="previewImage(this, 'previewHorometro2')") }}
+                                {{ form.FotoHorometro2(class="form-control", onchange="if(typeof previewImage === 'function') previewImage(this, 'previewHorometro2')") }}
                                 <label for="FotoHorometro2" class="file-upload-label">
                                     <i class="fas fa-camera me-2"></i>
                                     <span id="textHorometro2">Seleccionar imagen</span>
@@ -943,7 +1003,13 @@
 
         // Obtener ubicación
         function obtenerUbicacion() {
-            document.getElementById('ubicacionTexto').textContent = 'Obteniendo ubicación...';
+            const ubicacionTexto = document.getElementById('ubicacionTexto');
+            if (!ubicacionTexto) {
+                console.warn('Elemento ubicacionTexto no encontrado');
+                return;
+            }
+            
+            ubicacionTexto.textContent = 'Obteniendo ubicación...';
             
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(
@@ -951,13 +1017,17 @@
                         const lat = position.coords.latitude;
                         const lng = position.coords.longitude;
                         
-                        // Actualizar campos
-                        document.getElementById('latitud').value = lat.toFixed(6);
-                        document.getElementById('longitud').value = lng.toFixed(6);
+                        // Actualizar campos con verificación de existencia
+                        const latitudField = document.getElementById('latitud');
+                        const longitudField = document.getElementById('longitud');
+                        const ubicacionField = document.querySelector('input[name="ubicacion"]');
+                        
+                        if (latitudField) latitudField.value = lat.toFixed(6);
+                        if (longitudField) longitudField.value = lng.toFixed(6);
                         
                         // Mostrar coordenadas
-                        document.getElementById('ubicacionTexto').textContent = `Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}`;
-                        document.querySelector('input[name="ubicacion"]').value = `Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}`;
+                        ubicacionTexto.textContent = `Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}`;
+                        if (ubicacionField) ubicacionField.value = `Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}`;
                         
                         // Intentar obtener dirección (sin API key por ahora)
                         // fetch(`https://api.opencagedata.com/geocode/v1/json?q=${lat}+${lng}&key=YOUR_API_KEY`)
@@ -965,8 +1035,8 @@
                         //     .then(data => {
                         //         if (data.results && data.results[0]) {
                         //             const ubicacion = data.results[0].formatted;
-                        //             document.getElementById('ubicacionTexto').textContent = ubicacion;
-                        //             document.querySelector('input[name="ubicacion"]').value = ubicacion;
+                        //             ubicacionTexto.textContent = ubicacion;
+                        //             if (ubicacionField) ubicacionField.value = ubicacion;
                         //         }
                         //     })
                         //     .catch(() => {
@@ -986,7 +1056,7 @@
                                 mensaje = 'Tiempo de espera agotado';
                                 break;
                         }
-                        document.getElementById('ubicacionTexto').textContent = mensaje;
+                        ubicacionTexto.textContent = mensaje;
                         console.error('Error obteniendo ubicación:', error);
                     },
                     {
@@ -996,7 +1066,7 @@
                     }
                 );
             } else {
-                document.getElementById('ubicacionTexto').textContent = 'Geolocalización no soportada por este navegador';
+                ubicacionTexto.textContent = 'Geolocalización no soportada por este navegador';
             }
         }
 
@@ -1062,7 +1132,7 @@
                 if (fotoHorometro) fotoHorometro.style.display = 'block';
                 
                 // Verificar si el equipo tiene dos motores
-                const tieneDosMotores = {{ equipo.TieneDosMotores|tojson|safe }};
+                const tieneDosMotores = {{ (equipo.TieneDosMotores or False)|tojson|safe }};
                 const esSalida = {{ (form.TipoRegistro.data == 'salida')|tojson|safe }};
                 console.log('¿Equipo tiene dos motores?', tieneDosMotores);
                 console.log('¿Es formulario de salida?', esSalida);
@@ -1088,14 +1158,16 @@
                 const fotoHorometroField = document.getElementById('FotoHorometro');
                 const fotoHorometro2Field = document.getElementById('FotoHorometro2');
                 
-                if (kilometrajeField) kilometrajeField.required = true;
-                if (horometroField) horometroField.required = true;
+                // Solo hacer obligatorios los campos en formularios de entrada
+                const esSalidaOperador = {{ (form.TipoRegistro.data == 'salida')|tojson|safe }};
+                if (kilometrajeField && !esSalidaOperador) kilometrajeField.required = true;
+                if (horometroField && !esSalidaOperador) horometroField.required = true;
                 if (fotoKilometrajeField) fotoKilometrajeField.required = true;
                 if (fotoHorometroField) fotoHorometroField.required = true;
                 
-                // Hacer obligatorio el segundo horómetro solo si el equipo tiene dos motores
+                // Hacer obligatorio el segundo horómetro solo si el equipo tiene dos motores Y es entrada
                 if (tieneDosMotores) {
-                    if (horometro2Field) horometro2Field.required = true;
+                    if (horometro2Field && !esSalidaOperador) horometro2Field.required = true;
                     if (fotoHorometro2Field) fotoHorometro2Field.required = true;
                 } else {
                     if (horometro2Field) horometro2Field.required = false;
@@ -1152,11 +1224,11 @@
         }
         
         // LÓGICA ESPECÍFICA PARA HORÓMETRO 2 EN FORMULARIOS DE SALIDA
-        const esSalida = {{ (form.TipoRegistro.data == 'salida')|tojson|safe }};
+        const esSalidaHorometro = {{ (form.TipoRegistro.data == 'salida')|tojson|safe }};
         const tieneDosMotores = {{ (equipo.TieneDosMotores or False)|tojson|safe }};
         
         console.log('=== VERIFICANDO HORÓMETRO 2 PARA SALIDA ===');
-        console.log('esSalida:', esSalida);
+        console.log('esSalidaHorometro:', esSalidaHorometro);
         console.log('tieneDosMotores:', tieneDosMotores);
         
         // Buscar el elemento nuevamente para asegurar que existe
@@ -1203,7 +1275,8 @@
         console.log('esOperadorVerificacion:', esOperadorVerificacion);
         console.log('esOperativoVerificacion:', esOperativoVerificacion);
         
-        if (esSalida && tieneDosMotores && esOperadorVerificacion && esOperativoVerificacion) {
+        // CORRECCIÓN: Mostrar Horómetro 2 para CUALQUIER usuario cuando el equipo tiene dos motores
+        if (esSalidaHorometro && tieneDosMotores) {
             console.log('✅ MOSTRANDO Horómetro 2 en formulario de salida (condiciones cumplidas)');
             
             if (horometro2SectionFresh) {
@@ -1244,10 +1317,8 @@
         } else {
             console.log('❌ NO se cumple condición para mostrar Horómetro 2 en salida');
             console.log('Condiciones:', {
-                esSalida,
-                tieneDosMotores,
-                esOperadorVerificacion,
-                esOperativoVerificacion
+                esSalidaHorometro,
+                tieneDosMotores
             });
         }
         }
@@ -1286,9 +1357,38 @@
             console.log('=== VERIFICANDO CLIENTE ANTES DEL ENVÍO ===');
             const clienteSelect = document.getElementById('IdCliente');
             
+            // Verificar si el elemento existe
+            if (!clienteSelect) {
+                console.log('⚠️ Campo cliente no encontrado - saltando validación');
+                return true;
+            }
+            
             console.log('Campo cliente habilitado:', !clienteSelect.disabled);
             console.log('Valor seleccionado:', clienteSelect.value);
-            console.log('Texto seleccionado:', clienteSelect.options[clienteSelect.selectedIndex]?.text);
+            
+            // Solo mostrar texto seleccionado si es un campo select (no input hidden)
+            if (clienteSelect.tagName === 'SELECT' && clienteSelect.options) {
+                console.log('Texto seleccionado:', clienteSelect.options[clienteSelect.selectedIndex]?.text);
+            } else {
+                console.log('Texto seleccionado: N/A (campo oculto)');
+            }
+            
+            // Validar cliente solo en formularios de entrada
+            const tipoRegistro = document.querySelector('input[name="TipoRegistro"]');
+            if (tipoRegistro && tipoRegistro.value === 'entrada' && !clienteSelect.disabled) {
+                const estadoSelect = document.getElementById('IdEstadoEquipo');
+                let estadoTexto = '';
+                if (estadoSelect && estadoSelect.options && estadoSelect.selectedIndex >= 0) {
+                    estadoTexto = estadoSelect.options[estadoSelect.selectedIndex].text.toLowerCase();
+                }
+                
+                if (estadoTexto.includes('operativo') && (!clienteSelect.value || clienteSelect.value === '0' || clienteSelect.value === '')) {
+                    alert('⚠️ Debe seleccionar un cliente cuando el equipo está en estado operativo');
+                    return false;
+                }
+            }
+            
+            return true;
         }
 
         // Inicializar
@@ -1306,11 +1406,11 @@
             }
             
             // LÓGICA ESPECÍFICA PARA MOSTRAR HORÓMETRO 2 EN SALIDA
-            const esSalida = {{ (form.TipoRegistro.data == 'salida')|tojson|safe }};
+            const esSalidaInicializacion = {{ (form.TipoRegistro.data == 'salida')|tojson|safe }};
             const tieneDosMotores = {{ (equipo.TieneDosMotores or False)|tojson|safe }};
             
             console.log('=== INICIALIZACIÓN HORÓMETRO 2 ===');
-            console.log('esSalida:', esSalida);
+            console.log('esSalidaInicializacion:', esSalidaInicializacion);
             console.log('tieneDosMotores:', tieneDosMotores);
             
             // Verificar condiciones para mostrar Horómetro 2
@@ -1343,7 +1443,8 @@
             console.log('esOperadorInit:', esOperadorInit);
             console.log('esOperativoInit:', esOperativoInit);
             
-            if (esSalida && tieneDosMotores && esOperadorInit && esOperativoInit) {
+            // CORRECCIÓN: Mostrar Horómetro 2 para CUALQUIER usuario cuando el equipo tiene dos motores
+            if (esSalidaInicializacion && tieneDosMotores) {
                 console.log('🔧 FORZANDO VISIBILIDAD DEL HORÓMETRO 2');
                 
                 // Asegurar que el contenedor padre esté visible
@@ -1414,7 +1515,7 @@
             
             // VERIFICACIÓN ADICIONAL DESPUÉS DE 1 SEGUNDO
             setTimeout(function() {
-                const esSalida = {{ (form.TipoRegistro.data == 'salida')|tojson|safe }};
+                const esSalidaTimeout = {{ (form.TipoRegistro.data == 'salida')|tojson|safe }};
                 const tieneDosMotores = {{ (equipo.TieneDosMotores or False)|tojson|safe }};
                 
                 // Re-verificar las condiciones
@@ -1438,7 +1539,8 @@
                 
                 const esOperadorTimeout = cargoTextoTimeout.includes('operador');
                 
-                if (esSalida && tieneDosMotores && esOperadorTimeout && esOperativoTimeout) {
+                // CORRECCIÓN: Mostrar Horómetro 2 para CUALQUIER usuario cuando el equipo tiene dos motores
+                if (esSalidaTimeout && tieneDosMotores) {
                     console.log('🔍 VERIFICACIÓN TARDÍA DEL HORÓMETRO 2');
                     const horometro2Section = document.getElementById('horometro2Section');
                     if (horometro2Section) {
@@ -1490,8 +1592,8 @@
         // Obtener valores de entrada si están disponibles
         {% if valores_entrada %}
         valoresEntrada = {
-            kilometraje: {{ valores_entrada.kilometraje }},
-            horometro: {{ valores_entrada.horometro }}
+            kilometraje: {{ valores_entrada.kilometraje or 0 }},
+            horometro: {{ valores_entrada.horometro or 0 }}
         };
         {% endif %}
         
@@ -1652,11 +1754,25 @@
         
         // Validación del formulario
         document.getElementById('registroForm').addEventListener('submit', function(e) {
+            console.log('=== INICIANDO VALIDACIÓN DEL FORMULARIO ===');
+            
             // Validar fecha y hora usando la función mejorada
+            console.log('Validando fecha y hora...');
             if (!validarFechaHora()) {
+                console.log('❌ Validación de fecha/hora falló');
                 e.preventDefault();
                 return false;
             }
+            console.log('✅ Validación de fecha/hora pasó');
+            
+            // Validar cliente antes de enviar
+            console.log('Validando cliente...');
+            if (!verificarClienteAntesEnvio()) {
+                console.log('❌ Validación de cliente falló');
+                e.preventDefault();
+                return false;
+            }
+            console.log('✅ Validación de cliente pasó');
             
             // Obtener cargo del select o del div de solo lectura
             let cargoTexto = '';
@@ -1678,7 +1794,7 @@
                 const horometro2 = document.getElementById('Horometro2').value;
                 
                 // Verificar si el equipo tiene dos motores
-                const tieneDosMotores = {{ equipo.TieneDosMotores|tojson|safe }};
+                const tieneDosMotores = {{ (equipo.TieneDosMotores or False)|tojson|safe }};
                 
                 // Verificar si el cargo es operador y el estado es operativo
                 let cargoTexto = '';
@@ -1698,21 +1814,30 @@
                 
                 // Solo validar si es operador Y operativo
                 if (esOperador && esOperativo) {
-                    if (!kilometraje || !horometro) {
-                        e.preventDefault();
-                        alert('Los campos de kilometraje y horómetro son obligatorios para operadores con equipo operativo');
-                        return false;
+                    // En formularios de salida, los valores se toman automáticamente de la entrada
+                    const esSalidaValidacion = {{ (form.TipoRegistro.data == 'salida')|tojson|safe }};
+                    if (esSalidaValidacion) {
+                        // En salidas, no validar campos numéricos ya que se toman de la entrada
+                        console.log('Formulario de salida: valores tomados automáticamente de la entrada');
+                    } else {
+                        // En entradas, validar kilometraje y horómetro
+                        if (!kilometraje || !horometro) {
+                            e.preventDefault();
+                            alert('Los campos de kilometraje y horómetro son obligatorios para operadores con equipo operativo');
+                            return false;
+                        }
                     }
                     
-                    if (tieneDosMotores && !horometro2) {
+                    // Validar segundo horómetro solo en entradas
+                    if (!esSalidaValidacion && tieneDosMotores && !horometro2) {
                         e.preventDefault();
                         alert('El campo del segundo horómetro es obligatorio para equipos con dos motores');
                         return false;
                     }
                 }
                 
-                // Validación adicional con valores de entrada
-                if (valoresEntrada) {
+                // Validación adicional con valores de entrada (solo para formularios de entrada)
+                if (valoresEntrada && !esSalidaValidacion) {
                     const kmValor = parseFloat(kilometraje);
                     const hmValor = parseFloat(horometro);
                     const hm2Valor = parseFloat(horometro2);
@@ -1736,6 +1861,8 @@
                     }
                 }
             }
+            
+            console.log('✅ TODAS LAS VALIDACIONES PASARON - ENVIANDO FORMULARIO');
         });
         
         // Función para actualizar nombres de las fotos según el estado
@@ -1752,11 +1879,11 @@
             const labelFotoHorometro2 = document.getElementById('labelFotoHorometro2');
             
             if (labelFotoHorometro) {
-                labelFotoHorometro.textContent = esDisponible ? 'Foto Horómetro Grúa' : 'Foto del Horómetro';
+                labelFotoHorometro.textContent = 'Foto del Horómetro Grúa';
             }
             
             if (labelFotoHorometro2) {
-                labelFotoHorometro2.textContent = esDisponible ? 'Foto Horómetro Camión' : 'Foto del Segundo Horómetro';
+                labelFotoHorometro2.textContent = 'Foto del Horómetro Camión';
             }
         }
     </script>

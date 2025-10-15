@@ -1,0 +1,299 @@
+{% extends "base.html" %}
+
+{% block title %}Opciones de Combustible - {{ equipo.Placa }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4 mt-4">
+                <div>
+                    <h2 class="text-warning mb-1">
+                        <i class="fas fa-gas-pump me-2"></i>Registro de Combustible
+                    </h2>
+                    <p class="text-muted mb-0">{{ equipo.Placa }} - {{ tipo_equipo }} | {{ marca }}</p>
+                </div>
+                <a href="{{ url_for('panel_equipo', equipo_id=equipo.IdEquipo) }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Volver al Panel
+                </a>
+            </div>
+
+            <!-- Información del Usuario -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="user-avatar me-3">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                                <div>
+                                    <h5 class="mb-1">{{ usuario.nombre }}</h5>
+                                    <p class="text-muted mb-0">{{ usuario.documento }} - {{ usuario.perfil_usuario|title }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Información del Equipo -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-crane me-2"></i>Información del Equipo
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="equipo-info">
+                                        <div class="info-item">
+                                            <strong>Placa:</strong> {{ equipo.Placa }}
+                                        </div>
+                                        <div class="info-item">
+                                            <strong>Tipo:</strong> {{ tipo_equipo }}
+                                        </div>
+                                        <div class="info-item">
+                                            <strong>Marca:</strong> {{ marca }}
+                                        </div>
+                                        <div class="info-item">
+                                            <strong>Capacidad:</strong> {{ equipo.Capacidad or 'N/A' }} T
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="equipo-info">
+                                        <div class="info-item">
+                                            <strong>Estado:</strong> 
+                                            <span class="badge bg-success">{{ equipo.Estado|title }}</span>
+                                        </div>
+                                        <div class="info-item">
+                                            <strong>Motores:</strong> 
+                                            {% if equipo.TieneDosMotores %}
+                                                <span class="badge bg-info">Dos Motores</span>
+                                            {% else %}
+                                                <span class="badge bg-primary">Un Motor</span>
+                                            {% endif %}
+                                        </div>
+                                        <div class="info-item">
+                                            <strong>Modelo:</strong> {{ equipo.Modelo or 'N/A' }}
+                                        </div>
+                                        <div class="info-item">
+                                            <strong>Referencia:</strong> {{ equipo.Referencia or 'N/A' }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Opciones de Combustible -->
+            <div class="row">
+                <div class="col-12">
+                    <h4 class="mb-4">
+                        <i class="fas fa-gas-pump me-2 text-warning"></i>
+                        Seleccione el tipo de registro de combustible:
+                    </h4>
+                </div>
+
+                {% if equipo.TieneDosMotores %}
+                    <!-- Equipo con DOS MOTORES -->
+                    <div class="col-md-6 mb-4">
+                        <div class="card combustible-card">
+                            <div class="card-body text-center">
+                                <div class="combustible-icon mb-3">
+                                    <span class="material-symbols-outlined text-primary" style="font-size: 3rem;">auto_towing</span>
+                                </div>
+                                <h5 class="card-title">Combustible Grúa</h5>
+                                <p class="card-text text-muted">
+                                    Registro de combustible para el motor de la grúa. 
+                                    Incluye tipo de combustible, cantidad y evidencia fotográfica.
+                                </p>
+                                <div class="combustible-info mb-3">
+                                    <div class="info-item">
+                                        <i class="fas fa-info-circle me-2 text-info"></i>
+                                        <small>Motor principal de la grúa</small>
+                                    </div>
+                                </div>
+                                <a href="{{ url_for('registro_combustible_grua', equipo_id=equipo.IdEquipo) }}" class="btn btn-primary btn-lg">
+                                    <i class="fas fa-gas-pump me-2"></i>
+                                    Registrar Combustible Grúa
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 mb-4">
+                        <div class="card combustible-card">
+                            <div class="card-body text-center">
+                                <div class="combustible-icon mb-3">
+                                    <span class="material-symbols-outlined text-success" style="font-size: 3rem;">local_shipping</span>
+                                </div>
+                                <h5 class="card-title">Combustible Camión</h5>
+                                <p class="card-text text-muted">
+                                    Registro de combustible para el motor del camión. 
+                                    Incluye tipo de combustible, cantidad y evidencia fotográfica.
+                                </p>
+                                <div class="combustible-info mb-3">
+                                    <div class="info-item">
+                                        <i class="fas fa-info-circle me-2 text-info"></i>
+                                        <small>Motor del vehículo de transporte</small>
+                                    </div>
+                                </div>
+                                <a href="{{ url_for('registro_combustible_camion', equipo_id=equipo.IdEquipo) }}" class="btn btn-success btn-lg">
+                                    <i class="fas fa-gas-pump me-2"></i>
+                                    Registrar Combustible Camión
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                {% else %}
+                    <!-- Equipo con UN SOLO MOTOR -->
+                    <div class="col-md-8 offset-md-2 mb-4">
+                        <div class="card combustible-card">
+                            <div class="card-body text-center">
+                                <div class="combustible-icon mb-3">
+                                    <i class="fas fa-cog fa-3x text-primary"></i>
+                                </div>
+                                <h5 class="card-title">Registro de Combustible</h5>
+                                <p class="card-text text-muted">
+                                    Registro de combustible para este equipo. 
+                                    Incluye tipo de combustible, cantidad y evidencia fotográfica.
+                                </p>
+                                <div class="combustible-info mb-3">
+                                    <div class="info-item">
+                                        <i class="fas fa-info-circle me-2 text-info"></i>
+                                        <small>Motor del equipo {{ tipo_equipo }}</small>
+                                    </div>
+                                </div>
+                                <a href="{{ url_for('registro_combustible_equipo', equipo_id=equipo.IdEquipo) }}" class="btn btn-primary btn-lg">
+                                    <i class="fas fa-gas-pump me-2"></i>
+                                    Registrar Combustible
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Información adicional -->
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="alert alert-info">
+                        <h6 class="alert-heading">
+                            <i class="fas fa-info-circle me-2"></i>Información importante
+                        </h6>
+                        <ul class="mb-0">
+                            <li>El registro de combustible debe incluir evidencia fotográfica</li>
+                            <li>Seleccione el tipo correcto de combustible utilizado</li>
+                            <li>Ingrese la cantidad exacta de combustible agregado</li>
+                            <li>{% if equipo.TieneDosMotores %}Para equipos con dos motores, registre por separado el combustible de cada motor{% else %}Para equipos con un motor, registre el combustible del equipo completo{% endif %}</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.combustible-card {
+    transition: all 0.3s ease;
+    border: none;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    height: 100%;
+    min-height: 400px;
+}
+
+.combustible-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.combustible-icon {
+    height: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.combustible-card .btn {
+    border-radius: 8px;
+    font-weight: 500;
+    padding: 1rem 2rem;
+    font-size: 1.1rem;
+}
+
+.user-avatar {
+    width: 50px;
+    height: 50px;
+    background: #2e7d32;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    color: white;
+}
+
+.equipo-info {
+    text-align: left;
+}
+
+.info-item {
+    margin-bottom: 0.75rem;
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+}
+
+.info-item strong {
+    min-width: 120px;
+    color: #2e7d32;
+}
+
+.combustible-info {
+    text-align: left;
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .combustible-card {
+        min-height: 350px;
+    }
+    
+    .combustible-icon {
+        height: 80px;
+    }
+    
+    .combustible-card .btn {
+        padding: 0.75rem 1.5rem;
+        font-size: 1rem;
+    }
+    
+    .info-item {
+        flex-direction: column;
+        align-items: flex-start;
+        text-align: left;
+    }
+    
+    .info-item strong {
+        min-width: auto;
+        margin-bottom: 0.25rem;
+    }
+}
+</style>
+{% endblock %}
+

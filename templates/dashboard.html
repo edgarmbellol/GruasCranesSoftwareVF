@@ -151,7 +151,7 @@
                     <div class="card">
                         <div class="card-header">
                             <h5 class="card-title">
-                                <i class="fas fa-crane me-2 text-info"></i>
+                                <span class="material-symbols-outlined me-2 text-info">auto_towing</span>
                                 Estado de Equipos
                             </h5>
                         </div>
@@ -498,12 +498,12 @@
                         {% endif %}
                         {% if empleado_info.entrada.Horometro %}
                         <div class="detail-item">
-                            <strong>Horómetro:</strong> {{ empleado_info.entrada.Horometro }}
+                            <strong>Horómetro Grúa:</strong> {{ empleado_info.entrada.Horometro }}
                         </div>
                         {% endif %}
                         {% if empleado_info.equipo.TieneDosMotores and empleado_info.entrada.Horometro2 %}
                         <div class="detail-item">
-                            <strong>Horómetro 2:</strong> {{ empleado_info.entrada.Horometro2 }}
+                            <strong>Horómetro Camión:</strong> {{ empleado_info.entrada.Horometro2 }}
                         </div>
                         {% endif %}
                         {% if empleado_info.entrada.Observacion %}

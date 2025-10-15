@@ -466,3 +466,45 @@ class Equipo(db.Model):
     
     def __repr__(self):
         return f'<Equipo {self.Placa} - {self.tipo_equipo.descripcion if self.tipo_equipo else "Sin tipo"}>'
+
+
+class RegistroCombustible(db.Model):
+    """Modelo para registros de combustible"""
+    __tablename__ = 'registro_combustible'
+    
+    IdRegistroCombustible = db.Column(db.Integer, primary_key=True)
+    
+    # Relaciones
+    IdEquipo = db.Column(db.Integer, db.ForeignKey('equipos.IdEquipo'), nullable=False)
+    IdUsuario = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    
+    # Tipo de registro (grua, camion, equipo)
+    TipoRegistro = db.Column(db.String(20), nullable=False)  # 'grua', 'camion', 'equipo'
+    
+    # Información del registro
+    FechaRegistro = db.Column(db.Date, nullable=False)
+    HoraRegistro = db.Column(db.Time, nullable=False)
+    
+    # Información del combustible
+    TipoCombustible = db.Column(db.String(20), nullable=False)  # diesel, gasolina, gas, otro
+    CantidadGalones = db.Column(db.Float, nullable=False)
+    CostoTotal = db.Column(db.Float, nullable=False)
+    
+    # Fotos (rutas relativas desde static/uploads/)
+    FotoHorometro = db.Column(db.String(255))
+    FotoKilometraje = db.Column(db.String(255))  # Solo para camión
+    FotoGalones = db.Column(db.String(255))
+    FotoRecibo = db.Column(db.String(255))
+    
+    # Observaciones
+    Observaciones = db.Column(db.Text)
+    
+    # Metadata
+    FechaCreacion = db.Column(db.DateTime, default=get_colombia_datetime)
+    
+    # Relaciones ORM
+    equipo = db.relationship('Equipo', backref=db.backref('registros_combustible', lazy='dynamic'))
+    usuario = db.relationship('User', backref=db.backref('registros_combustible', lazy='dynamic'))
+    
+    def __repr__(self):
+        return f'<RegistroCombustible {self.IdRegistroCombustible} - Equipo: {self.equipo.Placa if self.equipo else "N/A"} - {self.TipoRegistro}>'
