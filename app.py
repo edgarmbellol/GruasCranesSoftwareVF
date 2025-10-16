@@ -1827,12 +1827,19 @@ def registro_combustible_grua(equipo_id):
         
         return redirect(url_for('panel_equipo', equipo_id=equipo_id))
     
+    # Obtener fecha y hora actual de Colombia para el formulario
+    fecha_hora_actual = get_colombia_datetime()
+    fecha_actual = fecha_hora_actual.strftime('%Y-%m-%d')
+    hora_actual = fecha_hora_actual.strftime('%H:%M')
+    
     return render_template('combustible/registro_grua.html', 
                          equipo=equipo,
                          usuario=usuario,
                          tipo_equipo=tipo_equipo,
                          marca=marca,
-                         estado_equipo=estado_equipo)
+                         estado_equipo=estado_equipo,
+                         fecha_actual=fecha_actual,
+                         hora_actual=hora_actual)
 
 @app.route('/combustible/registro/camion/<int:equipo_id>', methods=['GET', 'POST'])
 @login_required
@@ -1937,12 +1944,19 @@ def registro_combustible_camion(equipo_id):
         
         return redirect(url_for('panel_equipo', equipo_id=equipo_id))
     
+    # Obtener fecha y hora actual de Colombia para el formulario
+    fecha_hora_actual = get_colombia_datetime()
+    fecha_actual = fecha_hora_actual.strftime('%Y-%m-%d')
+    hora_actual = fecha_hora_actual.strftime('%H:%M')
+    
     return render_template('combustible/registro_camion.html', 
                          equipo=equipo,
                          usuario=usuario,
                          tipo_equipo=tipo_equipo,
                          marca=marca,
-                         estado_equipo=estado_equipo)
+                         estado_equipo=estado_equipo,
+                         fecha_actual=fecha_actual,
+                         hora_actual=hora_actual)
 
 @app.route('/combustible/registro/equipo/<int:equipo_id>', methods=['GET', 'POST'])
 @login_required
@@ -2046,12 +2060,19 @@ def registro_combustible_equipo(equipo_id):
         
         return redirect(url_for('panel_equipo', equipo_id=equipo_id))
     
+    # Obtener fecha y hora actual de Colombia para el formulario
+    fecha_hora_actual = get_colombia_datetime()
+    fecha_actual = fecha_hora_actual.strftime('%Y-%m-%d')
+    hora_actual = fecha_hora_actual.strftime('%H:%M')
+    
     return render_template('combustible/registro_equipo.html', 
                          equipo=equipo,
                          usuario=usuario,
                          tipo_equipo=tipo_equipo,
                          marca=marca,
-                         estado_equipo=estado_equipo)
+                         estado_equipo=estado_equipo,
+                         fecha_actual=fecha_actual,
+                         hora_actual=hora_actual)
 
 @app.route('/registro/<int:equipo_id>')
 def registro_horas(equipo_id):
@@ -3433,6 +3454,234 @@ def reporte_combustible():
                          registros_grua=len(registros_grua),
                          registros_camion=len(registros_camion),
                          registros_equipo=len(registros_equipo))
+
+@app.route('/reportes/combustible/exportar-excel')
+@require_admin
+def exportar_combustible_excel():
+    """Exportar reporte de combustible a Excel"""
+    from models import RegistroCombustible
+    from flask import send_file
+    
+    # Parámetros de filtro (los mismos del reporte)
+    equipo_id = request.args.get('equipo_id', type=int)
+    usuario_id = request.args.get('usuario_id', type=int)
+    tipo_registro = request.args.get('tipo_registro')
+    fecha_inicio = request.args.get('fecha_inicio')
+    fecha_fin = request.args.get('fecha_fin')
+    
+    # Construir query base
+    query = RegistroCombustible.query
+    
+    # Aplicar filtros
+    if equipo_id:
+        query = query.filter(RegistroCombustible.IdEquipo == equipo_id)
+    
+    if usuario_id:
+        query = query.filter(RegistroCombustible.IdUsuario == usuario_id)
+    
+    if tipo_registro:
+        query = query.filter(RegistroCombustible.TipoRegistro == tipo_registro)
+    
+    if fecha_inicio:
+        from datetime import datetime as dt
+        fecha_inicio_dt = dt.strptime(fecha_inicio, '%Y-%m-%d').date()
+        query = query.filter(RegistroCombustible.FechaRegistro >= fecha_inicio_dt)
+    
+    if fecha_fin:
+        from datetime import datetime as dt
+        fecha_fin_dt = dt.strptime(fecha_fin, '%Y-%m-%d').date()
+        query = query.filter(RegistroCombustible.FechaRegistro <= fecha_fin_dt)
+    
+    # Ordenar por fecha y hora descendente
+    registros = query.order_by(
+        RegistroCombustible.FechaRegistro.desc(),
+        RegistroCombustible.HoraRegistro.desc()
+    ).all()
+    
+    # Crear libro de Excel
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Reporte Combustible"
+    
+    # Estilos
+    header_font = Font(bold=True, color="FFFFFF", size=12)
+    header_fill = PatternFill(start_color="2E7D32", end_color="2E7D32", fill_type="solid")
+    header_alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+    
+    border_style = Border(
+        left=Side(style='thin'),
+        right=Side(style='thin'),
+        top=Side(style='thin'),
+        bottom=Side(style='thin')
+    )
+    
+    # Título del reporte
+    ws.merge_cells('A1:L1')
+    titulo_cell = ws['A1']
+    titulo_cell.value = "REPORTE DE COMBUSTIBLE - GRÚAS CRANES S.A.S"
+    titulo_cell.font = Font(bold=True, size=16, color="2E7D32")
+    titulo_cell.alignment = Alignment(horizontal="center", vertical="center")
+    
+    # Información de filtros aplicados
+    row = 2
+    if equipo_id or usuario_id or tipo_registro or fecha_inicio or fecha_fin:
+        ws.merge_cells(f'A{row}:L{row}')
+        filtros_cell = ws[f'A{row}']
+        filtros_text = "Filtros aplicados: "
+        filtros_list = []
+        
+        if equipo_id:
+            equipo = Equipo.query.get(equipo_id)
+            if equipo:
+                filtros_list.append(f"Equipo: {equipo.Placa}")
+        
+        if usuario_id:
+            usuario = User.query.get(usuario_id)
+            if usuario:
+                filtros_list.append(f"Usuario: {usuario.nombre}")
+        
+        if tipo_registro:
+            filtros_list.append(f"Tipo: {tipo_registro.title()}")
+        
+        if fecha_inicio:
+            filtros_list.append(f"Desde: {fecha_inicio}")
+        
+        if fecha_fin:
+            filtros_list.append(f"Hasta: {fecha_fin}")
+        
+        filtros_cell.value = filtros_text + ", ".join(filtros_list)
+        filtros_cell.font = Font(italic=True, size=10)
+        filtros_cell.alignment = Alignment(horizontal="center")
+        row += 1
+    
+    # Fecha de generación
+    ws.merge_cells(f'A{row}:L{row}')
+    fecha_cell = ws[f'A{row}']
+    fecha_cell.value = f"Generado el: {get_colombia_datetime().strftime('%d/%m/%Y %H:%M:%S')}"
+    fecha_cell.font = Font(italic=True, size=9)
+    fecha_cell.alignment = Alignment(horizontal="center")
+    row += 2
+    
+    # Encabezados
+    headers = [
+        'Fecha', 'Hora', 'Equipo', 'Tipo Equipo', 'Marca', 'Tipo Registro',
+        'Tipo Combustible', 'Galones', 'Costo Total', 'Registrado Por',
+        'Observaciones', 'Fecha Creación'
+    ]
+    
+    for col_num, header in enumerate(headers, 1):
+        cell = ws.cell(row=row, column=col_num)
+        cell.value = header
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = header_alignment
+        cell.border = border_style
+    
+    row += 1
+    
+    # Datos
+    for registro in registros:
+        ws.cell(row=row, column=1, value=registro.FechaRegistro.strftime('%d/%m/%Y'))
+        ws.cell(row=row, column=2, value=registro.HoraRegistro.strftime('%H:%M'))
+        ws.cell(row=row, column=3, value=registro.equipo.Placa if registro.equipo else 'N/A')
+        ws.cell(row=row, column=4, value=registro.equipo.tipo_equipo.descripcion if registro.equipo and registro.equipo.tipo_equipo else 'N/A')
+        ws.cell(row=row, column=5, value=registro.equipo.marca.DescripcionMarca if registro.equipo and registro.equipo.marca else 'N/A')
+        
+        # Tipo de registro
+        tipo_display = {
+            'grua': 'Grúa',
+            'camion': 'Camión',
+            'equipo': 'Equipo'
+        }.get(registro.TipoRegistro, registro.TipoRegistro)
+        ws.cell(row=row, column=6, value=tipo_display)
+        
+        # Tipo de combustible
+        combustible_display = {
+            'diesel': 'Diesel',
+            'gasolina': 'Gasolina',
+            'gas': 'Gas',
+            'otro': 'Otro'
+        }.get(registro.TipoCombustible, registro.TipoCombustible)
+        ws.cell(row=row, column=7, value=combustible_display)
+        
+        ws.cell(row=row, column=8, value=registro.CantidadGalones)
+        ws.cell(row=row, column=9, value=registro.CostoTotal)
+        ws.cell(row=row, column=10, value=registro.usuario.nombre if registro.usuario else 'N/A')
+        ws.cell(row=row, column=11, value=registro.Observaciones if registro.Observaciones else '')
+        ws.cell(row=row, column=12, value=registro.FechaCreacion.strftime('%d/%m/%Y %H:%M') if registro.FechaCreacion else '')
+        
+        # Aplicar bordes a todas las celdas de datos
+        for col in range(1, 13):
+            ws.cell(row=row, column=col).border = border_style
+            ws.cell(row=row, column=col).alignment = Alignment(vertical="center")
+        
+        row += 1
+    
+    # Fila de totales
+    row += 1
+    total_cell = ws.cell(row=row, column=7)
+    total_cell.value = "TOTALES:"
+    total_cell.font = Font(bold=True)
+    total_cell.alignment = Alignment(horizontal="right")
+    
+    # Total galones
+    total_galones = sum(r.CantidadGalones for r in registros)
+    galones_cell = ws.cell(row=row, column=8)
+    galones_cell.value = total_galones
+    galones_cell.font = Font(bold=True)
+    galones_cell.fill = PatternFill(start_color="FFF3CD", end_color="FFF3CD", fill_type="solid")
+    galones_cell.border = border_style
+    
+    # Total costo
+    total_costo = sum(r.CostoTotal for r in registros)
+    costo_cell = ws.cell(row=row, column=9)
+    costo_cell.value = total_costo
+    costo_cell.font = Font(bold=True)
+    costo_cell.fill = PatternFill(start_color="D4EDDA", end_color="D4EDDA", fill_type="solid")
+    costo_cell.border = border_style
+    
+    # Ajustar ancho de columnas
+    column_widths = {
+        'A': 12,  # Fecha
+        'B': 10,  # Hora
+        'C': 12,  # Equipo
+        'D': 15,  # Tipo Equipo
+        'E': 15,  # Marca
+        'F': 15,  # Tipo Registro
+        'G': 18,  # Tipo Combustible
+        'H': 12,  # Galones
+        'I': 15,  # Costo Total
+        'J': 25,  # Registrado Por
+        'K': 35,  # Observaciones
+        'L': 18   # Fecha Creación
+    }
+    
+    for column, width in column_widths.items():
+        ws.column_dimensions[column].width = width
+    
+    # Formatear columna de costo como moneda
+    for row_num in range(row - len(registros), row):
+        ws.cell(row=row_num, column=9).number_format = '$#,##0'
+    
+    # Formatear totales
+    galones_cell.number_format = '0.00'
+    costo_cell.number_format = '$#,##0'
+    
+    # Guardar en memoria
+    output = BytesIO()
+    wb.save(output)
+    output.seek(0)
+    
+    # Generar nombre de archivo
+    fecha_actual = get_colombia_datetime().strftime('%Y%m%d_%H%M%S')
+    nombre_archivo = f'reporte_combustible_{fecha_actual}.xlsx'
+    
+    return send_file(
+        output,
+        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        as_attachment=True,
+        download_name=nombre_archivo
+    )
 
 @app.route('/backups/<filename>')
 def download_backup(filename):

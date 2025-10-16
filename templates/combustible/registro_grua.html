@@ -57,13 +57,21 @@
                                     </div>
                                     
                                     <div class="col-md-6 mb-3">
-                                        <label for="fecha_registro" class="form-label">Fecha del Registro</label>
-                                        <input type="date" class="form-control" id="fecha_registro" name="fecha_registro" required>
+                                        <label for="fecha_registro" class="form-label">
+                                            Fecha del Registro
+                                            <i class="fas fa-lock ms-1 text-muted" title="Fecha automática (no editable)"></i>
+                                        </label>
+                                        <input type="date" class="form-control bg-light" id="fecha_registro" name="fecha_registro" readonly required>
+                                        <div class="form-text">Fecha automática al momento del registro</div>
                                     </div>
                                     
                                     <div class="col-md-6 mb-3">
-                                        <label for="hora_registro" class="form-label">Hora del Registro</label>
-                                        <input type="time" class="form-control" id="hora_registro" name="hora_registro" required>
+                                        <label for="hora_registro" class="form-label">
+                                            Hora del Registro
+                                            <i class="fas fa-lock ms-1 text-muted" title="Hora automática (no editable)"></i>
+                                        </label>
+                                        <input type="time" class="form-control bg-light" id="hora_registro" name="hora_registro" readonly required>
+                                        <div class="form-text">Hora automática al momento del registro</div>
                                     </div>
                                     
                                     <!-- Información del Combustible -->
@@ -410,12 +418,13 @@ function removeImage(button) {
     preview.remove();
 }
 
-// Configurar fecha y hora actual por defecto
+// Configurar fecha y hora actual automáticamente (SOLO LECTURA)
 document.addEventListener('DOMContentLoaded', function() {
-    const now = new Date();
-    const fecha = now.toISOString().split('T')[0];
-    const hora = now.toTimeString().slice(0, 5);
+    // Usar fecha y hora del servidor (Colombia) - más confiable que JavaScript
+    const fecha = '{{ fecha_actual }}';
+    const hora = '{{ hora_actual }}';
     
+    // Establecer valores automáticamente (campos readonly)
     document.getElementById('fecha_registro').value = fecha;
     document.getElementById('hora_registro').value = hora;
     

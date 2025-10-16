@@ -16,8 +16,8 @@ document.addEventListener('DOMContentLoaded', function() {
         return new bootstrap.Popover(popoverTriggerEl);
     });
 
-    // Auto-hide alerts después de 5 segundos
-    const alerts = document.querySelectorAll('.alert');
+    // Auto-hide alerts después de 5 segundos (excluyendo alertas en overlays)
+    const alerts = document.querySelectorAll('.alert:not(.fotos-overlay .alert)');
     alerts.forEach(function(alert) {
         setTimeout(function() {
             const bsAlert = new bootstrap.Alert(alert);

@@ -82,6 +82,9 @@
                             <a href="{{ url_for('reporte_combustible') }}" class="btn btn-outline-secondary">
                                 <i class="fas fa-redo me-2"></i>Limpiar Filtros
                             </a>
+                            <button type="button" class="btn btn-success" onclick="exportarExcel()">
+                                <i class="fas fa-file-excel me-2"></i>Exportar a Excel
+                            </button>
                         </div>
                     </form>
                 </div>
@@ -166,7 +169,8 @@
                                     <th width="8%">Galones</th>
                                     <th width="10%">Costo</th>
                                     <th width="12%">Registrado por</th>
-                                    <th width="27%">Acciones</th>
+                                    <th width="20%">Observaciones</th>
+                                    <th width="7%">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -219,14 +223,21 @@
                                         <small>{{ registro.usuario.nombre }}</small>
                                     </td>
                                     <td>
+                                        {% if registro.Observaciones %}
+                                            <div class="observaciones-cell">
+                                                <small class="text-muted">{{ registro.Observaciones|truncate(100) }}</small>
+                                                {% if registro.Observaciones|length > 100 %}
+                                                    <br><small class="text-info"><i class="fas fa-info-circle me-1"></i>Texto completo en exportación</small>
+                                                {% endif %}
+                                            </div>
+                                        {% else %}
+                                            <small class="text-muted">Sin observaciones</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
                                         <button class="btn btn-sm btn-info" onclick="mostrarFotos('{{ registro.IdRegistroCombustible }}')">
                                             <i class="fas fa-images me-1"></i>Ver Fotos
                                         </button>
-                                        {% if registro.Observaciones %}
-                                        <button class="btn btn-sm btn-secondary" onclick="mostrarObservaciones('{{ registro.IdRegistroCombustible }}', '{{ registro.Observaciones|e }}', '{{ registro.equipo.Placa }}', '{{ registro.FechaRegistro.strftime('%d/%m/%Y') }} {{ registro.HoraRegistro.strftime('%H:%M') }}')">
-                                            <i class="fas fa-comment me-1"></i>Observaciones
-                                        </button>
-                                        {% endif %}
                                     </td>
                                 </tr>
                                 {% endfor %}
@@ -284,21 +295,6 @@
     </div>
 </div>
 
-<!-- Overlay para mostrar observaciones -->
-<div id="obsOverlay" class="obs-overlay" style="display: none;">
-    <div class="obs-container">
-        <div class="obs-header">
-            <h5><i class="fas fa-comment me-2"></i>Observaciones</h5>
-            <button class="btn-close-obs" onclick="cerrarObservaciones()">&times;</button>
-        </div>
-        <div class="obs-body">
-            <p><strong>Equipo:</strong> <span id="obsEquipo"></span></p>
-            <p><strong>Fecha:</strong> <span id="obsFecha"></span></p>
-            <hr>
-            <p id="obsTexto" class="mb-0"></p>
-        </div>
-    </div>
-</div>
 
 {% endblock %}
 
@@ -318,22 +314,25 @@
 }
 
 /* Estilos para overlays personalizados */
-.fotos-overlay, .obs-overlay {
+.fotos-overlay {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
     background-color: rgba(0, 0, 0, 0.8);
-    z-index: 9999;
+    z-index: 99999; /* Aumentado para estar por encima del navbar de Bootstrap */
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 20px;
     box-sizing: border-box;
+    /* Asegurar que el modal esté completamente visible */
+    margin-top: 0;
+    overflow: auto;
 }
 
-.fotos-container, .obs-container {
+.fotos-container {
     background: white;
     border-radius: 12px;
     max-width: 95%;
@@ -342,10 +341,10 @@
     overflow: hidden;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
     animation: fadeInScale 0.3s ease-out;
-}
-
-.obs-container {
-    width: 500px;
+    /* Asegurar que el contenedor esté por encima de todo */
+    position: relative;
+    z-index: 100000;
+    margin-top: 60px; /* Espacio para el navbar fijo */
 }
 
 @keyframes fadeInScale {
@@ -359,7 +358,7 @@
     }
 }
 
-.fotos-header, .obs-header {
+.fotos-header {
     background: #ffc107;
     color: #000;
     padding: 15px 20px;
@@ -369,17 +368,12 @@
     border-bottom: 1px solid #dee2e6;
 }
 
-.obs-header {
-    background: #6c757d;
-    color: white;
-}
-
-.fotos-header h5, .obs-header h5 {
+.fotos-header h5 {
     margin: 0;
     font-weight: 600;
 }
 
-.btn-close-fotos, .btn-close-obs {
+.btn-close-fotos {
     background: none;
     border: none;
     font-size: 24px;
@@ -398,13 +392,15 @@
     background-color: rgba(0, 0, 0, 0.1);
 }
 
-.btn-close-obs:hover {
-    background-color: rgba(255, 255, 255, 0.2);
-}
-
 .fotos-info {
     padding: 15px 20px;
     border-bottom: 1px solid #dee2e6;
+}
+
+.observaciones-cell {
+    max-width: 200px;
+    word-wrap: break-word;
+    line-height: 1.4;
 }
 
 .fotos-grid {
@@ -464,19 +460,13 @@
     color: #6c757d;
 }
 
-.obs-body {
-    padding: 20px;
-}
 
 /* Responsive */
 @media (max-width: 768px) {
     .fotos-container {
         width: 95%;
         max-height: 90%;
-    }
-    
-    .obs-container {
-        width: 95%;
+        margin-top: 80px; /* Más espacio en móviles para el navbar */
     }
     
     .fotos-grid {
@@ -484,7 +474,7 @@
         padding: 15px;
     }
     
-    .fotos-header, .obs-header {
+    .fotos-header {
         padding: 12px 15px;
     }
     
@@ -509,17 +499,29 @@ function mostrarFotos(registroId) {
     const galones = dataElement.dataset.galones;
     const costo = dataElement.dataset.costo;
     
-    // Llenar información del header
-    document.getElementById('fotosTitulo').textContent = 'Fotos del Registro - ' + equipo;
-    document.getElementById('fotosEquipo').textContent = equipo;
-    document.getElementById('fotosTipo').textContent = tipo;
-    document.getElementById('fotosFecha').textContent = fecha;
-    document.getElementById('fotosGalones').textContent = galones;
-    document.getElementById('fotosCosto').textContent = costo;
+    // Llenar información del header (con verificaciones de null)
+    const fotosTitulo = document.getElementById('fotosTitulo');
+    const fotosEquipo = document.getElementById('fotosEquipo');
+    const fotosTipo = document.getElementById('fotosTipo');
+    const fotosFecha = document.getElementById('fotosFecha');
+    const fotosGalones = document.getElementById('fotosGalones');
+    const fotosCosto = document.getElementById('fotosCosto');
+    
+    if (fotosTitulo) fotosTitulo.textContent = 'Fotos del Registro - ' + equipo;
+    if (fotosEquipo) fotosEquipo.textContent = equipo;
+    if (fotosTipo) fotosTipo.textContent = tipo;
+    if (fotosFecha) fotosFecha.textContent = fecha;
+    if (fotosGalones) fotosGalones.textContent = galones;
+    if (fotosCosto) fotosCosto.textContent = costo;
     
     // Limpiar grid de fotos
     const fotosGrid = document.getElementById('fotosGrid');
-    fotosGrid.innerHTML = '';
+    if (fotosGrid) {
+        fotosGrid.innerHTML = '';
+    } else {
+        console.error('No se encontró el elemento fotosGrid');
+        return;
+    }
     
     // Crear tarjetas de fotos
     const fotos = [
@@ -574,60 +576,80 @@ function mostrarFotos(registroId) {
     });
     
     // Mostrar overlay
-    document.getElementById('fotosOverlay').style.display = 'flex';
-    document.body.style.overflow = 'hidden'; // Prevenir scroll del body
+    const fotosOverlay = document.getElementById('fotosOverlay');
+    if (fotosOverlay) {
+        fotosOverlay.style.display = 'flex';
+        document.body.style.overflow = 'hidden'; // Prevenir scroll del body
+        
+    } else {
+        console.error('No se encontró el elemento fotosOverlay');
+    }
 }
 
 // Función para cerrar fotos
 function cerrarFotos() {
-    document.getElementById('fotosOverlay').style.display = 'none';
-    document.body.style.overflow = ''; // Restaurar scroll del body
+    const fotosOverlay = document.getElementById('fotosOverlay');
+    if (fotosOverlay) {
+        fotosOverlay.style.display = 'none';
+        document.body.style.overflow = ''; // Restaurar scroll del body
+    }
 }
 
-// Función para mostrar observaciones
-function mostrarObservaciones(registroId, observacion, equipo, fecha) {
-    document.getElementById('obsEquipo').textContent = equipo;
-    document.getElementById('obsFecha').textContent = fecha;
-    document.getElementById('obsTexto').textContent = observacion;
-    
-    // Mostrar overlay
-    document.getElementById('obsOverlay').style.display = 'flex';
-    document.body.style.overflow = 'hidden'; // Prevenir scroll del body
-}
-
-// Función para cerrar observaciones
-function cerrarObservaciones() {
-    document.getElementById('obsOverlay').style.display = 'none';
-    document.body.style.overflow = ''; // Restaurar scroll del body
-}
+// Función para mostrar observaciones (DEPRECADA - Ya no se usa)
+// Las observaciones ahora se muestran directamente en la tabla
 
 // Cerrar con tecla ESC
 document.addEventListener('keydown', function(event) {
     if (event.key === 'Escape') {
         cerrarFotos();
-        cerrarObservaciones();
     }
 });
 
-// Cerrar haciendo click en el overlay (fuera del contenido)
-document.getElementById('fotosOverlay').addEventListener('click', function(event) {
-    if (event.target === this) {
-        cerrarFotos();
+// Configurar event listeners cuando el DOM esté listo
+document.addEventListener('DOMContentLoaded', function() {
+    // Cerrar haciendo click en el overlay (fuera del contenido)
+    const fotosOverlay = document.getElementById('fotosOverlay');
+    
+    if (fotosOverlay) {
+        fotosOverlay.addEventListener('click', function(event) {
+            if (event.target === this) {
+                cerrarFotos();
+            }
+        });
     }
-});
-
-document.getElementById('obsOverlay').addEventListener('click', function(event) {
-    if (event.target === this) {
-        cerrarObservaciones();
-    }
-});
-
-// Prevenir que el click en el contenido cierre el overlay
-document.querySelectorAll('.fotos-container, .obs-container').forEach(container => {
-    container.addEventListener('click', function(event) {
-        event.stopPropagation();
+    
+    // Prevenir que el click en el contenido cierre el overlay
+    document.querySelectorAll('.fotos-container').forEach(container => {
+        container.addEventListener('click', function(event) {
+            event.stopPropagation();
+        });
     });
 });
+
+// Función para exportar a Excel con los filtros actuales
+function exportarExcel() {
+    // Obtener valores de los filtros
+    const equipoId = document.getElementById('equipo_id').value;
+    const usuarioId = document.getElementById('usuario_id').value;
+    const tipoRegistro = document.getElementById('tipo_registro').value;
+    const fechaInicio = document.getElementById('fecha_inicio').value;
+    const fechaFin = document.getElementById('fecha_fin').value;
+    
+    // Construir URL con parámetros
+    let url = '{{ url_for("exportar_combustible_excel") }}?';
+    const params = [];
+    
+    if (equipoId) params.push('equipo_id=' + equipoId);
+    if (usuarioId) params.push('usuario_id=' + usuarioId);
+    if (tipoRegistro) params.push('tipo_registro=' + tipoRegistro);
+    if (fechaInicio) params.push('fecha_inicio=' + fechaInicio);
+    if (fechaFin) params.push('fecha_fin=' + fechaFin);
+    
+    url += params.join('&');
+    
+    // Abrir en nueva ventana para descargar
+    window.location.href = url;
+}
 </script>
 {% endblock %}
 
